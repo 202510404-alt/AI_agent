@@ -89,6 +89,10 @@ class ContextBuilder:
         prompt_parts.append("과거 오류 수정 내역(# HISTORY:)만 온전히 보존된 청정 코드입니다.\n\n")
 
         for rel_path in affected_files:
+            # 🛡️ [격리 방어선] 장부 보관소(system_memory) 및 마스터 지도(system_maps) 내부 파일은 컨텍스트 수집 대상에서 완전 무시
+            if "system_memory" in str(rel_path) or "system_maps" in str(rel_path):
+                continue
+
             prompt_parts.append(f"--- FILE: {rel_path} ---")
             try:
                 # 위에 만들어 둔 청소 함수를 실행시켜 알짜배기 코드만 받아옵니다.

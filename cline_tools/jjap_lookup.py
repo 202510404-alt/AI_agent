@@ -3,8 +3,8 @@ import sys
 import argparse
 from pathlib import Path
 
-SYMBOLS_FILE = Path(".jjap_symbols.json")
-CONTEXT_FILE = Path(".jjap_context.json")
+SYMBOLS_FILE = Path("system_memory") / ".jjap_symbols.json"
+CONTEXT_FILE = Path("system_memory") / ".jjap_context.json"
 
 def load_json(file_path: Path):
     if not file_path.exists():

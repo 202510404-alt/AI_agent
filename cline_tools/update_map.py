@@ -2,9 +2,12 @@ import json
 from pathlib import Path
 
 def update_map():
-    context_file = Path(".jjap_context.json")
-    symbols_file = Path(".jjap_symbols.json")
-    output_file = Path("CODEBASE_MAP.md")
+    # 🧠 [불러오기 교정] 격리 폴더(system_memory) 안으로 들어간 인덱싱 장부들을 정확하게 불러옵니다.
+    context_file = Path("system_memory") / ".jjap_context.json"
+    symbols_file = Path("system_memory") / ".jjap_symbols.json"
+    
+    # 💾 [내보내기 교정] 생성된 지도가 루트를 더럽히지 않고 무한 루프를 유발하지 않도록 격리 구역으로 내보냅니다.
+    output_file = Path("system_maps") / "CODEBASE_MAP.md"
     
     if not context_file.exists() or not symbols_file.exists():
         print("❌ Error: 인덱서 데이터 파일(.jjap_context 또는 .jjap_symbols)이 없습니다.")

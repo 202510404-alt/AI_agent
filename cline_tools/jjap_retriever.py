@@ -15,7 +15,8 @@ class JjapRetriever:
     """
     def __init__(self, project_root: Path):
         self.project_root = project_root
-        self.symbols_file = self.project_root / ".jjap_symbols.json"
+        # 🧠 [불러오기 교정] 격리 폴더(system_memory) 안으로 이사 간 인덱싱 장부를 정확하게 바라보도록 관로를 꺾어줍니다.
+        self.symbols_file = self.project_root / "system_memory" / ".jjap_symbols.json"
         self.max_context_lines = 300
         self.symbols_db = self._load_symbols()
 

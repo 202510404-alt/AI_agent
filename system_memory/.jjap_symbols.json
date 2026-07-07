@@ -62,10 +62,10 @@
       "parent": null,
       "file": "cline_tools/agent_navigator.py",
       "start_line": 11,
-      "end_line": 117,
+      "end_line": 118,
       "range": [
         11,
-        117
+        118
       ],
       "decorators": [],
       "signature": "class SemanticNavigator",
@@ -82,10 +82,10 @@
       "parent": "SemanticNavigator",
       "file": "cline_tools/agent_navigator.py",
       "start_line": 12,
-      "end_line": 15,
+      "end_line": 16,
       "range": [
         12,
-        15
+        16
       ],
       "decorators": [],
       "signature": "def __init__(...)",
@@ -101,18 +101,18 @@
       "type": "method",
       "parent": "SemanticNavigator",
       "file": "cline_tools/agent_navigator.py",
-      "start_line": 17,
-      "end_line": 24,
+      "start_line": 18,
+      "end_line": 25,
       "range": [
-        17,
-        24
+        18,
+        25
       ],
       "decorators": [],
       "signature": "def _load_database(...)",
       "calls": [
-        "exists",
         "open",
-        "load"
+        "load",
+        "exists"
       ],
       "used_by": [
         "cline_tools/agent_navigator.py::SemanticNavigator.__init__"
@@ -125,30 +125,30 @@
       "type": "method",
       "parent": "SemanticNavigator",
       "file": "cline_tools/agent_navigator.py",
-      "start_line": 26,
-      "end_line": 117,
+      "start_line": 27,
+      "end_line": 118,
       "range": [
-        26,
-        117
+        27,
+        118
       ],
       "decorators": [],
       "signature": "def extract_multi_slices(...)",
       "calls": [
-        "any",
-        "int",
-        "join",
-        "open",
-        "readlines",
-        "strip",
-        "get",
-        "len",
         "max",
-        "split",
-        "min",
+        "open",
+        "exists",
+        "strip",
+        "len",
+        "int",
         "print",
-        "findall",
+        "split",
+        "get",
         "append",
-        "exists"
+        "readlines",
+        "min",
+        "any",
+        "join",
+        "findall"
       ],
       "used_by": [
         "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
@@ -161,11 +161,11 @@
       "type": "class",
       "parent": null,
       "file": "cline_tools/agent_navigator.py",
-      "start_line": 122,
-      "end_line": 243,
+      "start_line": 123,
+      "end_line": 244,
       "range": [
-        122,
-        243
+        123,
+        244
       ],
       "decorators": [],
       "signature": "class JjapCursorNavigatorGUI",
@@ -179,24 +179,24 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "cline_tools/agent_navigator.py",
-      "start_line": 123,
-      "end_line": 172,
+      "start_line": 124,
+      "end_line": 173,
       "range": [
-        123,
-        172
+        124,
+        173
       ],
       "decorators": [],
       "signature": "def __init__(...)",
       "calls": [
-        "title",
         "Frame",
-        "Text",
-        "geometry",
-        "SemanticNavigator",
-        "Label",
-        "insert",
         "pack",
-        "Button"
+        "title",
+        "Button",
+        "Label",
+        "Text",
+        "insert",
+        "SemanticNavigator",
+        "geometry"
       ],
       "used_by": []
     },
@@ -207,29 +207,29 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "cline_tools/agent_navigator.py",
-      "start_line": 174,
-      "end_line": 224,
+      "start_line": 175,
+      "end_line": 225,
       "range": [
-        174,
-        224
+        175,
+        225
       ],
       "decorators": [],
       "signature": "def execute_slicing_pipeline(...)",
       "calls": [
-        "join",
-        "rstrip",
-        "write",
-        "delete",
-        "showerror",
         "open",
-        "insert",
         "strip",
+        "showwarning",
         "get",
-        "config",
-        "extract_multi_slices",
-        "startswith",
         "append",
-        "showwarning"
+        "delete",
+        "rstrip",
+        "join",
+        "insert",
+        "extract_multi_slices",
+        "config",
+        "showerror",
+        "write",
+        "startswith"
       ],
       "used_by": []
     },
@@ -240,21 +240,21 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "cline_tools/agent_navigator.py",
-      "start_line": 226,
-      "end_line": 243,
+      "start_line": 227,
+      "end_line": 244,
       "range": [
-        226,
-        243
+        227,
+        244
       ],
       "decorators": [],
       "signature": "def manual_export_file(...)",
       "calls": [
-        "write",
-        "showerror",
-        "open",
-        "asksaveasfilename",
         "str",
-        "showinfo"
+        "open",
+        "showinfo",
+        "showerror",
+        "asksaveasfilename",
+        "write"
       ],
       "used_by": []
     },
@@ -266,10 +266,10 @@
       "parent": null,
       "file": "cline_tools/context_builder.py",
       "start_line": 13,
-      "end_line": 102,
+      "end_line": 106,
       "range": [
         13,
-        102
+        106
       ],
       "decorators": [],
       "signature": "class ContextBuilder",
@@ -313,16 +313,16 @@
       "signature": "def read_and_clean_file(...)",
       "calls": [
         "FileNotFoundError",
-        "join",
-        "readlines",
         "open",
+        "exists",
         "strip",
         "len",
         "split",
-        "startswith",
-        "endswith",
+        "readlines",
         "append",
-        "exists"
+        "endswith",
+        "join",
+        "startswith"
       ],
       "used_by": [
         "cline_tools/context_builder.py::ContextBuilder.assemble_ai_prompt"
@@ -336,17 +336,17 @@
       "parent": "ContextBuilder",
       "file": "cline_tools/context_builder.py",
       "start_line": 79,
-      "end_line": 102,
+      "end_line": 106,
       "range": [
         79,
-        102
+        106
       ],
       "decorators": [],
       "signature": "def assemble_ai_prompt(...)",
       "calls": [
         "str",
-        "append",
         "join",
+        "append",
         "read_and_clean_file"
       ],
       "used_by": []
@@ -358,14 +358,68 @@
       "type": "function",
       "parent": null,
       "file": "cline_tools/create_ai_map.py",
-      "start_line": 19,
-      "end_line": 92,
+      "start_line": 38,
+      "end_line": 99,
       "range": [
-        19,
-        92
+        38,
+        99
       ],
       "decorators": [],
       "signature": "def parse_python_file(...)",
+      "calls": [],
+      "used_by": []
+    },
+    {
+      "symbol_id": "cline_tools/create_ai_map.py::collect_target_files",
+      "full_name": "collect_target_files",
+      "name": "collect_target_files",
+      "type": "function",
+      "parent": null,
+      "file": "cline_tools/create_ai_map.py",
+      "start_line": 102,
+      "end_line": 130,
+      "range": [
+        102,
+        130
+      ],
+      "decorators": [],
+      "signature": "def collect_target_files(...)",
+      "calls": [],
+      "used_by": []
+    },
+    {
+      "symbol_id": "cline_tools/create_ai_map.py::load_registry",
+      "full_name": "load_registry",
+      "name": "load_registry",
+      "type": "function",
+      "parent": null,
+      "file": "cline_tools/create_ai_map.py",
+      "start_line": 133,
+      "end_line": 147,
+      "range": [
+        133,
+        147
+      ],
+      "decorators": [],
+      "signature": "def load_registry(...)",
+      "calls": [],
+      "used_by": []
+    },
+    {
+      "symbol_id": "cline_tools/create_ai_map.py::load_protocols",
+      "full_name": "load_protocols",
+      "name": "load_protocols",
+      "type": "function",
+      "parent": null,
+      "file": "cline_tools/create_ai_map.py",
+      "start_line": 150,
+      "end_line": 165,
+      "range": [
+        150,
+        165
+      ],
+      "decorators": [],
+      "signature": "def load_protocols(...)",
       "calls": [],
       "used_by": []
     },
@@ -376,11 +430,11 @@
       "type": "function",
       "parent": null,
       "file": "cline_tools/create_ai_map.py",
-      "start_line": 95,
-      "end_line": 199,
+      "start_line": 168,
+      "end_line": 236,
       "range": [
-        95,
-        199
+        168,
+        236
       ],
       "decorators": [],
       "signature": "def main(...)",
@@ -394,11 +448,11 @@
       "type": "function",
       "parent": null,
       "file": "cline_tools/create_ai_map.py",
-      "start_line": 206,
-      "end_line": 208,
+      "start_line": 243,
+      "end_line": 245,
       "range": [
-        206,
-        208
+        243,
+        245
       ],
       "decorators": [],
       "signature": "def generate_ai_optimized_map(...)",
@@ -412,11 +466,11 @@
       "type": "class",
       "parent": null,
       "file": "cline_tools/indexer.py",
-      "start_line": 15,
-      "end_line": 216,
+      "start_line": 22,
+      "end_line": 227,
       "range": [
-        15,
-        216
+        22,
+        227
       ],
       "decorators": [],
       "signature": "class AdvancedIndexerV2",
@@ -430,11 +484,11 @@
       "type": "method",
       "parent": "AdvancedIndexerV2",
       "file": "cline_tools/indexer.py",
-      "start_line": 24,
-      "end_line": 32,
+      "start_line": 31,
+      "end_line": 39,
       "range": [
-        24,
-        32
+        31,
+        39
       ],
       "decorators": [],
       "signature": "def __init__(...)",
@@ -448,18 +502,18 @@
       "type": "method",
       "parent": "AdvancedIndexerV2",
       "file": "cline_tools/indexer.py",
-      "start_line": 34,
-      "end_line": 35,
+      "start_line": 41,
+      "end_line": 42,
       "range": [
-        34,
-        35
+        41,
+        42
       ],
       "decorators": [],
       "signature": "def _get_sha256(...)",
       "calls": [
+        "encode",
         "hexdigest",
-        "sha256",
-        "encode"
+        "sha256"
       ],
       "used_by": [
         "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -472,19 +526,19 @@
       "type": "method",
       "parent": "AdvancedIndexerV2",
       "file": "cline_tools/indexer.py",
-      "start_line": 37,
-      "end_line": 53,
+      "start_line": 44,
+      "end_line": 60,
       "range": [
-        37,
-        53
+        44,
+        60
       ],
       "decorators": [],
       "signature": "def _extract_skeleton(...)",
       "calls": [
-        "isinstance",
-        "append",
+        "parse",
         "join",
-        "parse"
+        "append",
+        "isinstance"
       ],
       "used_by": [
         "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -497,19 +551,19 @@
       "type": "method",
       "parent": "AdvancedIndexerV2",
       "file": "cline_tools/indexer.py",
-      "start_line": 55,
-      "end_line": 89,
+      "start_line": 62,
+      "end_line": 95,
       "range": [
-        55,
-        89
+        62,
+        95
       ],
       "decorators": [],
       "signature": "def parse_protocols_and_registries(...)",
       "calls": [
-        "isinstance",
         "lower",
+        "type",
         "parse",
-        "type"
+        "isinstance"
       ],
       "used_by": [
         "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -522,32 +576,32 @@
       "type": "method",
       "parent": "AdvancedIndexerV2",
       "file": "cline_tools/indexer.py",
-      "start_line": 91,
-      "end_line": 162,
+      "start_line": 97,
+      "end_line": 168,
       "range": [
-        91,
-        162
+        97,
+        168
       ],
       "decorators": [],
       "signature": "def index_file(...)",
       "calls": [
-        "dump",
-        "_get_sha256",
-        "parse_protocols_and_registries",
-        "_extract_skeleton",
-        "set",
-        "int",
-        "parse",
         "open",
-        "relative_to",
-        "getattr",
-        "isinstance",
-        "as_posix",
         "read",
+        "int",
         "list",
         "append",
+        "isinstance",
+        "getattr",
+        "_extract_skeleton",
+        "stat",
+        "relative_to",
+        "parse",
+        "dump",
+        "set",
         "walk",
-        "stat"
+        "parse_protocols_and_registries",
+        "as_posix",
+        "_get_sha256"
       ],
       "used_by": [
         "cline_tools/indexer.py::AdvancedIndexerV2.scan_project"
@@ -560,30 +614,31 @@
       "type": "method",
       "parent": "AdvancedIndexerV2",
       "file": "cline_tools/indexer.py",
-      "start_line": 164,
-      "end_line": 216,
+      "start_line": 170,
+      "end_line": 227,
       "range": [
-        164,
-        216
+        170,
+        227
       ],
       "decorators": [],
       "signature": "def scan_project(...)",
       "calls": [
-        "dump",
-        "set",
-        "any",
-        "index_file",
         "open",
-        "get",
-        "replace",
-        "print",
-        "sorted",
-        "Path",
-        "endswith",
-        "list",
-        "append",
         "exists",
-        "walk"
+        "print",
+        "list",
+        "get",
+        "append",
+        "endswith",
+        "index_file",
+        "Path",
+        "any",
+        "dump",
+        "makedirs",
+        "set",
+        "walk",
+        "replace",
+        "sorted"
       ],
       "used_by": []
     },
@@ -649,10 +704,10 @@
       "parent": null,
       "file": "cline_tools/jjap_retriever.py",
       "start_line": 9,
-      "end_line": 128,
+      "end_line": 129,
       "range": [
         9,
-        128
+        129
       ],
       "decorators": [],
       "signature": "class JjapRetriever",
@@ -667,10 +722,10 @@
       "parent": "JjapRetriever",
       "file": "cline_tools/jjap_retriever.py",
       "start_line": 16,
-      "end_line": 20,
+      "end_line": 21,
       "range": [
         16,
-        20
+        21
       ],
       "decorators": [],
       "signature": "def __init__(...)",
@@ -686,20 +741,20 @@
       "type": "method",
       "parent": "JjapRetriever",
       "file": "cline_tools/jjap_retriever.py",
-      "start_line": 22,
-      "end_line": 36,
+      "start_line": 23,
+      "end_line": 37,
       "range": [
-        22,
-        36
+        23,
+        37
       ],
       "decorators": [],
       "signature": "def _load_symbols(...)",
       "calls": [
         "open",
-        "get",
-        "len",
-        "print",
         "exists",
+        "print",
+        "len",
+        "get",
         "load"
       ],
       "used_by": [
@@ -713,32 +768,32 @@
       "type": "method",
       "parent": "JjapRetriever",
       "file": "cline_tools/jjap_retriever.py",
-      "start_line": 38,
-      "end_line": 97,
+      "start_line": 39,
+      "end_line": 98,
       "range": [
-        38,
-        97
+        39,
+        98
       ],
       "decorators": [],
       "signature": "def retrieve_symbol(...)",
       "calls": [
-        "join",
-        "rstrip",
-        "next",
-        "open",
-        "readlines",
-        "strip",
-        "get",
-        "_safe_truncate",
         "max",
-        "len",
-        "min",
-        "extend",
-        "print",
-        "startswith",
-        "append",
+        "open",
+        "_safe_truncate",
         "exists",
-        "_find_best_match"
+        "print",
+        "strip",
+        "len",
+        "get",
+        "append",
+        "readlines",
+        "min",
+        "rstrip",
+        "_find_best_match",
+        "join",
+        "next",
+        "extend",
+        "startswith"
       ],
       "used_by": []
     },
@@ -749,18 +804,18 @@
       "type": "method",
       "parent": "JjapRetriever",
       "file": "cline_tools/jjap_retriever.py",
-      "start_line": 99,
-      "end_line": 116,
+      "start_line": 100,
+      "end_line": 117,
       "range": [
-        99,
-        116
+        100,
+        117
       ],
       "decorators": [],
       "signature": "def _find_best_match(...)",
       "calls": [
+        "lower",
         "get",
-        "print",
-        "lower"
+        "print"
       ],
       "used_by": [
         "cline_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
@@ -773,20 +828,20 @@
       "type": "method",
       "parent": "JjapRetriever",
       "file": "cline_tools/jjap_retriever.py",
-      "start_line": 118,
-      "end_line": 128,
+      "start_line": 119,
+      "end_line": 129,
       "range": [
-        118,
-        128
+        119,
+        129
       ],
       "decorators": [],
       "signature": "def _safe_truncate(...)",
       "calls": [
-        "join",
-        "len",
         "print",
-        "splitlines",
-        "append"
+        "len",
+        "append",
+        "join",
+        "splitlines"
       ],
       "used_by": [
         "cline_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
@@ -799,11 +854,11 @@
       "type": "function",
       "parent": null,
       "file": "cline_tools/jjap_retriever.py",
-      "start_line": 131,
-      "end_line": 139,
+      "start_line": 132,
+      "end_line": 140,
       "range": [
-        131,
-        139
+        132,
+        140
       ],
       "decorators": [],
       "signature": "def main(...)",
@@ -856,10 +911,10 @@
       "parent": null,
       "file": "cline_tools/jjap_watcher.py",
       "start_line": 76,
-      "end_line": 98,
+      "end_line": 99,
       "range": [
         76,
-        98
+        99
       ],
       "decorators": [],
       "signature": "class CodeChangeHandler",
@@ -892,20 +947,20 @@
       "parent": "CodeChangeHandler",
       "file": "cline_tools/jjap_watcher.py",
       "start_line": 81,
-      "end_line": 98,
+      "end_line": 99,
       "range": [
         81,
-        98
+        99
       ],
       "decorators": [],
       "signature": "def dispatch(...)",
       "calls": [
-        "any",
-        "as_posix",
-        "Path",
         "print",
+        "time",
+        "Path",
+        "any",
         "run_pipeline",
-        "time"
+        "as_posix"
       ],
       "used_by": []
     },
@@ -916,11 +971,11 @@
       "type": "function",
       "parent": null,
       "file": "cline_tools/jjap_watcher.py",
-      "start_line": 100,
-      "end_line": 126,
+      "start_line": 101,
+      "end_line": 127,
       "range": [
-        100,
-        126
+        101,
+        127
       ],
       "decorators": [],
       "signature": "def main(...)",
@@ -935,10 +990,10 @@
       "parent": null,
       "file": "cline_tools/update_map.py",
       "start_line": 4,
-      "end_line": 85,
+      "end_line": 88,
       "range": [
         4,
-        85
+        88
       ],
       "decorators": [],
       "signature": "def update_map(...)",

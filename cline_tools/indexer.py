@@ -1,3 +1,4 @@
+
 import ast
 import json
 import hashlib
@@ -5,19 +6,25 @@ import os
 from pathlib import Path
 from typing import Dict, Any, List
 
-# 🎯 영문 switch.py 콘솔 원격 연동 (한글 인코딩 에러 및 경로 폭파 완벽 방지)
+# 🎯 영문 switch.py 콘솔 원격 연동
 try:
     from cline_tools.switch import SCAN_MODE
 except ImportError:
-    # 혹시 모를 파일 유실이나 임포트 크래시 방지용 안전 백업 스위치
     SCAN_MODE = "ROOT"
+
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = SCRIPT_DIR.parent  # 🔥 상위의 진짜 프로젝트 루트 강제 추적
+
+OUTPUT_FILE_PATH = PROJECT_ROOT / "system_maps" / "AI_CODEBASE_MAP.md"
+REGISTRY_JSON_PATH = PROJECT_ROOT / "system_memory" / "registry_constants.json"
+PROTOCOL_JSON_PATH = PROJECT_ROOT / "system_memory" / "data_protocols.json"
 
 class AdvancedIndexerV2:
     """
     [Jjap-Cursor Core Indexer V3.5 - Ultra Universal Engine]
     
     🛠️ 형님의 무제한 범용성 계약 조건 완벽 반영:
-      - 특정 폴더 제한 완전 철폐! src/ 내부의 모든 파이썬 파일을 알아서 정밀 센싱합니다.
+      - 특정 폴더 제한 완전 철폐! 설정에 따라 프로젝트 전체 혹은 src/ 내부를 자동 스캔합니다.
       - 파일 내부에 'Variables'나 'vars'가 들어간 클래스가 있으면 데이터 프로토콜 장부로 자동 분류.
       - 그 외에 일반적인 엔티티, 플랫폼, 카메라 등의 모든 핵심 클래스는 레지스트리 상수로 100% 자동 징집.
     """
@@ -81,7 +88,6 @@ class AdvancedIndexerV2:
                 
                 # 🧱 2. 범용 레지스트리 상수 스캔: 폴더 불문! 모든 핵심 구동 클래스(플랫폼, 플레이어, 적 등)를 상수로 맵핑
                 else:
-                    # 마스터 실행 스위치류나 내장 클래스를 제외한 모든 커스텀 클래스를 상수로 추출
                     if node.name not in ["AppState"]:
                         self.registry_constants[node.name] = f"{rel_path_str}::{node.name}"
                         
@@ -162,7 +168,6 @@ class AdvancedIndexerV2:
             pass
 
     def scan_project(self):
-        # 🎛️ switch.py 설정에 따른 타겟 스캔 경로 동적 배정
         if SCAN_MODE == "ROOT":
             scan_target = self.project_root
             print("🎯 [Indexer] Mode: ROOT (프로젝트 원본 경로를 직접 진입하여 경로 에러를 완전 차단합니다)")
@@ -176,24 +181,27 @@ class AdvancedIndexerV2:
 
         for root, dirs, files in os.walk(scan_target, followlinks=True):
             normalized_root = root.replace("\\", "/")
+            
+            # 🚨 [여기 주의] 꼬인 중복 경로 예방선 유지
             if "src/project_root/src" in normalized_root:
                 continue
 
-            # 시스템 공통 제외 영역 설정 + ROOT 모드일 때 src 중복 제거
-            excludes = [".venv", ".git", "__pycache__"]
-            if SCAN_MODE == "ROOT":
-                excludes.append("src")
+            # 🛠️ [형님 수술 구역]: 무시 대상 목록에서 깡통 생성기였던 "src" 강제 추가를 제거합니다.
+            # system_memory와 system_maps를 무시하여 인덱서 무한루프는 칼같이 방어합니다.
+            excludes = [".venv", ".git", "__pycache__", "system_memory", "system_maps"]
 
-            if any(kw in root for kw in excludes):
+            # 폴더명 단위가 아니라 전체 경로(normalized_root)를 기준으로 영리하게 검문합니다.
+            if any(kw in normalized_root for kw in excludes):
                 continue
 
             for file in files:
+                # SRC 모드일 때는 최상단 start.py 수집을 패스합니다.
                 if file == "start.py" and SCAN_MODE == "SRC":
                     continue
                 if file.endswith(".py"):
+                    # 🎯 정확하게 개별 파일 징집 입고
                     self.index_file(Path(root) / file)
-                    
-                    
+
         for s in self.symbols:
             name_to_check = s["name"]
             for target in self.symbols:
@@ -201,19 +209,22 @@ class AdvancedIndexerV2:
                     s["used_by"].append(target["symbol_id"])
             s["used_by"] = sorted(list(set(s["used_by"])))
 
-        # 덮어쓰기 출력 일괄 동기화
-        with open(".jjap_context.json", "w", encoding="utf-8") as f:
+        # 🛠️ [격리 개조 포인트 2] 장부 출력 타겟 리다이렉트
+        # 혹시 폴더가 없으면 에러가 터지므로 안전하게 자동 생성 로직 투입
+        os.makedirs("system_memory", exist_ok=True)
+
+        with open("system_memory/.jjap_context.json", "w", encoding="utf-8") as f:
             json.dump({"files": self.files_context}, f, indent=2, ensure_ascii=False)
-        with open(".jjap_symbols.json", "w", encoding="utf-8") as f:
+        with open("system_memory/.jjap_symbols.json", "w", encoding="utf-8") as f:
             json.dump({"symbols": self.symbols}, f, indent=2, ensure_ascii=False)
-        with open("definition_map.json", "w", encoding="utf-8") as f:
+        with open("system_memory/definition_map.json", "w", encoding="utf-8") as f:
             json.dump(self.definition_map, f, indent=2, ensure_ascii=False)
-        with open("data_protocols.json", "w", encoding="utf-8") as f:
+        with open("system_memory/data_protocols.json", "w", encoding="utf-8") as f:
             json.dump({"protocols": self.data_protocols}, f, indent=2, ensure_ascii=False)
-        with open("registry_constants.json", "w", encoding="utf-8") as f:
+        with open("system_memory/registry_constants.json", "w", encoding="utf-8") as f:
             json.dump({"registered_entities": self.registry_constants}, f, indent=2, ensure_ascii=False)
 
-        print("🧬 [Jjap-Indexer Universal] 폴더 제한 해제! 전 구역 자동 분류 및 5대 장부 오버라이트 완료!")
+        print(f"🧬 [Jjap-Indexer Universal] 5대 장부를 'system_memory/' 구역으로 안전하게 격리 저장 완료!")
 
 if __name__ == "__main__":
     root = Path(__file__).parent.resolve()

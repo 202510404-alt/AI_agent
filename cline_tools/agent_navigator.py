@@ -11,7 +11,8 @@ from pathlib import Path
 class SemanticNavigator:
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir
-        self.symbols_path = root_dir / ".jjap_symbols.json"
+        # 🧠 [불러오기 교정] 묶어낸 격리 폴더(system_memory) 안의 .jjap_symbols.json 정보를 정확하게 가져옵니다.
+        self.symbols_path = root_dir / "system_memory" / ".jjap_symbols.json"
         self.symbols_data = self._load_database()
 
     def _load_database(self):
@@ -211,12 +212,12 @@ class JjapCursorNavigatorGUI:
         # GUI 창에 렌더링 인쇄
         self.code_display.insert(tk.END, self.last_markdown_content)
         
-        # 💾 [플러스 알파] 프로젝트 루트에 extracted_context.md 자동 상시 저장 처리!
-        auto_save_path = self.project_root / "extracted_context.md"
+        # 💾 [내보내기 교정] 프로젝트 루트가 아닌 묶어낸 격리 폴더(system_maps/) 내부로 자동 상시 저장 처리!
+        auto_save_path = self.project_root / "system_maps" / "extracted_context.md"
         try:
             with open(auto_save_path, "w", encoding="utf-8") as f:
                 f.write(self.last_markdown_content)
-            status_msg = f"🟢 추출 및 마크다운 자동 저장 완료! -> {auto_save_path.name}"
+            status_msg = f"🟢 추출 및 마크다운 자동 저장 완료! -> system_maps/{auto_save_path.name}"
             self.export_button.config(state=tk.NORMAL)
         except Exception as e:
             status_msg = f"⚠️ 화면 추출 완료했으나 자동 파일 저장 실패: {e}"
