@@ -5,6 +5,13 @@ import os
 from pathlib import Path
 from typing import Dict, Any, List
 
+# 🎯 영문 switch.py 콘솔 원격 연동 (한글 인코딩 에러 및 경로 폭파 완벽 방지)
+try:
+    from cline_tools.switch import SCAN_MODE
+except ImportError:
+    # 혹시 모를 파일 유실이나 임포트 크래시 방지용 안전 백업 스위치
+    SCAN_MODE = "ROOT"
+
 class AdvancedIndexerV2:
     """
     [Jjap-Cursor Core Indexer V3.5 - Ultra Universal Engine]
@@ -155,20 +162,38 @@ class AdvancedIndexerV2:
             pass
 
     def scan_project(self):
-        src_folder = self.project_root / "src"
-        if not src_folder.exists():
-            print("⚠️ [Indexer] 프로젝트 루트 내에 'src' 폴더를 찾을 수 없어 스캔을 중단합니다.")
+        # 🎛️ switch.py 설정에 따른 타겟 스캔 경로 동적 배정
+        if SCAN_MODE == "ROOT":
+            scan_target = self.project_root
+            print("🎯 [Indexer] Mode: ROOT (프로젝트 원본 경로를 직접 진입하여 경로 에러를 완전 차단합니다)")
+        else:
+            scan_target = self.project_root / "src"
+            print("🎯 [Indexer] Mode: SRC (순정 규격인 src/ 폴더 내부만 정밀 스캔합니다)")
+
+        if not scan_target.exists():
+            print(f"⚠️ [Indexer] 스캔 대상 경로가 존재하지 않아 중단합니다: {scan_target}")
             return
 
-        for root, dirs, files in os.walk(src_folder):
-            if any(kw in root for kw in [".venv", ".git", "__pycache__", "cline_tools"]):
+        for root, dirs, files in os.walk(scan_target, followlinks=True):
+            normalized_root = root.replace("\\", "/")
+            if "src/project_root/src" in normalized_root:
                 continue
+
+            # 시스템 공통 제외 영역 설정 + ROOT 모드일 때 src 중복 제거
+            excludes = [".venv", ".git", "__pycache__"]
+            if SCAN_MODE == "ROOT":
+                excludes.append("src")
+
+            if any(kw in root for kw in excludes):
+                continue
+
             for file in files:
-                if file == "start.py":
+                if file == "start.py" and SCAN_MODE == "SRC":
                     continue
                 if file.endswith(".py"):
                     self.index_file(Path(root) / file)
-
+                    
+                    
         for s in self.symbols:
             name_to_check = s["name"]
             for target in self.symbols:

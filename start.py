@@ -1,12 +1,14 @@
 """Jjap-Cursor Total Control Launchpad.
 
-[짭커서 통합 기동 사령탑 - 실시간 입출력 파이프 스트림 결합 버전]
+[짭커서 통합 기동 사령탑 - 실시간 입출력 파이프 스트림 결합 버전 + 리빌드 파이프라인 통합]
 서브 프로세스(Watcher, Navigator)의 모든 디버깅 로그와 print 비명을
 현재 부모 터미널로 100% 실시간 유도 및 직결하여 숨김없이 자백하게 만듭니다.
 """
 
 import os
 import sys
+import shutil
+import stat
 
 # Windows CP949 인코딩 환경에서 이모지 출력 시 발생하는 UnicodeEncodeError 방지
 if sys.platform == "win32":
@@ -51,6 +53,7 @@ WATCHER_SCRIPT = CLINE_TOOLS_DIR / "jjap_watcher.py"
 NAVIGATOR_SCRIPT = CLINE_TOOLS_DIR / "agent_navigator.py"
 CREATE_AI_MAP_SCRIPT = CLINE_TOOLS_DIR / "create_ai_map.py"
 
+
 def auto_install_dependencies():
     """형님이 가상환경을 안 켰을 때를 대비해, watchdog이 없으면 자동으로 설치해주는 안전장치"""
     print("📦 [의존성 검사] 실시간 감시망 필수 라이브러리(watchdog) 상태 점검 중...")
@@ -85,17 +88,20 @@ def main():
     auto_install_dependencies()
     print("----------------------------------------------------------------------")
 
+    # 🚀 [0-A단계: 선제 청소 및 동적 복제 리빌드 발동]
+    print("----------------------------------------------------------------------")
+
     # 환경변수 세팅 복사 및 조립 (import 크래시 방지 및 실시간 무버퍼 강제)
     env = os.environ.copy()
     env["PYTHONPATH"] = os.path.pathsep.join([str(ROOT_DIR), str(CLINE_TOOLS_DIR), env.get("PYTHONPATH", "")])
     env["PYTHONUNBUFFERED"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"
 
-    # 🔥 [0단계: 순정 인덱싱 메커니즘 완전 복원]
+    # 🔥 [0-B단계: 최신 코드로 완벽 채워진 src/ 폴더 순정 인덱싱 메커니즘 가동]
     print("➡️ 0단계: 기동 전 AI 초경량 요약 지도(AI_CODEBASE_MAP.md) 선제 강제 빌드...")
     if CREATE_AI_MAP_SCRIPT.exists():
         try:
-            # 1단계 인덱서 선제 요격 가동
+            # 1단계 인덱서 선제 요격 가동 (이제 src/ 내부에 최신 복제본들이 다 들어있으므로 완벽하게 추출됩니다)
             indexer_script = CLINE_TOOLS_DIR / "indexer.py"
             if indexer_script.exists():
                 subprocess.run(

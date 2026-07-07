@@ -1,0 +1,54 @@
+{
+  "files": {
+    "start.py": {
+      "hash": "00b7022f79cf5d34232812159c9c9472d6c8ffc31448433d3c39a43ccf485cbc",
+      "mtime": 1783424203,
+      "skeleton": "def get_best_python(...):\n    ...\ndef auto_install_dependencies(...):\n    ...\ndef main(...):\n    ..."
+    },
+    "cline_tools/agent_navigator.py": {
+      "hash": "47b3868b2021a6a9d978a80972078c6203b9e1f85fcd5799ae423e2035cf026e",
+      "mtime": 1783413447,
+      "skeleton": "class SemanticNavigator:\n    def __init__(...):\n        ...\n    def _load_database(...):\n        ...\n    def extract_multi_slices(...):\n        ...\nclass JjapCursorNavigatorGUI:\n    def __init__(...):\n        ...\n    def execute_slicing_pipeline(...):\n        ...\n    def manual_export_file(...):\n        ..."
+    },
+    "cline_tools/context_builder.py": {
+      "hash": "9326fdc355ca5872728874a57b28880f83fc5e63b5939d30fc7b437bd0ceed35",
+      "mtime": 1783069040,
+      "skeleton": "class ContextBuilder:\n    def __init__(...):\n        ...\n    def read_and_clean_file(...):\n        ...\n    def assemble_ai_prompt(...):\n        ..."
+    },
+    "cline_tools/create_ai_map.py": {
+      "hash": "d14004673fe756c841d0ca28958b18f8aa6b6c1a400e2c2b7dd51eda0de15976",
+      "mtime": 1783338975,
+      "skeleton": "def parse_python_file(...):\n    ...\ndef main(...):\n    ...\ndef generate_ai_optimized_map(...):\n    ..."
+    },
+    "cline_tools/indexer.py": {
+      "hash": "336eef9d46112d2efc4e125d9c6342b3e6541af2e21a76e440dd2795d5c7ff01",
+      "mtime": 1783424093,
+      "skeleton": "class AdvancedIndexerV2:\n    def __init__(...):\n        ...\n    def _get_sha256(...):\n        ...\n    def _extract_skeleton(...):\n        ...\n    def parse_protocols_and_registries(...):\n        ...\n    def index_file(...):\n        ...\n    def scan_project(...):\n        ..."
+    },
+    "cline_tools/jjap_lookup.py": {
+      "hash": "66947f9a62aaac0984289ebbf4cb1954c86cdbc4de72dba597dcba9d9a8d4c05",
+      "mtime": 1783069040,
+      "skeleton": "def load_json(...):\n    ...\ndef lookup_symbol(...):\n    ...\ndef show_skeleton(...):\n    ..."
+    },
+    "cline_tools/jjap_retriever.py": {
+      "hash": "104d0995c168bcdfab9f96e988b49d8e297154332b88c1820380746c3f8d87ec",
+      "mtime": 1783069040,
+      "skeleton": "class JjapRetriever:\n    def __init__(...):\n        ...\n    def _load_symbols(...):\n        ...\n    def retrieve_symbol(...):\n        ...\n    def _find_best_match(...):\n        ...\n    def _safe_truncate(...):\n        ...\ndef main(...):\n    ..."
+    },
+    "cline_tools/jjap_watcher.py": {
+      "hash": "1316edf419f58ccd9fa52a1a105550332fcaeffc8b75d97b093260a4c344eb59",
+      "mtime": 1783069040,
+      "skeleton": "def import_file_directly(...):\n    ...\ndef run_pipeline(...):\n    ...\nclass CodeChangeHandler:\n    def __init__(...):\n        ...\n    def dispatch(...):\n        ...\ndef main(...):\n    ..."
+    },
+    "cline_tools/switch.py": {
+      "hash": "35e0a4356e314345e14dbd960ffeb158418dfabfd318ca7c529c6c3483326f0e",
+      "mtime": 1783424026,
+      "skeleton": ""
+    },
+    "cline_tools/update_map.py": {
+      "hash": "2cc10b47c151a99b359ea4c3e2c6de0ab891a9dce88879ad417fbbe62f29588d",
+      "mtime": 1783069040,
+      "skeleton": "def update_map(...):\n    ..."
+    }
+  }
+}
