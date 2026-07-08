@@ -1,66 +1,12 @@
 {
   "symbols": [
     {
-      "symbol_id": "start.py::get_best_python",
-      "full_name": "get_best_python",
-      "name": "get_best_python",
-      "type": "function",
-      "parent": null,
-      "file": "start.py",
-      "start_line": 32,
-      "end_line": 48,
-      "range": [
-        32,
-        48
-      ],
-      "decorators": [],
-      "signature": "def get_best_python(...)",
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "start.py::auto_install_dependencies",
-      "full_name": "auto_install_dependencies",
-      "name": "auto_install_dependencies",
-      "type": "function",
-      "parent": null,
-      "file": "start.py",
-      "start_line": 57,
-      "end_line": 78,
-      "range": [
-        57,
-        78
-      ],
-      "decorators": [],
-      "signature": "def auto_install_dependencies(...)",
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "start.py::main",
-      "full_name": "main",
-      "name": "main",
-      "type": "function",
-      "parent": null,
-      "file": "start.py",
-      "start_line": 80,
-      "end_line": 196,
-      "range": [
-        80,
-        196
-      ],
-      "decorators": [],
-      "signature": "def main(...)",
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "cline_tools/agent_navigator.py::SemanticNavigator",
+      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator",
       "full_name": "SemanticNavigator",
       "name": "SemanticNavigator",
       "type": "class",
       "parent": null,
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 11,
       "end_line": 118,
       "range": [
@@ -71,16 +17,16 @@
       "signature": "class SemanticNavigator",
       "calls": [],
       "used_by": [
-        "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__"
+        "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__"
       ]
     },
     {
-      "symbol_id": "cline_tools/agent_navigator.py::SemanticNavigator.__init__",
+      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator.__init__",
       "full_name": "SemanticNavigator.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "SemanticNavigator",
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 12,
       "end_line": 16,
       "range": [
@@ -95,12 +41,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/agent_navigator.py::SemanticNavigator._load_database",
+      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator._load_database",
       "full_name": "SemanticNavigator._load_database",
       "name": "_load_database",
       "type": "method",
       "parent": "SemanticNavigator",
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 18,
       "end_line": 25,
       "range": [
@@ -111,20 +57,20 @@
       "signature": "def _load_database(...)",
       "calls": [
         "open",
-        "load",
-        "exists"
+        "exists",
+        "load"
       ],
       "used_by": [
-        "cline_tools/agent_navigator.py::SemanticNavigator.__init__"
+        "python_agent_tools/agent_navigator.py::SemanticNavigator.__init__"
       ]
     },
     {
-      "symbol_id": "cline_tools/agent_navigator.py::SemanticNavigator.extract_multi_slices",
+      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator.extract_multi_slices",
       "full_name": "SemanticNavigator.extract_multi_slices",
       "name": "extract_multi_slices",
       "type": "method",
       "parent": "SemanticNavigator",
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 27,
       "end_line": 118,
       "range": [
@@ -134,33 +80,33 @@
       "decorators": [],
       "signature": "def extract_multi_slices(...)",
       "calls": [
-        "readlines",
+        "append",
+        "int",
         "join",
-        "open",
-        "strip",
-        "get",
-        "split",
+        "exists",
+        "findall",
+        "readlines",
         "min",
         "print",
-        "any",
-        "exists",
-        "max",
+        "strip",
         "len",
-        "int",
-        "findall",
-        "append"
+        "get",
+        "split",
+        "open",
+        "max",
+        "any"
       ],
       "used_by": [
-        "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
+        "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
       ]
     },
     {
-      "symbol_id": "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI",
+      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI",
       "full_name": "JjapCursorNavigatorGUI",
       "name": "JjapCursorNavigatorGUI",
       "type": "class",
       "parent": null,
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 123,
       "end_line": 244,
       "range": [
@@ -173,12 +119,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__",
+      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__",
       "full_name": "JjapCursorNavigatorGUI.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 124,
       "end_line": 173,
       "range": [
@@ -188,25 +134,25 @@
       "decorators": [],
       "signature": "def __init__(...)",
       "calls": [
-        "pack",
-        "SemanticNavigator",
+        "Label",
         "Text",
-        "Button",
-        "geometry",
         "insert",
         "title",
+        "geometry",
+        "Button",
         "Frame",
-        "Label"
+        "pack",
+        "SemanticNavigator"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline",
+      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline",
       "full_name": "JjapCursorNavigatorGUI.execute_slicing_pipeline",
       "name": "execute_slicing_pipeline",
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 175,
       "end_line": 225,
       "range": [
@@ -216,30 +162,30 @@
       "decorators": [],
       "signature": "def execute_slicing_pipeline(...)",
       "calls": [
+        "append",
         "join",
-        "rstrip",
-        "delete",
+        "config",
         "write",
-        "extract_multi_slices",
+        "delete",
+        "insert",
+        "startswith",
         "strip",
         "showerror",
+        "rstrip",
+        "extract_multi_slices",
         "get",
         "showwarning",
-        "startswith",
-        "insert",
-        "open",
-        "config",
-        "append"
+        "open"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI.manual_export_file",
+      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.manual_export_file",
       "full_name": "JjapCursorNavigatorGUI.manual_export_file",
       "name": "manual_export_file",
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
-      "file": "cline_tools/agent_navigator.py",
+      "file": "python_agent_tools/agent_navigator.py",
       "start_line": 227,
       "end_line": 244,
       "range": [
@@ -249,22 +195,22 @@
       "decorators": [],
       "signature": "def manual_export_file(...)",
       "calls": [
-        "str",
         "write",
-        "showerror",
         "asksaveasfilename",
+        "str",
         "showinfo",
+        "showerror",
         "open"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/context_builder.py::ContextBuilder",
+      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder",
       "full_name": "ContextBuilder",
       "name": "ContextBuilder",
       "type": "class",
       "parent": null,
-      "file": "cline_tools/context_builder.py",
+      "file": "python_agent_tools/context_builder.py",
       "start_line": 13,
       "end_line": 106,
       "range": [
@@ -277,12 +223,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/context_builder.py::ContextBuilder.__init__",
+      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder.__init__",
       "full_name": "ContextBuilder.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "ContextBuilder",
-      "file": "cline_tools/context_builder.py",
+      "file": "python_agent_tools/context_builder.py",
       "start_line": 16,
       "end_line": 18,
       "range": [
@@ -297,12 +243,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/context_builder.py::ContextBuilder.read_and_clean_file",
+      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder.read_and_clean_file",
       "full_name": "ContextBuilder.read_and_clean_file",
       "name": "read_and_clean_file",
       "type": "method",
       "parent": "ContextBuilder",
-      "file": "cline_tools/context_builder.py",
+      "file": "python_agent_tools/context_builder.py",
       "start_line": 20,
       "end_line": 77,
       "range": [
@@ -312,29 +258,29 @@
       "decorators": [],
       "signature": "def read_and_clean_file(...)",
       "calls": [
-        "readlines",
+        "append",
         "join",
-        "strip",
-        "split",
-        "len",
-        "FileNotFoundError",
-        "startswith",
-        "endswith",
+        "readlines",
         "exists",
-        "open",
-        "append"
+        "startswith",
+        "strip",
+        "endswith",
+        "len",
+        "split",
+        "FileNotFoundError",
+        "open"
       ],
       "used_by": [
-        "cline_tools/context_builder.py::ContextBuilder.assemble_ai_prompt"
+        "python_agent_tools/context_builder.py::ContextBuilder.assemble_ai_prompt"
       ]
     },
     {
-      "symbol_id": "cline_tools/context_builder.py::ContextBuilder.assemble_ai_prompt",
+      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder.assemble_ai_prompt",
       "full_name": "ContextBuilder.assemble_ai_prompt",
       "name": "assemble_ai_prompt",
       "type": "method",
       "parent": "ContextBuilder",
-      "file": "cline_tools/context_builder.py",
+      "file": "python_agent_tools/context_builder.py",
       "start_line": 79,
       "end_line": 106,
       "range": [
@@ -344,25 +290,25 @@
       "decorators": [],
       "signature": "def assemble_ai_prompt(...)",
       "calls": [
-        "read_and_clean_file",
+        "append",
         "join",
         "str",
-        "append"
+        "read_and_clean_file"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/create_ai_map.py::parse_python_file",
+      "symbol_id": "python_agent_tools/create_ai_map.py::parse_python_file",
       "full_name": "parse_python_file",
       "name": "parse_python_file",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/create_ai_map.py",
-      "start_line": 38,
-      "end_line": 99,
+      "file": "python_agent_tools/create_ai_map.py",
+      "start_line": 41,
+      "end_line": 102,
       "range": [
-        38,
-        99
+        41,
+        102
       ],
       "decorators": [],
       "signature": "def parse_python_file(...)",
@@ -370,17 +316,17 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/create_ai_map.py::collect_target_files",
+      "symbol_id": "python_agent_tools/create_ai_map.py::collect_target_files",
       "full_name": "collect_target_files",
       "name": "collect_target_files",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/create_ai_map.py",
-      "start_line": 102,
-      "end_line": 130,
+      "file": "python_agent_tools/create_ai_map.py",
+      "start_line": 105,
+      "end_line": 133,
       "range": [
-        102,
-        130
+        105,
+        133
       ],
       "decorators": [],
       "signature": "def collect_target_files(...)",
@@ -388,17 +334,17 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/create_ai_map.py::load_registry",
+      "symbol_id": "python_agent_tools/create_ai_map.py::load_registry",
       "full_name": "load_registry",
       "name": "load_registry",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/create_ai_map.py",
-      "start_line": 133,
-      "end_line": 147,
+      "file": "python_agent_tools/create_ai_map.py",
+      "start_line": 136,
+      "end_line": 150,
       "range": [
-        133,
-        147
+        136,
+        150
       ],
       "decorators": [],
       "signature": "def load_registry(...)",
@@ -406,17 +352,17 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/create_ai_map.py::load_protocols",
+      "symbol_id": "python_agent_tools/create_ai_map.py::load_protocols",
       "full_name": "load_protocols",
       "name": "load_protocols",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/create_ai_map.py",
-      "start_line": 150,
-      "end_line": 165,
+      "file": "python_agent_tools/create_ai_map.py",
+      "start_line": 153,
+      "end_line": 168,
       "range": [
-        150,
-        165
+        153,
+        168
       ],
       "decorators": [],
       "signature": "def load_protocols(...)",
@@ -424,17 +370,17 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/create_ai_map.py::main",
+      "symbol_id": "python_agent_tools/create_ai_map.py::main",
       "full_name": "main",
       "name": "main",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/create_ai_map.py",
-      "start_line": 168,
-      "end_line": 236,
+      "file": "python_agent_tools/create_ai_map.py",
+      "start_line": 171,
+      "end_line": 239,
       "range": [
-        168,
-        236
+        171,
+        239
       ],
       "decorators": [],
       "signature": "def main(...)",
@@ -442,17 +388,17 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/create_ai_map.py::generate_ai_optimized_map",
+      "symbol_id": "python_agent_tools/create_ai_map.py::generate_ai_optimized_map",
       "full_name": "generate_ai_optimized_map",
       "name": "generate_ai_optimized_map",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/create_ai_map.py",
-      "start_line": 243,
-      "end_line": 245,
+      "file": "python_agent_tools/create_ai_map.py",
+      "start_line": 246,
+      "end_line": 248,
       "range": [
-        243,
-        245
+        246,
+        248
       ],
       "decorators": [],
       "signature": "def generate_ai_optimized_map(...)",
@@ -460,12 +406,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/indexer.py::AdvancedIndexerV2",
+      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2",
       "full_name": "AdvancedIndexerV2",
       "name": "AdvancedIndexerV2",
       "type": "class",
       "parent": null,
-      "file": "cline_tools/indexer.py",
+      "file": "python_agent_tools/indexer.py",
       "start_line": 22,
       "end_line": 227,
       "range": [
@@ -478,12 +424,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/indexer.py::AdvancedIndexerV2.__init__",
+      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.__init__",
       "full_name": "AdvancedIndexerV2.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "cline_tools/indexer.py",
+      "file": "python_agent_tools/indexer.py",
       "start_line": 31,
       "end_line": 39,
       "range": [
@@ -496,12 +442,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/indexer.py::AdvancedIndexerV2._get_sha256",
+      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2._get_sha256",
       "full_name": "AdvancedIndexerV2._get_sha256",
       "name": "_get_sha256",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "cline_tools/indexer.py",
+      "file": "python_agent_tools/indexer.py",
       "start_line": 41,
       "end_line": 42,
       "range": [
@@ -511,21 +457,21 @@
       "decorators": [],
       "signature": "def _get_sha256(...)",
       "calls": [
+        "sha256",
         "encode",
-        "hexdigest",
-        "sha256"
+        "hexdigest"
       ],
       "used_by": [
-        "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
+        "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
       ]
     },
     {
-      "symbol_id": "cline_tools/indexer.py::AdvancedIndexerV2._extract_skeleton",
+      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2._extract_skeleton",
       "full_name": "AdvancedIndexerV2._extract_skeleton",
       "name": "_extract_skeleton",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "cline_tools/indexer.py",
+      "file": "python_agent_tools/indexer.py",
       "start_line": 44,
       "end_line": 60,
       "range": [
@@ -537,20 +483,20 @@
       "calls": [
         "parse",
         "join",
-        "isinstance",
-        "append"
+        "append",
+        "isinstance"
       ],
       "used_by": [
-        "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
+        "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
       ]
     },
     {
-      "symbol_id": "cline_tools/indexer.py::AdvancedIndexerV2.parse_protocols_and_registries",
+      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.parse_protocols_and_registries",
       "full_name": "AdvancedIndexerV2.parse_protocols_and_registries",
       "name": "parse_protocols_and_registries",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "cline_tools/indexer.py",
+      "file": "python_agent_tools/indexer.py",
       "start_line": 62,
       "end_line": 95,
       "range": [
@@ -561,21 +507,21 @@
       "signature": "def parse_protocols_and_registries(...)",
       "calls": [
         "parse",
-        "type",
         "isinstance",
-        "lower"
+        "lower",
+        "type"
       ],
       "used_by": [
-        "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
+        "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
       ]
     },
     {
-      "symbol_id": "cline_tools/indexer.py::AdvancedIndexerV2.index_file",
+      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file",
       "full_name": "AdvancedIndexerV2.index_file",
       "name": "index_file",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "cline_tools/indexer.py",
+      "file": "python_agent_tools/indexer.py",
       "start_line": 97,
       "end_line": 168,
       "range": [
@@ -585,35 +531,35 @@
       "decorators": [],
       "signature": "def index_file(...)",
       "calls": [
+        "append",
+        "int",
         "_extract_skeleton",
-        "parse_protocols_and_registries",
-        "dump",
-        "getattr",
-        "list",
-        "relative_to",
+        "_get_sha256",
         "parse",
         "isinstance",
-        "as_posix",
-        "stat",
-        "read",
-        "walk",
+        "getattr",
         "set",
+        "relative_to",
+        "dump",
+        "list",
+        "stat",
         "open",
-        "int",
-        "_get_sha256",
-        "append"
+        "as_posix",
+        "walk",
+        "read",
+        "parse_protocols_and_registries"
       ],
       "used_by": [
-        "cline_tools/indexer.py::AdvancedIndexerV2.scan_project"
+        "python_agent_tools/indexer.py::AdvancedIndexerV2.scan_project"
       ]
     },
     {
-      "symbol_id": "cline_tools/indexer.py::AdvancedIndexerV2.scan_project",
+      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.scan_project",
       "full_name": "AdvancedIndexerV2.scan_project",
       "name": "scan_project",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "cline_tools/indexer.py",
+      "file": "python_agent_tools/indexer.py",
       "start_line": 170,
       "end_line": 227,
       "range": [
@@ -623,32 +569,32 @@
       "decorators": [],
       "signature": "def scan_project(...)",
       "calls": [
-        "dump",
+        "print",
+        "append",
         "makedirs",
+        "exists",
+        "index_file",
+        "set",
+        "endswith",
+        "walk",
         "list",
         "get",
-        "print",
-        "index_file",
-        "endswith",
-        "replace",
-        "walk",
-        "any",
-        "exists",
-        "set",
-        "Path",
+        "sorted",
         "open",
-        "append",
-        "sorted"
+        "dump",
+        "replace",
+        "any",
+        "Path"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_lookup.py::load_json",
+      "symbol_id": "python_agent_tools/jjap_lookup.py::load_json",
       "full_name": "load_json",
       "name": "load_json",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/jjap_lookup.py",
+      "file": "python_agent_tools/jjap_lookup.py",
       "start_line": 9,
       "end_line": 14,
       "range": [
@@ -661,12 +607,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_lookup.py::lookup_symbol",
+      "symbol_id": "python_agent_tools/jjap_lookup.py::lookup_symbol",
       "full_name": "lookup_symbol",
       "name": "lookup_symbol",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/jjap_lookup.py",
+      "file": "python_agent_tools/jjap_lookup.py",
       "start_line": 16,
       "end_line": 43,
       "range": [
@@ -679,12 +625,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_lookup.py::show_skeleton",
+      "symbol_id": "python_agent_tools/jjap_lookup.py::show_skeleton",
       "full_name": "show_skeleton",
       "name": "show_skeleton",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/jjap_lookup.py",
+      "file": "python_agent_tools/jjap_lookup.py",
       "start_line": 45,
       "end_line": 61,
       "range": [
@@ -697,12 +643,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_retriever.py::JjapRetriever",
+      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever",
       "full_name": "JjapRetriever",
       "name": "JjapRetriever",
       "type": "class",
       "parent": null,
-      "file": "cline_tools/jjap_retriever.py",
+      "file": "python_agent_tools/jjap_retriever.py",
       "start_line": 9,
       "end_line": 129,
       "range": [
@@ -715,12 +661,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_retriever.py::JjapRetriever.__init__",
+      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever.__init__",
       "full_name": "JjapRetriever.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "cline_tools/jjap_retriever.py",
+      "file": "python_agent_tools/jjap_retriever.py",
       "start_line": 16,
       "end_line": 21,
       "range": [
@@ -735,12 +681,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_retriever.py::JjapRetriever._load_symbols",
+      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever._load_symbols",
       "full_name": "JjapRetriever._load_symbols",
       "name": "_load_symbols",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "cline_tools/jjap_retriever.py",
+      "file": "python_agent_tools/jjap_retriever.py",
       "start_line": 23,
       "end_line": 37,
       "range": [
@@ -750,24 +696,24 @@
       "decorators": [],
       "signature": "def _load_symbols(...)",
       "calls": [
-        "get",
         "print",
-        "len",
-        "load",
         "exists",
+        "load",
+        "len",
+        "get",
         "open"
       ],
       "used_by": [
-        "cline_tools/jjap_retriever.py::JjapRetriever.__init__"
+        "python_agent_tools/jjap_retriever.py::JjapRetriever.__init__"
       ]
     },
     {
-      "symbol_id": "cline_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol",
+      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol",
       "full_name": "JjapRetriever.retrieve_symbol",
       "name": "retrieve_symbol",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "cline_tools/jjap_retriever.py",
+      "file": "python_agent_tools/jjap_retriever.py",
       "start_line": 39,
       "end_line": 98,
       "range": [
@@ -777,33 +723,33 @@
       "decorators": [],
       "signature": "def retrieve_symbol(...)",
       "calls": [
+        "_find_best_match",
+        "append",
+        "print",
+        "exists",
         "readlines",
         "join",
-        "extend",
-        "next",
-        "strip",
-        "get",
-        "print",
         "min",
-        "len",
         "startswith",
-        "_safe_truncate",
-        "exists",
-        "max",
-        "open",
+        "extend",
+        "strip",
         "rstrip",
-        "_find_best_match",
-        "append"
+        "len",
+        "next",
+        "get",
+        "open",
+        "max",
+        "_safe_truncate"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_retriever.py::JjapRetriever._find_best_match",
+      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever._find_best_match",
       "full_name": "JjapRetriever._find_best_match",
       "name": "_find_best_match",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "cline_tools/jjap_retriever.py",
+      "file": "python_agent_tools/jjap_retriever.py",
       "start_line": 100,
       "end_line": 117,
       "range": [
@@ -813,21 +759,21 @@
       "decorators": [],
       "signature": "def _find_best_match(...)",
       "calls": [
+        "print",
         "get",
-        "lower",
-        "print"
+        "lower"
       ],
       "used_by": [
-        "cline_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
+        "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
       ]
     },
     {
-      "symbol_id": "cline_tools/jjap_retriever.py::JjapRetriever._safe_truncate",
+      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever._safe_truncate",
       "full_name": "JjapRetriever._safe_truncate",
       "name": "_safe_truncate",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "cline_tools/jjap_retriever.py",
+      "file": "python_agent_tools/jjap_retriever.py",
       "start_line": 119,
       "end_line": 129,
       "range": [
@@ -837,23 +783,23 @@
       "decorators": [],
       "signature": "def _safe_truncate(...)",
       "calls": [
+        "append",
         "join",
         "print",
-        "splitlines",
         "len",
-        "append"
+        "splitlines"
       ],
       "used_by": [
-        "cline_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
+        "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
       ]
     },
     {
-      "symbol_id": "cline_tools/jjap_retriever.py::main",
+      "symbol_id": "python_agent_tools/jjap_retriever.py::main",
       "full_name": "main",
       "name": "main",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/jjap_retriever.py",
+      "file": "python_agent_tools/jjap_retriever.py",
       "start_line": 132,
       "end_line": 140,
       "range": [
@@ -866,12 +812,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_watcher.py::import_file_directly",
+      "symbol_id": "python_agent_tools/jjap_watcher.py::import_file_directly",
       "full_name": "import_file_directly",
       "name": "import_file_directly",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/jjap_watcher.py",
+      "file": "python_agent_tools/jjap_watcher.py",
       "start_line": 20,
       "end_line": 28,
       "range": [
@@ -884,12 +830,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_watcher.py::run_pipeline",
+      "symbol_id": "python_agent_tools/jjap_watcher.py::run_pipeline",
       "full_name": "run_pipeline",
       "name": "run_pipeline",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/jjap_watcher.py",
+      "file": "python_agent_tools/jjap_watcher.py",
       "start_line": 30,
       "end_line": 73,
       "range": [
@@ -900,16 +846,16 @@
       "signature": "def run_pipeline(...)",
       "calls": [],
       "used_by": [
-        "cline_tools/jjap_watcher.py::CodeChangeHandler.dispatch"
+        "python_agent_tools/jjap_watcher.py::CodeChangeHandler.dispatch"
       ]
     },
     {
-      "symbol_id": "cline_tools/jjap_watcher.py::CodeChangeHandler",
+      "symbol_id": "python_agent_tools/jjap_watcher.py::CodeChangeHandler",
       "full_name": "CodeChangeHandler",
       "name": "CodeChangeHandler",
       "type": "class",
       "parent": null,
-      "file": "cline_tools/jjap_watcher.py",
+      "file": "python_agent_tools/jjap_watcher.py",
       "start_line": 76,
       "end_line": 99,
       "range": [
@@ -922,12 +868,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_watcher.py::CodeChangeHandler.__init__",
+      "symbol_id": "python_agent_tools/jjap_watcher.py::CodeChangeHandler.__init__",
       "full_name": "CodeChangeHandler.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "CodeChangeHandler",
-      "file": "cline_tools/jjap_watcher.py",
+      "file": "python_agent_tools/jjap_watcher.py",
       "start_line": 77,
       "end_line": 79,
       "range": [
@@ -940,12 +886,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_watcher.py::CodeChangeHandler.dispatch",
+      "symbol_id": "python_agent_tools/jjap_watcher.py::CodeChangeHandler.dispatch",
       "full_name": "CodeChangeHandler.dispatch",
       "name": "dispatch",
       "type": "method",
       "parent": "CodeChangeHandler",
-      "file": "cline_tools/jjap_watcher.py",
+      "file": "python_agent_tools/jjap_watcher.py",
       "start_line": 81,
       "end_line": 99,
       "range": [
@@ -955,22 +901,22 @@
       "decorators": [],
       "signature": "def dispatch(...)",
       "calls": [
-        "time",
         "print",
+        "time",
+        "run_pipeline",
         "as_posix",
         "any",
-        "Path",
-        "run_pipeline"
+        "Path"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/jjap_watcher.py::main",
+      "symbol_id": "python_agent_tools/jjap_watcher.py::main",
       "full_name": "main",
       "name": "main",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/jjap_watcher.py",
+      "file": "python_agent_tools/jjap_watcher.py",
       "start_line": 101,
       "end_line": 127,
       "range": [
@@ -983,12 +929,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "cline_tools/update_map.py::update_map",
+      "symbol_id": "python_agent_tools/update_map.py::update_map",
       "full_name": "update_map",
       "name": "update_map",
       "type": "function",
       "parent": null,
-      "file": "cline_tools/update_map.py",
+      "file": "python_agent_tools/update_map.py",
       "start_line": 4,
       "end_line": 88,
       "range": [
