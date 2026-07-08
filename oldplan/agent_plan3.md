@@ -1,27 +1,8 @@
-===========================
-AI BOOTSTRAP
-===========================
-
-Step1.
-AI_PROTOCOL.md를 끝까지 읽는다.
-
-Step2.
-AI_CODEBASE_MAP.md에서 수정 대상 파일을 찾는다.
-
-Step3.
-agent_navigator를 사용하여 필요한 파일만 로드한다.
-
-Step4.
-로드되지 않은 파일의 구현을 절대로 추측하지 않는다.
-
-Step5.
-수정 후 Validation Checklist를 수행한다.
-
-# 🏗️ plan_final.md — ASE-OS Single Source of Truth (v1.3)
+# 🏗️ plan_final.md — ASE-OS Single Source of Truth (v1.2)
 
 > **[전 에이전트 필독 / 최우선순위 문서]**
 > 본 문서는 프로젝트 최상위에 위치하는 단 하나의 진실 공급원(SSOT)이다.
-> 모든 AI 에이전트(Planner, Manager, Worker, Validator 등)는 코드 수정 전 반드시 본 문서의 §0.5(설계 철학), §0.6(Context Escalation Policy), §0.7(Deferred Feature Policy), §2(스위치 맵), §3(인터페이스 규격), §3.5(디버깅 로그 예측-검증), §3.6(파일 락), §3.7(교차 세션 병합 — Deferred), §3.8(Project Model Builder), §3.9(Dependency Analyzer), §3.10(Need More Context 프로토콜), §3.11(Cost Estimator)을 파싱하고 준수해야 한다.
+> 모든 AI 에이전트(Planner, Manager, Worker, Validator 등)는 코드 수정 전 반드시 본 문서의 §0.5(설계 철학), §2(스위치 맵), §3(인터페이스 규격), §3.5(디버깅 로그 예측-검증), §3.6(파일 락), §3.7(교차 세션 병합), §3.8(Project Model Builder), §3.9(Dependency Analyzer), §3.10(Need More Context 프로토콜), §3.11(Cost Estimator)을 파싱하고 준수해야 한다.
 > 경로는 예외 없이 `AI_CODEBASE_MAP.md`의 `[📂 실제경로]` 표기를 그대로 사용한다. 축약·추측·상대경로 임의 변경 금지.
 
 ### 📌 v1.1 변경 이력 (v1.0 대비)
@@ -49,18 +30,6 @@ Step5.
 * **[변경]** Level2 Master Planner 데이터 흐름을 `Knowledge → Planner → TaskGraph`에서 `Knowledge → Project Model Builder → Dependency Analyzer → Planner → TaskGraph`로 갱신.
 * **[변경]** §4 로드맵에 Phase 14~17 신설.
 * **[변경]** §5 체크리스트에 v1.2 신규 항목 추가.
-
-### 📌 v1.3 변경 이력 (v1.2 대비 — 정책 명문화)
-
-> 아래 두 항목은 별도 정책 확정 사항을 문서에 명문화한 것이다. 신규 서브시스템 추가가 아니라, 기존 §0.5·§3.7·§3.10·§4의 산발적 언급을 하나의 강제 규칙으로 통합·승격한다.
-
-* **[신규]** §0.6 Context Escalation Policy — AI는 항상 AI Map → Slice(§3.10 Need More Context 프로토콜) 조회를 우선 사용해야 하며, 파일 전체 컨텍스트 요청은 "동적 코드 구조로 인한 정적 분석 실패" 또는 "심볼 해석 실패"가 명확히 확인된 경우에 한해 정의된 에스컬레이션 규칙을 따라서만 허용된다. 임의 사유의 전체 파일 첨부는 금지된다.
-* **[신규]** §0.7 Deferred Feature Policy — Session Merge(§3.7 교차 세션 병합) 및 Semantic Merge(Level8)는 핵심 실행 파이프라인(Level2~Level6, Level9 Validator)의 안정성이 검증된 이후에 구현하는 **후순위(Deferred) 기능**으로 명문화한다. MVP 및 초기 버전(v1.0~v1.2 로드맵 기준 Phase 1~13 1차 안정화 구간)의 구현 범위에는 포함하지 않는다.
-* **[변경]** §2 YAML 스위치 맵의 `level6_live_retriever.need_more_context_protocol`에 `escalation` 서브블록 추가, `level8_semantic_merge`/`multi_session_merge`에 `deferred_feature: true`, `mvp_scope: false` 플래그 추가.
-* **[변경]** §3.4 Reject Rules에 Context Escalation 위반(무단 전체 파일 요청) 반려 규칙 추가.
-* **[변경]** §3.10에 에스컬레이션 트리거·승인 절차 서술 추가(§0.6 참조).
-* **[변경]** §4 로드맵의 Phase 7(Semantic Merge), Phase 13(Session Merge)에 `[DEFERRED]` 표기 및 착수 조건(선행 Phase 완료) 명시.
-* **[변경]** §5 체크리스트에 v1.3 신규 항목(Context Escalation 사유 기록 여부, Deferred 기능 조기 착수 금지 여부) 추가.
 
 ---
 
@@ -110,71 +79,6 @@ Slice 응답 (필요한 코드만, 수백~수천 토큰)
 ```
 
 목표 수치 예시: 3,000 → 1,200 → 900 → 700 토큰 식으로 반복 조회하더라도, 전체 파일 첨부(예: 40만 토큰) 대비 누적 합계가 훨씬 작게 유지되어야 한다. 이 원칙은 §3.8(Project Model Builder), §3.10(Need More Context), §3.12(AI Map 의미 정보)의 설계 근거가 된다.
-
----
-
-## 0.6 Context Escalation Policy (v1.3 신규 — 전 에이전트 필독)
-
-### 0.6.1 원칙
-
-AI는 항상 **AI Map → Slice**(§3.10 Need More Context 프로토콜)를 우선 사용한다. 이는 §0.5.1(좋은 Retriever 우선)·§0.5.2(토큰 최적화형 Interactive RAG) 철학의 직접적 실행 규칙이다. 파일 전체 컨텍스트("전체 파일 첨부")는 예외적 수단이며, 기본 경로가 아니다.
-
-### 0.6.2 에스컬레이션 허용 조건
-
-다음 두 가지 사유에 한해서만, 정의된 절차를 거쳐 파일 전체 컨텍스트를 요청할 수 있다.
-
-1. **동적 코드 구조(Dynamic Code Structure)** — 데코레이터 기반 동적 등록, 런타임 몽키패칭, `getattr`/리플렉션 기반 호출, 메타클래스 등으로 인해 AI Map의 정적 스캔(`create_ai_map.py`)이 심볼 관계·호출 그래프를 정확히 포착하지 못하는 경우.
-2. **심볼 해석 실패(Symbol Resolution Failure)** — §3.10 `ContextRequestProtocol.resolve()`가 요청된 `symbol`을 AI Map/Retriever 색인에서 찾지 못해 빈 결과 또는 에러를 반환하는 경우(예: 심볼명 오탈자가 아닌, 색인 자체에 해당 심볼이 없는 경우).
-
-위 두 사유 중 어느 하나에도 해당하지 않는 "그냥 편해서", "빠르게 확인하려고" 같은 사유의 전체 파일 요청은 금지된다.
-
-### 0.6.3 에스컬레이션 절차
-
-1. 1차로 §3.10 JSON 스키마(`{"need":[{"file","symbol","reason"}]}`)로 심볼 단위 Slice를 요청한다.
-2. Navigator/Retriever가 해당 요청을 처리하지 못했음을 확인한 뒤(§0.6.2의 사유 중 하나로 실패 원인을 특정), 동일 스키마에서 `symbol` 필드를 생략(`null`)하여 파일 전체를 요청하되, `reason` 필드에 **"어떤 시도가 실패했는지"**와 **"§0.6.2 중 어느 사유에 해당하는지"**를 명시한다.
-3. Navigator는 이 확장 요청을 일반 Slice 요청과 구분해 별도 로그(`escalation_log`)에 기록한다 — 비용 추적 및 §3.12 AI Map 색인 개선(정적 스캔이 놓친 동적 구조 보완)의 학습 데이터로 재사용하기 위함이다.
-4. 동일 파일에 대한 전체 컨텍스트 요청이 반복적으로 발생하면(임계값은 §2 `escalation.repeat_threshold` 참조), Reflection(Level10)이 해당 파일을 AI Map 의미 정보(§3.12) 보강 후보로 표시한다 — 근본적으로 Slice만으로 해결되도록 색인 품질을 개선하는 것이 목표다.
-
-### 0.6.4 §3.10과의 관계
-
-이 정책은 §3.10 Need More Context 프로토콜의 `ContextNeed.symbol: Optional[str] = None`(파일 전체, 가급적 지양) 케이스에 대한 **구체적 승인 기준**을 명문화한 것이다. §3.10 구현 시 `symbol=None`인 요청은 반드시 §0.6.2의 사유 코드(`dynamic_structure` | `symbol_resolution_failure`)를 `reason`에 태깅해야 하며, 태깅되지 않은 전체 파일 요청은 §3.4 Reject Rule(§0.6.5 참조)에 따라 반려된다.
-
-### 0.6.5 반려 규칙 연동
-
-§3.4 코드 생략 방지 템플릿 제약에 아래 규칙이 추가된다(전문은 §3.4 참조).
-
-```
-12. [v1.3] symbol 필드가 null(파일 전체 요청)인 ContextRequest인데, reason에
-    §0.6.2 사유 코드(dynamic_structure | symbol_resolution_failure)가 명시되지
-    않은 경우 즉시 반려 — Navigator는 표준 사유 코드 목록을 포함한 재요청
-    메시지를 반환한다.
-```
-
----
-
-## 0.7 Deferred Feature Policy (v1.3 신규 — 전 에이전트 필독)
-
-### 0.7.1 원칙
-
-**Session Merge**(§3.7 교차 세션 병합 시스템)와 **Semantic Merge**(Level8, §4 Phase 7 관련)는 핵심 실행 파이프라인(Level2 Master Planner ~ Level6 Live Retriever, Level9 Validator)의 안정성이 검증된 이후에 구현하는 **후순위(Deferred) 기능**으로 정의한다. MVP 및 초기 버전의 구현 범위에는 포함하지 않는다.
-
-### 0.7.2 범위 정의
-
-* **MVP/초기 버전 범위**: §4 로드맵 Phase 1~6, 8~12(Task Graph, Worker 병렬 실행, Conflict 예측, Validator, Reflection, Project Memory, File Lock, 디버깅 로그 예측-검증) — 즉 "핵심 실행 파이프라인"에 해당하는 항목.
-* **Deferred 범위**: Phase 7(Semantic Merge 최소 버전), Phase 13(Session Registry + Cross-Session Merge Coordinator), 그리고 이 둘에 의존하는 후속 확장 전부.
-* Phase 14~17(v1.2, Project Model Builder / Dependency Analyzer / Cost Estimator / Need More Context 프로토콜)은 §0.5 설계 철학(Retriever/AI Map 우선순위)에 따른 별도 트랙이며, 본 Deferred 정책의 대상이 아니다.
-
-### 0.7.3 착수 조건
-
-Session Merge(Phase 13) 및 Semantic Merge(Phase 7)는 다음 조건이 모두 충족된 이후에만 착수한다.
-
-1. Level2(Master Planner)~Level6(Live Retriever) 및 Level9(Validator)가 §4 로드맵 기준 최소 구현 완료 상태(Phase 1~6, 8~10)에 도달했는가.
-2. §5 체크리스트 기준 "빌드 성공 + 최소 1개 테스트 통과" 조건이 해당 Phase들에서 안정적으로(연속 3회 이상) 재현되는가.
-3. 위 두 조건이 충족되지 않은 상태에서 Semantic Merge/Session Merge 관련 코드를 먼저 작성하는 것은 §0.7.1 원칙 위반으로 간주하며, Manager Layer는 해당 Task를 즉시 반려하고 선행 Phase 완료를 요구한다.
-
-### 0.7.4 스위치 기본값 강제
-
-§2 YAML 스위치 맵에서 `level8_semantic_merge.enabled`와 `multi_session_merge.enabled`는 기본값 `false`를 유지하며, 위 §0.7.3 조건이 충족되기 전까지는 `true`로 전환하는 설정 변경 자체를 반려 대상으로 취급한다(운영 환경 오기동 방지). 두 블록에는 `deferred_feature: true`, `mvp_scope: false` 플래그를 명시해, 설정 파일만 보고도 "이 기능은 아직 켤 수 없는 상태"임을 즉시 알 수 있게 한다.
 
 ---
 
@@ -328,13 +232,6 @@ ase_os:
         fallback: "freeform_text_request"       # OFF 시: 기존처럼 자연어 파일 요청을 사람이 해석
         schema_version: "1.0"
         strict_validation: true                 # true면 스키마 불일치 JSON은 즉시 반려 후 재요청
-        escalation:                              # [v1.3 신규] §0.6 Context Escalation Policy 연동
-          allowed_reason_codes:                  # symbol=null(파일 전체) 요청 시 reason에 필수 태깅
-            - "dynamic_structure"                # §0.6.2-1: 동적 코드 구조로 정적 스캔 실패
-            - "symbol_resolution_failure"         # §0.6.2-2: 심볼 해석 실패
-          require_reason_code: true              # false면 태깅 없이도 전체 파일 요청 허용(비권장)
-          repeat_threshold: 3                    # 동일 파일 반복 에스컬레이션 시 §0.6.3-4 Reflection 트리거
-          log_path: "system_memory/escalation_log.json"
 
     level7_conflict_manager:
       enabled: false
@@ -343,8 +240,6 @@ ase_os:
     level8_semantic_merge:
       enabled: false
       fallback: "raw_git_merge"       # OFF 시: 의도 분석 없이 텍스트 기반 Git merge
-      deferred_feature: true          # [v1.3 신규] §0.7 Deferred Feature Policy 대상
-      mvp_scope: false                # MVP/초기 버전 구현 범위 제외 — §0.7.3 착수 조건 충족 전 enabled: true 전환 금지
 
     level9_validator:
       enabled: true
@@ -373,8 +268,6 @@ ase_os:
   # [v1.1 신규] 멀티 터미널 교차 세션 병합
   multi_session_merge:
     enabled: false                          # 기본 OFF — 단일 터미널 사용자는 굳이 켤 필요 없음
-    deferred_feature: true                  # [v1.3 신규] §0.7 Deferred Feature Policy 대상
-    mvp_scope: false                        # MVP/초기 버전 구현 범위 제외 — §0.7.3 착수 조건 충족 전 enabled: true 전환 금지
     fallback: "manual_cross_merge"          # OFF 시: 사람이 두 세션 결과물을 수동 git merge
     session_registry_path: "system_memory/sessions.json"
     heartbeat_interval_sec: 20
@@ -698,9 +591,7 @@ class FileLockManager(ABC):
 * Task 완료(DONE/FAILED 확정) 즉시 `release()` 호출은 필수이며, 이를 누락한 Worker 구현은 §3.4 규칙 7로 반려한다.
 * 락 정보는 `system_memory/locks/*.lock` (JSON)에 영속화되어, 프로세스 재시작 후에도 잔류 락을 `sweep_stale_locks()`로 복구 가능해야 한다.
 
-### 3.7 교차 세션(멀티 터미널) 병합 시스템 [DEFERRED — §0.7 Deferred Feature Policy 대상]
-
-> ⚠️ **[v1.3]** 본 서브시스템은 §0.7 Deferred Feature Policy에 따라 MVP/초기 버전 구현 범위에서 제외된다. 아래 인터페이스 정의는 설계 참고용으로 유지하되, §0.7.3 착수 조건(핵심 실행 파이프라인 안정성 검증)이 충족되기 전까지 실제 구현에 착수하지 않는다.
+### 3.7 교차 세션(멀티 터미널) 병합 시스템
 
 **설계 의도**: 한 사람이 여러 터미널에서 각각 독립적으로 Planner를 돌려 서로 다른(혹은 겹치는) 작업을 동시에 진행할 수 있다. 각 세션은 자기 안에서 Level7(Conflict)/Level8(Semantic Merge)까지 끝내 "로컬 완료" 상태가 되고, 이후 다른 세션의 존재가 감지되면 두 세션의 로컬 완료 결과물끼리 한 단계 더 높은 수준에서 병합된다. 즉, Level7/8을 Task 단위가 아니라 **세션 단위**로 한 번 더 재적용하는 구조다.
 
@@ -791,11 +682,6 @@ class CrossSessionMergeCoordinator(ABC):
     Dependency Analyzer의 산출물이 아니라 Planner가 직접 계산한 값으로 채워져 있으면 즉시 반려.
 11. [v1.2] need_more_context_protocol.strict_validation: true인 환경에서, §3.10 JSON 스키마를
     따르지 않는 자연어 컨텍스트 요청은 Navigator가 즉시 반려하고 표준 스키마로 재요청을 유도한다.
-12. [v1.3] symbol 필드가 null(파일 전체 요청)인 ContextRequest인데, reason에 §0.6.2 사유 코드
-    (dynamic_structure | symbol_resolution_failure)가 명시되지 않은 경우 즉시 반려 — Navigator는
-    표준 사유 코드 목록을 포함한 재요청 메시지를 반환한다(§0.6 Context Escalation Policy).
-13. [v1.3] §0.7.3 착수 조건이 충족되지 않은 상태에서 Semantic Merge(Level8) 또는 Session Merge
-    (multi_session_merge) 관련 코드를 작성/수정하는 Patch는 즉시 반려 — 선행 Phase 완료를 요구한다.
 ```
 
 ---
@@ -937,9 +823,7 @@ from dataclasses import dataclass, field
 @dataclass(frozen=True)
 class ContextNeed:
     file: str          # [📂 실제경로] 규격
-    symbol: Optional[str] = None   # None이면 파일 전체 — §0.6 Context Escalation Policy의 허용 조건
-                                    # (동적 코드 구조 | 심볼 해석 실패)을 충족하고 reason에 사유 코드를
-                                    # 태깅한 경우에만 허용, 그 외에는 §3.4 Reject Rule 12로 반려됨
+    symbol: Optional[str] = None   # None이면 파일 전체(가급적 지양, §0.5.2 토큰 절감 원칙 위반)
     reason: str = ""    # 왜 필요한지 — 로깅 및 Reflection 학습 데이터로 재사용
 
 
@@ -971,7 +855,6 @@ class ContextRequestProtocol(ABC):
 2. Navigator(`agent_navigator.py`)가 `parse()`로 검증 후 `resolve()`를 호출, Level6 Live Retriever(`jjap_retriever.py` 계열)에 심볼 단위 조회를 위임한다.
 3. 여러 `need` 항목은 배치로 한 번에 조회해 §0 부가 리스크 지점(N+1 호출 문제)을 완화한다.
 4. 이 프로토콜은 §0.5.2 Interactive RAG 흐름의 "Slice 요청" 단계를 표준화한 것이며, 모델 교체 시에도 Navigator/Retriever 쪽 코드는 변경할 필요가 없다.
-5. **[v1.3]** `resolve()`가 심볼 단위 조회에 실패하면(빈 결과/에러), Navigator는 곧바로 파일 전체를 반환하지 않는다. §0.6 Context Escalation Policy의 절차(§0.6.3)에 따라 실패 사유를 `dynamic_structure` 또는 `symbol_resolution_failure`로 특정한 재요청을 먼저 받아야 하며, 사유 코드 없는 전체 파일 폴백은 §3.4 Reject Rule 12로 차단된다.
 
 ---
 
@@ -1062,21 +945,19 @@ class CostEstimator(ABC):
 | 4 | `TaskGraph` ABC + 최소 DAG (add/get_ready/mark_status) | `agent_core/plan/task_graph.py` (신규) | 3개 Task 의존성 그래프 순회 테스트 통과 |
 | 5 | Worker 2개 병렬 실행 (기존 gemini_client.py 스텁 실체화) | `agent_core/plan/gemini_client.py` | 동시 2 Patch 생성, 파일 충돌 없음 |
 | 6 | `ConflictManager.predict_conflicts()` — write_set 교집합 검사만 구현 | `agent_core/execution/conflict_manager.py` (신규) | 인위적 충돌 시나리오 2건 탐지 성공 |
-| 7 | **[DEFERRED — §0.7]** Semantic Merge 최소 버전 (Intent 태그 기반 단순 병합) — §0.7.3 착수 조건 충족 전까지 보류 | `agent_core/execution/semantic_merge.py` (신규) | Patch A/B 병합 후 import 성공 |
+| 7 | Semantic Merge 최소 버전 (Intent 태그 기반 단순 병합) | `agent_core/execution/semantic_merge.py` (신규) | Patch A/B 병합 후 import 성공 |
 | 8 | `Validator.run_all()` — import + build 2단계만 우선 구현 | `agent_core/validation/validator.py` (신규) | 고의 ImportError 케이스 탐지 |
 | 9 | Reflection 최소 버전 — ValidationReport → 1문장 recommendation 생성 | `agent_core/execution/reflection.py` (신규) | 동일 ImportError 재발생률 감소 확인 |
 | 10 | Project Memory 영속화 — 실패이력/빌드이력 JSON 스키마 확정 | `system_memory/task_history.json` (신규 스키마) | 재시작 후 이전 실패 이력 조회 성공 |
 | **11** | **[v1.1]** File Lock Manager 구현 — Manager Layer가 write_set 파일에 락 획득/대기/해제 | `agent_core/execution/file_lock.py` (신규) | Worker 2개가 동일 파일 write_set을 가진 Task 동시 투입 시, 한쪽이 정상 대기 후 순차 처리됨을 확인 |
 | **12** | **[v1.1]** 디버깅 로그 예측-검증 파이프라인 — `DebugLogSpec`/`StandaloneExecutionValidator` 구현, Level9에 통합 | `agent_core/execution/standalone_runner.py` (신규), `agent_core/validation/validator.py` 확장 | Planner가 예측한 출력 패턴과 실제 단독실행 출력이 3개 샘플 Task에서 100% 매칭 |
-| **13** | **[v1.1][DEFERRED — §0.7]** Session Registry + Cross-Session Merge Coordinator — §0.7.3 착수 조건 충족 전까지 보류, 2개 터미널 시뮬레이션으로 검증 | `agent_core/plan/session_registry.py` (신규) | 서로 다른 두 프로세스가 겹치는 write_set을 가진 Task를 각각 완료 후, 자동으로 병합 브랜치 1개 생성 확인 |
+| **13** | **[v1.1]** Session Registry + Cross-Session Merge Coordinator — 2개 터미널 시뮬레이션으로 검증 | `agent_core/plan/session_registry.py` (신규) | 서로 다른 두 프로세스가 겹치는 write_set을 가진 Task를 각각 완료 후, 자동으로 병합 브랜치 1개 생성 확인 |
 | **14** | **[v1.2]** AI Map 의미 정보 레이어 + Project Model Builder — `create_ai_map.py` 확장(role_summary/call_graph/complexity/risk/dependency_count/caller_count) 후 이를 소비하는 `ProjectModel` 생성 | `cline_tools/create_ai_map.py` (확장), `agent_core/plan/project_model_builder.py` (신규) | 샘플 파일 20개 기준 의미 정보 자동 생성 성공, `ProjectModel.modules`가 실제 패키지 구조와 100% 일치 |
 | **15** | **[v1.2]** Dependency Analyzer 분리 — Planner의 Read/Write Set 계산 로직을 이관, `MasterPlanner.decompose()`가 빈 read_set/write_set의 Task만 반환하도록 개정 | `agent_core/plan/dependency_analyzer.py` (신규), `agent_core/plan/planner.py` (개정) | 기존 Planner가 계산하던 동일 시나리오 3건에서 Analyzer 산출 Read/Write Set이 100% 일치 |
 | **16** | **[v1.2]** Cost Estimator 구현 — routing_table 기반 모델 자동 선택 | `agent_core/plan/cost_estimator.py` (신규) | 난이도 상/중/하 Task 각 1건씩 투입 시 routing_table대로 모델이 선택됨을 로그로 확인 |
 | **17** | **[v1.2]** Need More Context JSON 프로토콜 — Navigator에 파서/검증기 통합 | `agent_core/execution/context_request.py` (신규), `cline_tools/agent_navigator.py` (확장) | 스키마 준수 JSON 요청 5건 100% 처리, 스키마 위반 JSON 3건 100% 반려 후 재요청 메시지 반환 |
 
 > Evolution Layer(Level11)는 Phase 1~17 완료 후 별도 Phase 18로 이연한다 (plan1.md의 로드맵 우선순위 유지, 조기 확장으로 인한 결합도 증가 방지). Manager Layer(Level4) 기본 골격은 Phase 11에서 File Lock과 함께 최초 구현되며, 순수 디스패치 로직 고도화는 이후 별도 이슈로 분리한다. Phase 14~17(v1.2)은 §0.5 설계 철학에 따라 Phase 1~13(v1.1) 완료 및 안정화 이후 착수를 권장하되, Retriever/AI Map 우선순위 원칙상 Phase 14는 예외적으로 조기 병행 착수를 검토할 수 있다.
->
-> **[v1.3]** Phase 7(Semantic Merge)과 Phase 13(Session Merge)은 §0.7 Deferred Feature Policy에 따라 MVP/초기 버전 범위에서 제외된 후순위 항목이다. 로드맵 번호는 설계 순서 참고용으로 유지하되, 실제 착수는 §0.7.3의 선행 조건(Level2~Level6, Level9 안정화)이 충족된 이후에만 허용된다. 그 전까지 두 Phase는 인터페이스 설계 문서 상태로만 존재하며, `agent_core/execution/semantic_merge.py`·`agent_core/plan/session_registry.py`에 대한 실제 구현 Patch는 §3.4 Reject Rule 13에 의해 반려된다.
 
 ---
 
@@ -1097,5 +978,3 @@ class CostEstimator(ABC):
 - [ ] **[v1.2]** 컨텍스트가 부족해 추가 요청을 보내는 경우, §3.10 `{"need":[...]}` JSON 스키마를 정확히 따랐는가(자연어 요청 금지)?
 - [ ] **[v1.2]** `ai_map_semantic_layer.enabled: true`인 환경에서 신규/수정 심볼에 `role_summary`(60자 이내)와 `risk_level`이 채워졌는가?
 - [ ] **[v1.2]** `cost_estimator.enabled: true`인 환경이라면, 이 Task가 `routing_table` 기준으로 올바른 모델에 배정되었는가(로그로 확인)?
-- [ ] **[v1.3]** AI Map → Slice(§3.10) 조회를 먼저 시도했는가? 파일 전체 컨텍스트를 요청했다면 §0.6.2 사유 코드(dynamic_structure | symbol_resolution_failure)를 `reason`에 명시했는가?
-- [ ] **[v1.3]** Semantic Merge(Level8) 또는 Session Merge(multi_session_merge) 관련 코드를 작성하려는 경우, §0.7.3 착수 조건(핵심 파이프라인 안정화)이 실제로 충족되었는가 — 충족 전이라면 해당 Task를 진행하지 않았는가?

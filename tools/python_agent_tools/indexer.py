@@ -8,12 +8,15 @@ from typing import Dict, Any, List
 
 # 🎯 영문 switch.py 콘솔 원격 연동
 try:
-    from cline_tools.switch import SCAN_MODE
+    from switch import SCAN_MODE
 except ImportError:
     SCAN_MODE = "ROOT"
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-PROJECT_ROOT = SCRIPT_DIR.parent  # 🔥 상위의 진짜 프로젝트 루트 강제 추적
+if SCRIPT_DIR.name == "python_agent_tools" and SCRIPT_DIR.parent.name == "tools":
+    PROJECT_ROOT = SCRIPT_DIR.parent.parent
+else:
+    PROJECT_ROOT = SCRIPT_DIR
 
 OUTPUT_FILE_PATH = PROJECT_ROOT / "system_maps" / "AI_CODEBASE_MAP.md"
 REGISTRY_JSON_PATH = PROJECT_ROOT / "system_memory" / "registry_constants.json"
@@ -95,77 +98,45 @@ class AdvancedIndexerV2:
             pass
 
     def index_file(self, file_path: Path):
+        # 마스터 루트 기준의 올바른 상대 경로 추출
+        rel_path_str = file_path.relative_to(self.project_root).as_posix()
+        
         try:
-            with open(file_path, "r", encoding="utf-8") as f:
+            mtime = int(file_path.stat().st_mtime)
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-        except Exception:
-            return
+            file_hash = self._get_sha256(content)
 
-        rel_path = file_path.relative_to(self.project_root)
-        rel_path_str = rel_path.as_posix()
+            # 💡 [형님 맞춤형 분기] 파이썬 파일일 때만 내부 클래스/함수 정밀 분석
+            if file_path.suffix == ".py":
+                skeleton = self._extract_skeleton(content)
+                self.parse_protocols_and_registries(content, rel_path_str)
+                
+                # 심볼 맵 구성 로직
+                try:
+                    tree = ast.parse(content)
+                    for node in tree.body:
+                        if isinstance(node, ast.ClassDef):
+                            self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
+                            for sub in node.body:
+                                if isinstance(sub, ast.FunctionDef):
+                                    self.definition_map[f"{node.name}.{sub.name}"] = f"{rel_path_str}:{sub.lineno}"
+                        elif isinstance(node, ast.FunctionDef):
+                            self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
+                except Exception:
+                    pass
+            else:
+                # 💡 [형님 맞춤형 분기] 비-파이썬 파일은 문법 에러를 내지 않고 안전하게 경로와 기본 정보만 보존!
+                skeleton = f"Non-Python File ({file_path.suffix.upper()})"
 
-        file_hash = self._get_sha256(content)
-        skeleton = self._extract_skeleton(content)
-        self.files_context[rel_path_str] = {
-            "hash": file_hash,
-            "mtime": int(file_path.stat().st_mtime),
-            "skeleton": skeleton
-        }
-
-        # 동적 분배기 기동
-        self.parse_protocols_and_registries(content, rel_path_str)
-
-        try:
-            tree = ast.parse(content)
-            for node in tree.body:
-                if isinstance(node, ast.ClassDef):
-                    class_id = f"{rel_path_str}::{node.name}"
-                    self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
-                    end_lineno = getattr(node, "end_lineno", node.lineno)
-                    
-                    self.symbols.append({
-                        "symbol_id": class_id, "full_name": node.name, "name": node.name,
-                        "type": "class", "parent": None, "file": rel_path_str,
-                        "start_line": node.lineno, "end_line": end_lineno, "range": [node.lineno, end_lineno],
-                        "decorators": [ast.dump(d) for d in node.decorator_list], "signature": f"class {node.name}",
-                        "calls": [], "used_by": []
-                    })
-                    
-                    for sub in node.body:
-                        if isinstance(sub, ast.FunctionDef):
-                            method_id = f"{class_id}.{sub.name}"
-                            self.definition_map[f"{node.name}.{sub.name}"] = f"{rel_path_str}:{sub.lineno}"
-                            sub_end_lineno = getattr(sub, "end_lineno", sub.lineno)
-                            
-                            calls = []
-                            for expr in ast.walk(sub):
-                                if isinstance(expr, ast.Call) and isinstance(expr.func, ast.Name):
-                                    calls.append(expr.func.id)
-                                elif isinstance(expr, ast.Call) and isinstance(expr.func, ast.Attribute):
-                                    calls.append(expr.func.attr)
-
-                            self.symbols.append({
-                                "symbol_id": method_id, "full_name": f"{node.name}.{sub.name}", "name": sub.name,
-                                "type": "method", "parent": node.name, "file": rel_path_str,
-                                "start_line": sub.lineno, "end_line": sub_end_lineno, "range": [sub.lineno, sub_end_lineno],
-                                "decorators": [ast.dump(d) for d in sub.decorator_list], "signature": f"def {sub.name}(...)",
-                                "calls": list(set(calls)), "used_by": []
-                            })
-                            
-                elif isinstance(node, ast.FunctionDef):
-                    func_id = f"{rel_path_str}::{node.name}"
-                    self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
-                    func_end_lineno = getattr(node, "end_lineno", node.lineno)
-                    
-                    self.symbols.append({
-                        "symbol_id": func_id, "full_name": node.name, "name": node.name,
-                        "type": "function", "parent": None, "file": rel_path_str,
-                        "start_line": node.lineno, "end_line": func_end_lineno, "range": [node.lineno, func_end_lineno],
-                        "decorators": [ast.dump(d) for d in node.decorator_list], "signature": f"def {node.name}(...)",
-                        "calls": [], "used_by": []
-                    })
-        except Exception:
-            pass
+            # 장부에 안전하게 세이브
+            self.files_context[rel_path_str] = {
+                "hash": file_hash,
+                "mtime": mtime,
+                "skeleton": skeleton
+            }
+        except Exception as e:
+            print(f"⚠️ [파일 수집 예외 패스] {rel_path_str}: {str(e)}")
 
     def scan_project(self):
         if SCAN_MODE == "ROOT":
@@ -179,28 +150,38 @@ class AdvancedIndexerV2:
             print(f"⚠️ [Indexer] 스캔 대상 경로가 존재하지 않아 중단합니다: {scan_target}")
             return
 
+        # 🛡️ 인덱서가 수집 중에 절대 건드려서는 안 될 원자력 발전소(장부 및 지도 보관소) 선언
+        EXCLUDE_KEYWORDS = [".venv", ".git", "__pycache__", "cline_tools", "system_memory", "system_maps"]
+
         for root, dirs, files in os.walk(scan_target, followlinks=True):
             normalized_root = root.replace("\\", "/")
             
-            # 🚨 [여기 주의] 꼬인 중복 경로 예방선 유지
             if "src/project_root/src" in normalized_root:
                 continue
 
-            # 🛠️ [형님 수술 구역]: 무시 대상 목록에서 깡통 생성기였던 "src" 강제 추가를 제거합니다.
-            # system_memory와 system_maps를 무시하여 인덱서 무한루프는 칼같이 방어합니다.
-            excludes = [".venv", ".git", "__pycache__", "system_memory", "system_maps"]
-
-            # 폴더명 단위가 아니라 전체 경로(normalized_root)를 기준으로 영리하게 검문합니다.
-            if any(kw in normalized_root for kw in excludes):
+            # 폴더 전체 경로를 기준으로 시스템 제외 목록 필터링
+            if any(kw in normalized_root for kw in EXCLUDE_KEYWORDS):
                 continue
 
             for file in files:
-                # SRC 모드일 때는 최상단 start.py 수집을 패스합니다.
+                file_path = Path(root) / file
+
+                # 🛡️ 장부 파일 자체를 열어서 인덱싱 장부에 수집하려는 무한 루프(꼬리물기) 방어
+                if file_path.suffix in [".json", ".md"] and any(kw in file_path.as_posix() for kw in ["system_memory", "system_maps"]):
+                    continue
+
+                # SRC 모드일 때는 최상단 start.py 수집 패스
                 if file == "start.py" and SCAN_MODE == "SRC":
                     continue
-                if file.endswith(".py"):
-                    # 🎯 정확하게 개별 파일 징집 입고
-                    self.index_file(Path(root) / file)
+
+                # 💡 [형님 맞춤형 분기 정밀 보강]:
+                # SRC 모드일 때는 무조건 파이썬만 수집 (.py)
+                # ROOT 모드일 때는 파이썬이 아니더라도 모두 수집 대상으로 징집!
+                if SCAN_MODE == "SRC" and file_path.suffix != ".py":
+                    continue
+
+                # 🎯 안전하게 수집 엔진으로 입고
+                self.index_file(file_path)
 
         for s in self.symbols:
             name_to_check = s["name"]
@@ -209,24 +190,27 @@ class AdvancedIndexerV2:
                     s["used_by"].append(target["symbol_id"])
             s["used_by"] = sorted(list(set(s["used_by"])))
 
-        # 🛠️ [격리 개조 포인트 2] 장부 출력 타겟 리다이렉트
-        # 혹시 폴더가 없으면 에러가 터지므로 안전하게 자동 생성 로직 투입
-        os.makedirs("system_memory", exist_ok=True)
+        # 🛠️ [격리 개조 포인트 2] 진짜 최상위 PROJECT_ROOT 기준으로 타깃 경로 절대 고정
+        TARGET_MEMORY_DIR = PROJECT_ROOT / "system_memory"
+        os.makedirs(TARGET_MEMORY_DIR, exist_ok=True)
 
-        with open("system_memory/.jjap_context.json", "w", encoding="utf-8") as f:
+        with open(TARGET_MEMORY_DIR / ".jjap_context.json", "w", encoding="utf-8") as f:
             json.dump({"files": self.files_context}, f, indent=2, ensure_ascii=False)
-        with open("system_memory/.jjap_symbols.json", "w", encoding="utf-8") as f:
+        with open(TARGET_MEMORY_DIR / ".jjap_symbols.json", "w", encoding="utf-8") as f:
             json.dump({"symbols": self.symbols}, f, indent=2, ensure_ascii=False)
-        with open("system_memory/definition_map.json", "w", encoding="utf-8") as f:
+        with open(TARGET_MEMORY_DIR / "definition_map.json", "w", encoding="utf-8") as f:
             json.dump(self.definition_map, f, indent=2, ensure_ascii=False)
-        with open("system_memory/data_protocols.json", "w", encoding="utf-8") as f:
+        with open(TARGET_MEMORY_DIR / "data_protocols.json", "w", encoding="utf-8") as f:
             json.dump({"protocols": self.data_protocols}, f, indent=2, ensure_ascii=False)
-        with open("system_memory/registry_constants.json", "w", encoding="utf-8") as f:
+        with open(TARGET_MEMORY_DIR / "registry_constants.json", "w", encoding="utf-8") as f:
             json.dump({"registered_entities": self.registry_constants}, f, indent=2, ensure_ascii=False)
 
-        print(f"🧬 [Jjap-Indexer Universal] 5대 장부를 'system_memory/' 구역으로 안전하게 격리 저장 완료!")
+        print(f"🧬 [Jjap-Indexer Universal] 5대 장부를 마스터 루트 하위 '{TARGET_MEMORY_DIR}' 구역으로 안전하게 격리 저장 완료!")
+
 
 if __name__ == "__main__":
-    root = Path(__file__).parent.resolve()
-    indexer = AdvancedIndexerV2(root)
+    # 🚨 기존 root = Path(__file__).parent.resolve() 방식을 버리고,
+    # 상단에서 지독하게 정화해 둔 상위 마스터 PROJECT_ROOT를 직접 찔러 넣어 단독 실행 시에도 절대 오차가 없도록 고정합니다.
+    print(f"⚡ [테스트 기동] 마스터 프로젝트 루트 탐색 좌표: {PROJECT_ROOT}")
+    indexer = AdvancedIndexerV2(PROJECT_ROOT)
     indexer.scan_project()

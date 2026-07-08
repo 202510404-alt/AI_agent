@@ -103,7 +103,7 @@ def parse_python_file(file_path: Path):
 
 
 def collect_target_files():
-    """indexer.py의 scan_project()와 동일한 규칙(SCAN_MODE, 제외 폴더, start.py 처리)을 그대로 재현합니다."""
+    """[수정] .py 제한을 해제하고, 제외 키워드가 없는 프로젝트 내의 '모든 파일'을 수집합니다."""
     if SCAN_MODE == "ROOT":
         scan_target = PROJECT_ROOT
         print("🎯 [create_ai_map] Mode: ROOT (프로젝트 전체 경로를 직접 스캔합니다)")
@@ -127,8 +127,9 @@ def collect_target_files():
         for file in files:
             if file == "start.py" and SCAN_MODE == "SRC":
                 continue
-            if file.endswith(".py"):
-                target_files.append(Path(root) / file)
+            
+            # 💡 [교정] 특정 확장자 차단 해제 -> 모든 파일을 수집 대상으로 포함
+            target_files.append(Path(root) / file)
 
     return sorted(target_files)
 
@@ -173,12 +174,11 @@ def main():
     if not target_files:
         return
 
-    print(f"🔍 [디버그] 스캔 타깃 파이썬 파일 수집 완료: 총 {len(target_files)}개 탐색됨")
+    print(f"🔍 [디버그] 스캔 타깃 파일 수집 완료: 총 {len(target_files)}개 탐색됨 (비-파이썬 파일 포함)")
 
     path_to_registry = load_registry()
     path_to_protocol = load_protocols()
 
-    # 🚨 system_maps 폴더가 없으면 생성 후, 무조건 그 안에 마스터 장부 재생성 강제
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     if OUTPUT_FILE_PATH.exists():
         try:
@@ -200,6 +200,7 @@ def main():
             rel_path = file_path.relative_to(PROJECT_ROOT)
             parts = rel_path.parts
 
+            # 디렉터리 트리 라인 출력 생성
             for i in range(1, len(parts)):
                 current_dir_path = Path(*parts[:i])
                 if current_dir_path not in printed_dirs:
@@ -211,14 +212,19 @@ def main():
             file_name = parts[-1]
             posix_rel_path = rel_path.as_posix()
 
-            symbols_info = parse_python_file(file_path)
-            symbols_str = " | ".join(symbols_info) if symbols_info else ""
+            # 💡 [교정] 파이썬 파일일 때만 내부 심볼(AST)을 분석하고, 나머지는 경로만 출력합니다.
+            if file_name.endswith(".py"):
+                symbols_info = parse_python_file(file_path)
+                symbols_str = " | ".join(symbols_info) if symbols_info else ""
+            else:
+                symbols_str = "" # 파이썬이 아니면 심볼 분석 생략
 
             if symbols_str:
                 f.write(f"{indent}├── {file_name} [📂 {posix_rel_path}] -> [{symbols_str}]\n")
             else:
                 f.write(f"{indent}├── {file_name} [📂 {posix_rel_path}]\n")
 
+            # 레지스트리 및 프로토콜 정보 출력 유지
             if posix_rel_path in path_to_registry:
                 for reg_const in path_to_registry[posix_rel_path]:
                     f.write(f"{indent}│     ├── 🔑 [REGISTRY]: \"{reg_const}\"\n")
@@ -236,7 +242,7 @@ def main():
 
         f.write("```\n")
 
-    print(f"🎯 [마스터 공장] 'system_maps/AI_CODEBASE_MAP.md'가 {len(target_files)}개의 규격으로 안전하게 자동 갱신되었습니다 형님!")
+    print(f"🎯 [마스터 공장] 'system_maps/AI_CODEBASE_MAP.md'가 모든 파일 구조를 포함하여 안전하게 자동 갱신되었습니다 형님!")
 
 
 # ======================================================================

@@ -1,8 +1,8 @@
 {
   "files": {
     "python_agent_tools/agent_navigator.py": {
-      "hash": "fb7fd9b748002d0ec4409d06e9642ffe5b32e464a5256e65d374027e028af85f",
-      "mtime": 1783505168,
+      "hash": "ffb05f52d3bb5483439426422329c12489ac6e96414166e847472bfdcdb644de",
+      "mtime": 1783509433,
       "skeleton": "class SemanticNavigator:\n    def __init__(...):\n        ...\n    def _load_database(...):\n        ...\n    def extract_multi_slices(...):\n        ...\nclass JjapCursorNavigatorGUI:\n    def __init__(...):\n        ...\n    def execute_slicing_pipeline(...):\n        ...\n    def manual_export_file(...):\n        ..."
     },
     "python_agent_tools/context_builder.py": {
@@ -11,13 +11,13 @@
       "skeleton": "class ContextBuilder:\n    def __init__(...):\n        ...\n    def read_and_clean_file(...):\n        ...\n    def assemble_ai_prompt(...):\n        ..."
     },
     "python_agent_tools/create_ai_map.py": {
-      "hash": "55db9e648599c483793e7aa8e9924f1adac400eee94707bcd8d0a6589662ba97",
-      "mtime": 1783462300,
+      "hash": "5db5f7c8163811b835441d022335d75088c935f00d1500e97700062091b19255",
+      "mtime": 1783510478,
       "skeleton": "def parse_python_file(...):\n    ...\ndef collect_target_files(...):\n    ...\ndef load_registry(...):\n    ...\ndef load_protocols(...):\n    ...\ndef main(...):\n    ...\ndef generate_ai_optimized_map(...):\n    ..."
     },
     "python_agent_tools/indexer.py": {
-      "hash": "523cba5c619d98e463b3ba8c770d62efdd593330b06db1ebf40e438e7d22dbb9",
-      "mtime": 1783428437,
+      "hash": "89e3a43b6518f222295a9c0a5cf4d5d4621dbf826ca7e1140c47df98d9a4ff05",
+      "mtime": 1783511479,
       "skeleton": "class AdvancedIndexerV2:\n    def __init__(...):\n        ...\n    def _get_sha256(...):\n        ...\n    def _extract_skeleton(...):\n        ...\n    def parse_protocols_and_registries(...):\n        ...\n    def index_file(...):\n        ...\n    def scan_project(...):\n        ..."
     },
     "python_agent_tools/jjap_lookup.py": {
@@ -34,6 +34,16 @@
       "hash": "577d7faf716307393ee06754b1036bf0fbc971986d110d9da1f52f6bf15fd88c",
       "mtime": 1783426085,
       "skeleton": "def import_file_directly(...):\n    ...\ndef run_pipeline(...):\n    ...\nclass CodeChangeHandler:\n    def __init__(...):\n        ...\n    def dispatch(...):\n        ...\ndef main(...):\n    ..."
+    },
+    "python_agent_tools/README.md": {
+      "hash": "69063a1b6cb758860da105ccd40dc0045b5cfdfeae81414b2c326b3c9da419ef",
+      "mtime": 1783069040,
+      "skeleton": "Non-Python File (.MD)"
+    },
+    "python_agent_tools/rule.txt": {
+      "hash": "ae06f632e5ee74d3b339c5876733c15dc226e0b6164f76ce8d3800afbeb4a0b0",
+      "mtime": 1783069040,
+      "skeleton": "Non-Python File (.TXT)"
     },
     "python_agent_tools/switch.py": {
       "hash": "aa1d9da12acf4a2092f638cb6afeb1b0fe8d69fc3958edde6e0a55980fcc3a29",
