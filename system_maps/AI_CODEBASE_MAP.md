@@ -5,6 +5,20 @@
 
 ```markdown
 project_root/
+├── agent_core/
+│   ├── __init__.py [📂 agent_core/__init__.py]
+│   ├── execution/
+│   │   ├── __init__.py [📂 agent_core/execution/__init__.py]
+│   ├── memory/
+│   │   ├── __init__.py [📂 agent_core/memory/__init__.py]
+│   ├── plan/
+│   │   ├── __init__.py [📂 agent_core/plan/__init__.py]
+│   │   ├── gemini_client.py [📂 agent_core/plan/gemini_client.py]
+│   │   ├── planner.py [📂 agent_core/plan/planner.py]
+│   │   ├── prompt_builder.py [📂 agent_core/plan/prompt_builder.py]
+│   │   ├── schemas.py [📂 agent_core/plan/schemas.py]
+│   ├── validation/
+│   │   ├── __init__.py [📂 agent_core/validation/__init__.py]
 ├── cline_tools/
 │   ├── agent_navigator.py [📂 cline_tools/agent_navigator.py] -> [💡 📦 imp: json, pathlib.Path, re, sys, tkinter, tkinter.filedialog | 🧬 class SemanticNavigator [L11-118] |    └─ def __init__(root_dir) [L12-16] |    └─ def _load_database() [L18-25] |    └─ def extract_multi_slices(raw_prompt) [L27-118] | 🧬 class JjapCursorNavigatorGUI [L123-244] |    └─ def __init__(root, project_root) [L124-173] |    └─ def execute_slicing_pipeline() [L175-225] |    └─ def manual_export_file() [L227-244]]
 │   │     ├── 🔑 [REGISTRY]: "SemanticNavigator"

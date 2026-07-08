@@ -5,6 +5,51 @@
       "mtime": 1783424203,
       "skeleton": "def get_best_python(...):\n    ...\ndef auto_install_dependencies(...):\n    ...\ndef main(...):\n    ..."
     },
+    "agent_core/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/execution/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/memory/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/plan/gemini_client.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/plan/planner.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/plan/prompt_builder.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/plan/schemas.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/plan/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
+    "agent_core/validation/__init__.py": {
+      "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mtime": 1783489174,
+      "skeleton": ""
+    },
     "cline_tools/agent_navigator.py": {
       "hash": "7b8407cc845593e9655d0e609c1444cd3dd551b7a6ed5dc9d8870966e7fcfdcf",
       "mtime": 1783425895,

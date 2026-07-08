@@ -134,21 +134,21 @@
       "decorators": [],
       "signature": "def extract_multi_slices(...)",
       "calls": [
-        "max",
+        "readlines",
+        "join",
         "open",
-        "exists",
         "strip",
+        "get",
+        "split",
+        "min",
+        "print",
+        "any",
+        "exists",
+        "max",
         "len",
         "int",
-        "print",
-        "split",
-        "get",
-        "append",
-        "readlines",
-        "min",
-        "any",
-        "join",
-        "findall"
+        "findall",
+        "append"
       ],
       "used_by": [
         "cline_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
@@ -188,15 +188,15 @@
       "decorators": [],
       "signature": "def __init__(...)",
       "calls": [
-        "Frame",
         "pack",
-        "title",
-        "Button",
-        "Label",
-        "Text",
-        "insert",
         "SemanticNavigator",
-        "geometry"
+        "Text",
+        "Button",
+        "geometry",
+        "insert",
+        "title",
+        "Frame",
+        "Label"
       ],
       "used_by": []
     },
@@ -216,20 +216,20 @@
       "decorators": [],
       "signature": "def execute_slicing_pipeline(...)",
       "calls": [
-        "open",
-        "strip",
-        "showwarning",
-        "get",
-        "append",
-        "delete",
-        "rstrip",
         "join",
-        "insert",
-        "extract_multi_slices",
-        "config",
-        "showerror",
+        "rstrip",
+        "delete",
         "write",
-        "startswith"
+        "extract_multi_slices",
+        "strip",
+        "showerror",
+        "get",
+        "showwarning",
+        "startswith",
+        "insert",
+        "open",
+        "config",
+        "append"
       ],
       "used_by": []
     },
@@ -250,11 +250,11 @@
       "signature": "def manual_export_file(...)",
       "calls": [
         "str",
-        "open",
-        "showinfo",
+        "write",
         "showerror",
         "asksaveasfilename",
-        "write"
+        "showinfo",
+        "open"
       ],
       "used_by": []
     },
@@ -312,17 +312,17 @@
       "decorators": [],
       "signature": "def read_and_clean_file(...)",
       "calls": [
-        "FileNotFoundError",
-        "open",
-        "exists",
-        "strip",
-        "len",
-        "split",
         "readlines",
-        "append",
-        "endswith",
         "join",
-        "startswith"
+        "strip",
+        "split",
+        "len",
+        "FileNotFoundError",
+        "startswith",
+        "endswith",
+        "exists",
+        "open",
+        "append"
       ],
       "used_by": [
         "cline_tools/context_builder.py::ContextBuilder.assemble_ai_prompt"
@@ -344,10 +344,10 @@
       "decorators": [],
       "signature": "def assemble_ai_prompt(...)",
       "calls": [
-        "str",
+        "read_and_clean_file",
         "join",
-        "append",
-        "read_and_clean_file"
+        "str",
+        "append"
       ],
       "used_by": []
     },
@@ -537,8 +537,8 @@
       "calls": [
         "parse",
         "join",
-        "append",
-        "isinstance"
+        "isinstance",
+        "append"
       ],
       "used_by": [
         "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -560,10 +560,10 @@
       "decorators": [],
       "signature": "def parse_protocols_and_registries(...)",
       "calls": [
-        "lower",
-        "type",
         "parse",
-        "isinstance"
+        "type",
+        "isinstance",
+        "lower"
       ],
       "used_by": [
         "cline_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -585,23 +585,23 @@
       "decorators": [],
       "signature": "def index_file(...)",
       "calls": [
-        "open",
-        "read",
-        "int",
-        "list",
-        "append",
-        "isinstance",
-        "getattr",
         "_extract_skeleton",
-        "stat",
+        "parse_protocols_and_registries",
+        "dump",
+        "getattr",
+        "list",
         "relative_to",
         "parse",
-        "dump",
-        "set",
-        "walk",
-        "parse_protocols_and_registries",
+        "isinstance",
         "as_posix",
-        "_get_sha256"
+        "stat",
+        "read",
+        "walk",
+        "set",
+        "open",
+        "int",
+        "_get_sha256",
+        "append"
       ],
       "used_by": [
         "cline_tools/indexer.py::AdvancedIndexerV2.scan_project"
@@ -623,21 +623,21 @@
       "decorators": [],
       "signature": "def scan_project(...)",
       "calls": [
-        "open",
-        "exists",
-        "print",
-        "list",
-        "get",
-        "append",
-        "endswith",
-        "index_file",
-        "Path",
-        "any",
         "dump",
         "makedirs",
-        "set",
-        "walk",
+        "list",
+        "get",
+        "print",
+        "index_file",
+        "endswith",
         "replace",
+        "walk",
+        "any",
+        "exists",
+        "set",
+        "Path",
+        "open",
+        "append",
         "sorted"
       ],
       "used_by": []
@@ -750,12 +750,12 @@
       "decorators": [],
       "signature": "def _load_symbols(...)",
       "calls": [
-        "open",
-        "exists",
+        "get",
         "print",
         "len",
-        "get",
-        "load"
+        "load",
+        "exists",
+        "open"
       ],
       "used_by": [
         "cline_tools/jjap_retriever.py::JjapRetriever.__init__"
@@ -777,23 +777,23 @@
       "decorators": [],
       "signature": "def retrieve_symbol(...)",
       "calls": [
-        "max",
-        "open",
+        "readlines",
+        "join",
+        "extend",
+        "next",
+        "strip",
+        "get",
+        "print",
+        "min",
+        "len",
+        "startswith",
         "_safe_truncate",
         "exists",
-        "print",
-        "strip",
-        "len",
-        "get",
-        "append",
-        "readlines",
-        "min",
+        "max",
+        "open",
         "rstrip",
         "_find_best_match",
-        "join",
-        "next",
-        "extend",
-        "startswith"
+        "append"
       ],
       "used_by": []
     },
@@ -813,8 +813,8 @@
       "decorators": [],
       "signature": "def _find_best_match(...)",
       "calls": [
-        "lower",
         "get",
+        "lower",
         "print"
       ],
       "used_by": [
@@ -837,11 +837,11 @@
       "decorators": [],
       "signature": "def _safe_truncate(...)",
       "calls": [
-        "print",
-        "len",
-        "append",
         "join",
-        "splitlines"
+        "print",
+        "splitlines",
+        "len",
+        "append"
       ],
       "used_by": [
         "cline_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
@@ -955,12 +955,12 @@
       "decorators": [],
       "signature": "def dispatch(...)",
       "calls": [
-        "print",
         "time",
-        "Path",
+        "print",
+        "as_posix",
         "any",
-        "run_pipeline",
-        "as_posix"
+        "Path",
+        "run_pipeline"
       ],
       "used_by": []
     },
