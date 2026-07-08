@@ -108,21 +108,55 @@ class AdvancedIndexerV2:
             file_hash = self._get_sha256(content)
 
             # 💡 [형님 맞춤형 분기] 파이썬 파일일 때만 내부 클래스/함수 정밀 분석
+            # 💡 [형님 맞춤형 분기] 파이썬 파일일 때만 내부 클래스/함수 정밀 분석
             if file_path.suffix == ".py":
                 skeleton = self._extract_skeleton(content)
                 self.parse_protocols_and_registries(content, rel_path_str)
                 
-                # 심볼 맵 구성 로직
+                # 심볼 맵 구성 로직 및 양방향 추적용 symbols 장부 적재
+                # 💡 tools/python_agent_tools/indexer.py 내부의 ast.parse 순회 구역 교정
                 try:
                     tree = ast.parse(content)
                     for node in tree.body:
                         if isinstance(node, ast.ClassDef):
                             self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
+                            
+                            # ➡️ [중요] "type": "class" 규격을 칼같이 주입합니다.
+                            self.symbols.append({
+                                "name": node.name,
+                                "type": "class", # 👈 🚨 여기에 타잎을 명시해야 워처가 안 죽습니다!
+                                "file": rel_path_str,
+                                "start_line": node.lineno,
+                                "end_line": getattr(node, "end_lineno", node.lineno),
+                                "used_by": []
+                            })
+                            
                             for sub in node.body:
                                 if isinstance(sub, ast.FunctionDef):
                                     self.definition_map[f"{node.name}.{sub.name}"] = f"{rel_path_str}:{sub.lineno}"
+                                    
+                                    # ➡️ [중요] 클래스 내부 메서드도 함수 규격 주입
+                                    self.symbols.append({
+                                        "name": sub.name,
+                                        "type": "function", # 👈 🚨 타잎 주입!
+                                        "file": rel_path_str,
+                                        "start_line": sub.lineno,
+                                        "end_line": getattr(sub, "end_lineno", sub.lineno),
+                                        "used_by": []
+                                    })
+                                    
                         elif isinstance(node, ast.FunctionDef):
                             self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
+                            
+                            # ➡️ [중요] 일반 전역 함수 규격 주입
+                            self.symbols.append({
+                                "name": node.name,
+                                "type": "function", # 👈 🚨 타잎 주입!
+                                "file": rel_path_str,
+                                "start_line": node.lineno,
+                                "end_line": getattr(node, "end_lineno", node.lineno),
+                                "used_by": []
+                            })
                 except Exception:
                     pass
             else:

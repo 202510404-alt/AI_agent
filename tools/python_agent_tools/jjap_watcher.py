@@ -47,8 +47,8 @@ def run_pipeline():
         
         # 디버그 모드일 때만 심볼 정밀 스캔 내역 도배
         if DEBUG_MODE:
-            classes = [s["name"] for s in indexer_obj.symbols if s["type"] == "class"]
-            methods = [s["name"] for s in indexer_obj.symbols if s["type"] in ["function", "method"]]
+            classes = [s["name"] for s in indexer_obj.symbols if s.get("type") == "class"]
+            methods = [s["name"] for s in indexer_obj.symbols if s.get("type") in ["function", "method"]]
             print(f"    🧬 [디버그] 클래스 목록 추출: {classes}")
             print(f"    🎯 [디버그] 함수/메서드 목록 추출: {methods}")
             

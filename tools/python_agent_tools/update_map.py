@@ -66,7 +66,8 @@ def update_map():
             if file_symbols:
                 f.write("#### 🔍 내부 심볼 및 의존성 관계:\n")
                 for s in file_symbols:
-                    f.write(f"- **[{s['type'].upper()}]** `{s['full_name']}` (Line: {s['start_line']}~{s['end_line']})\n")
+                   # 수정 코드: s['full_name']을 s['name']으로 변경
+                    f.write(f"- **[{s['type'].upper()}]** `{s['name']}` (Line: {s['start_line']}~{s['end_line']})\n")
                     if s.get("calls"):
                         f.write(f"  - 🔗 *Calls (호출하는 것)*: `{', '.join(s['calls'])}`\n")
                     if s.get("used_by"):

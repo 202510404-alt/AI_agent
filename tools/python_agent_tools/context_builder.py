@@ -18,62 +18,63 @@ class ContextBuilder:
         self.project_root = Path(project_root)
 
     def read_and_clean_file(self, relative_path: str) -> str:
-        """파일을 읽어서 사람용 주석은 다 버리고, AI 오답노트와 순수 코드만 발라내는 핵심 검열 함수입니다.
-        
-        🎯 나를 호출하는 곳:
-          - 형님이 툴을 실행하거나 소스코드를 수집해서 저(AI)에게 컨텍스트를 제공하는 메인 스크립트에서 호출됩니다.
-          
-        🛠️ 작동 원리 (형님의 아이디어 반영):
-          1. 하드디스크에서 원본 파일을 날것 그대로 읽어옵니다 (원본은 절대 훼손되지 않음).
-          2. 코드를 한 줄씩 쪼개서 뒤집어까며 `# INFO:` 딱지가 붙은 초보자용 주석은 싹 쓰레기통에 버립니다.
-          3. `# HISTORY:`나 `# FIX:`가 붙은 과거 버그 이력과 순수 코드는 보따리에 소중히 담아서 합칩니다.
+        """파일을 읽어서 사람용 주석(# INFO:) 내용은 완전히 비우되,
+        줄바꿈과 콤팩트한 줄 번호 태그만 강제로 남겨서 토큰을 최소화하고
+        AI와 인간의 라인 인덱스를 100% 동기화하는 개조 함수입니다.
         """
         file_path = self.project_root / relative_path
         
-        # 안전장치: 파일이 없으면 에러를 내뱉습니다.
         if not file_path.exists():
             raise FileNotFoundError(f"요청하신 경로에 파일이 존재하지 않습니다: {relative_path}")
 
-        # 1단계: 원본 파일을 인코딩 깨짐 없이 안전하게 읽어옵니다.
         with open(file_path, "r", encoding="utf-8") as f:
             lines = f.readlines()
 
         cleaned_lines = []
         in_multiline_comment = False
 
-        # 2단계: 코드를 한 줄씩 검사하는 컨베이어 벨트 가동
-        for line in lines:
+        # enumerate를 사용해 파일 원본의 물리적인 줄 번호(1부터 시작)를 정확히 추적합니다.
+        for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
 
-            # 파이썬의 다중행 주석(""") 처리용 감지기 (선택적 필터링을 위함)
+            # 1. 다중행 주석(""") 처리 블록
             if stripped.startswith('"""') or stripped.endswith('"""'):
-                # 만약 이 독스트링 주석 안에 '오답노트'나 'HISTORY'라는 말이 없다면 토큰 절약을 위해 날릴 준비를 합니다.
                 if '"""' in stripped and len(stripped) > 3:
-                    pass # 단일행 독스트링은 통과
+                    pass 
                 else:
                     in_multiline_comment = not in_multiline_comment
-                    cleaned_lines.append(line)
+                    # 토큰 최소화: 라벨과 원본 줄바꿈만 남김
+                    cleaned_lines.append(f"[{idx:03d}]\n")
                     continue
 
             if in_multiline_comment:
-                # 다중행 주석 안의 내용도 그대로 일단 담습니다.
-                cleaned_lines.append(line)
+                # 다중행 주석 내부도 토큰 절약을 위해 내용을 비우고 줄만 유지
+                cleaned_lines.append(f"[{idx:03d}]\n")
                 continue
 
-            # ⭐ 형님이 오더 내리신 마법의 필터링 핵심 구역!
-            # 1. 초보자 공부용 주석(# INFO:)이 발견되면 AI에게 줄 보따리에 넣지 않고 즉시 스킵(삭제)!
+            # ⭐ 형님의 핵심 지시사항: 주석 부분은 내용을 비운 채 억지로 줄 표시를 유지!
+            # 2. # INFO: 로 시작하는 주석행 처리
             if stripped.startswith("# INFO:"):
+                # 💡 핵심: 긴 주석 텍스트를 다 날려버리고 오직 줄 번호 태그와 개행만 주입 (토큰 최소화!)
+                cleaned_lines.append(f"[{idx:03d}]\n")
                 continue
 
-            # 2. 코드 옆에 붙은 꼬리표 주석 예외 처리 (예: `x = 1  # INFO: 변수임`)
+            # 3. 코드 옆에 붙은 꼬리표 주석 예외 처리 (`x = 1  # INFO: ...`)
             if " # INFO:" in line:
-                # # INFO: 앞부분의 순수 코드만 싹둑 잘라서 남깁니다.
-                line = line.split(" # INFO:")[0] + "\n"
+                # 주석 내용만 잘라내고, 코드 앞단에 줄 번호를 붙여서 재조립
+                pure_code = line.split(" # INFO:")[0]
+                cleaned_lines.append(f"[{idx:03d}]{pure_code}\n")
+                continue
 
-            # 3. 그 외의 순수 실행 코드 및 # HISTORY:, # FIX: 주석은 AI 오답노트이므로 안전하게 보따리에 보관!
-            cleaned_lines.append(line)
+            # 4. 일반 빈 줄 처리
+            if not stripped:
+                cleaned_lines.append(f"[{idx:03d}]\n")
+                continue
 
-        # 3단계: 정화가 완료된 깨끗한 코드 줄들을 다시 하나의 예쁜 문자열 덩어리로 합쳐서 리턴합니다.
+            # 5. 그 외의 순수 실행 코드 및 보존 주석 (# HISTORY:, # FIX:)
+            # AI가 토큰을 해석할 때 밀리지 않도록 고정형 태그를 맨 앞에 강제 주입합니다.
+            cleaned_lines.append(f"[{idx:03d}]{line}")
+
         return "".join(cleaned_lines)
 
     def assemble_ai_prompt(self, user_query: str, affected_files: list[str]) -> str:
