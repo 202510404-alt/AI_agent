@@ -5,8 +5,6 @@
 
 ```markdown
 project_root/
-├── #create_ai_map.py [📂 #create_ai_map.py] -> [💡 📦 imp: ast, json, os, pathlib.Path | 🎯 def parse_python_file(file_path) [L38-99] | 🎯 def collect_target_files() [L102-130] | 🎯 def load_registry() [L133-147] | 🎯 def load_protocols() [L150-165] | 🎯 def main() [L168-236] | 🎯 def generate_ai_optimized_map() [L243-245]]
-├── #start.py [📂 #start.py] -> [💡 📦 imp: os, pathlib.Path, shutil, stat, subprocess, sys | 🎯 def get_best_python() [L32-48] | 🎯 def auto_install_dependencies() [L57-78] | 🎯 def main() [L80-196]]
 ├── agent_core/
 │   ├── __init__.py [📂 agent_core/__init__.py]
 │   ├── execution/
@@ -24,7 +22,7 @@ project_root/
 ├── start.py [📂 start.py] -> [💡 📦 imp: os, pathlib.Path, shutil, stat, subprocess, sys | 🎯 def _handle_remove_readonly(func, path, exc_info) [L51-57] | 🎯 def migrate_legacy_cline_tools_directory() [L60-116] | 🎯 def get_best_python() [L124-140] | 🎯 def auto_install_dependencies() [L149-170] | 🎯 def main() [L172-293]]
 ├── tools/
 │   ├── python_agent_tools/
-│   │   ├── agent_navigator.py [📂 tools/python_agent_tools/agent_navigator.py] -> [💡 📦 imp: json, pathlib.Path, re, sys, tkinter, tkinter.filedialog | 🧬 class SemanticNavigator [L11-118] |    └─ def __init__(root_dir) [L12-16] |    └─ def _load_database() [L18-25] |    └─ def extract_multi_slices(raw_prompt) [L27-118] | 🧬 class JjapCursorNavigatorGUI [L123-244] |    └─ def __init__(root, project_root) [L124-173] |    └─ def execute_slicing_pipeline() [L175-225] |    └─ def manual_export_file() [L227-244]]
+│   │   ├── agent_navigator.py [📂 tools/python_agent_tools/agent_navigator.py] -> [💡 📦 imp: json, pathlib.Path, re, sys, tkinter, tkinter.filedialog | 🧬 class SemanticNavigator [L11-342] |    └─ def __init__(root_dir) [L12-16] |    └─ def _load_database() [L18-25] |    └─ def extract_multi_slices(raw_prompt) [L30-342] | 🧬 class JjapCursorNavigatorGUI [L347-468] |    └─ def __init__(root, project_root) [L348-397] |    └─ def execute_slicing_pipeline() [L399-449] |    └─ def manual_export_file() [L451-468]]
 │   │   ├── context_builder.py [📂 tools/python_agent_tools/context_builder.py] -> [💡 📦 imp: os, pathlib.Path | 🧬 class ContextBuilder [L13-106] |    └─ def __init__(project_root) [L16-18] |    └─ def read_and_clean_file(relative_path) [L20-77] |    └─ def assemble_ai_prompt(user_query, affected_files) [L79-106]]
 │   │   ├── create_ai_map.py [📂 tools/python_agent_tools/create_ai_map.py] -> [💡 📦 imp: ast, json, os, pathlib.Path | 🎯 def parse_python_file(file_path) [L41-102] | 🎯 def collect_target_files() [L105-133] | 🎯 def load_registry() [L136-150] | 🎯 def load_protocols() [L153-168] | 🎯 def main() [L171-239] | 🎯 def generate_ai_optimized_map() [L246-248]]
 │   │   ├── indexer.py [📂 tools/python_agent_tools/indexer.py] -> [💡 📦 imp: ast, hashlib, json, os, pathlib.Path, typing.Any | 🧬 class AdvancedIndexerV2 [L22-227] |    └─ def __init__(project_root) [L31-39] |    └─ def _get_sha256(content) [L41-42] |    └─ def _extract_skeleton(content) [L44-60] |    └─ def parse_protocols_and_registries(content, rel_path_str) [L62-95] |    └─ def index_file(file_path) [L97-168] |    └─ def scan_project() [L170-227]]

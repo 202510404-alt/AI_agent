@@ -1,8 +1,8 @@
 {
   "files": {
     "python_agent_tools/agent_navigator.py": {
-      "hash": "7b8407cc845593e9655d0e609c1444cd3dd551b7a6ed5dc9d8870966e7fcfdcf",
-      "mtime": 1783425895,
+      "hash": "a8e936e5ddcdbbb8f0cc7427581b83b635af2ca7276b1fb4dc8b285b76f69f68",
+      "mtime": 1783503552,
       "skeleton": "class SemanticNavigator:\n    def __init__(...):\n        ...\n    def _load_database(...):\n        ...\n    def extract_multi_slices(...):\n        ...\nclass JjapCursorNavigatorGUI:\n    def __init__(...):\n        ...\n    def execute_slicing_pipeline(...):\n        ...\n    def manual_export_file(...):\n        ..."
     },
     "python_agent_tools/context_builder.py": {

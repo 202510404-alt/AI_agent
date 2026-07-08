@@ -16,23 +16,23 @@
 ## 💀 [Skeleton & Dependency 명세서]
 ### 📄 python_agent_tools/agent_navigator.py
 #### 🔍 내부 심볼 및 의존성 관계:
-- **[CLASS]** `SemanticNavigator` (Line: 11~118)
+- **[CLASS]** `SemanticNavigator` (Line: 11~342)
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__`
 - **[METHOD]** `SemanticNavigator.__init__` (Line: 12~16)
   - 🔗 *Calls (호출하는 것)*: `_load_database`
 - **[METHOD]** `SemanticNavigator._load_database` (Line: 18~25)
-  - 🔗 *Calls (호출하는 것)*: `open, exists, load`
+  - 🔗 *Calls (호출하는 것)*: `exists, open, load`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/agent_navigator.py::SemanticNavigator.__init__`
-- **[METHOD]** `SemanticNavigator.extract_multi_slices` (Line: 27~118)
-  - 🔗 *Calls (호출하는 것)*: `append, int, join, exists, findall, readlines, min, print, strip, len, get, split, open, max, any`
+- **[METHOD]** `SemanticNavigator.extract_multi_slices` (Line: 30~342)
+  - 🔗 *Calls (호출하는 것)*: `findall, max, append, len, repr, endswith, exists, join, readlines, printExec, open, print, split, int, any, get, min, strip, print_exc, replace`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline`
-- **[CLASS]** `JjapCursorNavigatorGUI` (Line: 123~244)
-- **[METHOD]** `JjapCursorNavigatorGUI.__init__` (Line: 124~173)
-  - 🔗 *Calls (호출하는 것)*: `Label, Text, insert, title, geometry, Button, Frame, pack, SemanticNavigator`
-- **[METHOD]** `JjapCursorNavigatorGUI.execute_slicing_pipeline` (Line: 175~225)
-  - 🔗 *Calls (호출하는 것)*: `append, join, config, write, delete, insert, startswith, strip, showerror, rstrip, extract_multi_slices, get, showwarning, open`
-- **[METHOD]** `JjapCursorNavigatorGUI.manual_export_file` (Line: 227~244)
-  - 🔗 *Calls (호출하는 것)*: `write, asksaveasfilename, str, showinfo, showerror, open`
+- **[CLASS]** `JjapCursorNavigatorGUI` (Line: 347~468)
+- **[METHOD]** `JjapCursorNavigatorGUI.__init__` (Line: 348~397)
+  - 🔗 *Calls (호출하는 것)*: `SemanticNavigator, Button, title, Label, insert, geometry, Text, Frame, pack`
+- **[METHOD]** `JjapCursorNavigatorGUI.execute_slicing_pipeline` (Line: 399~449)
+  - 🔗 *Calls (호출하는 것)*: `open, rstrip, config, join, insert, delete, write, showerror, startswith, strip, get, extract_multi_slices, append, showwarning`
+- **[METHOD]** `JjapCursorNavigatorGUI.manual_export_file` (Line: 451~468)
+  - 🔗 *Calls (호출하는 것)*: `open, showinfo, write, showerror, str, asksaveasfilename`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -60,10 +60,10 @@ class JjapCursorNavigatorGUI:
 - **[METHOD]** `ContextBuilder.__init__` (Line: 16~18)
   - 🔗 *Calls (호출하는 것)*: `Path`
 - **[METHOD]** `ContextBuilder.read_and_clean_file` (Line: 20~77)
-  - 🔗 *Calls (호출하는 것)*: `append, join, readlines, exists, startswith, strip, endswith, len, split, FileNotFoundError, open`
+  - 🔗 *Calls (호출하는 것)*: `exists, open, join, split, readlines, startswith, strip, len, append, endswith, FileNotFoundError`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/context_builder.py::ContextBuilder.assemble_ai_prompt`
 - **[METHOD]** `ContextBuilder.assemble_ai_prompt` (Line: 79~106)
-  - 🔗 *Calls (호출하는 것)*: `append, join, str, read_and_clean_file`
+  - 🔗 *Calls (호출하는 것)*: `read_and_clean_file, str, join, append`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -110,19 +110,19 @@ def generate_ai_optimized_map(...):
 - **[CLASS]** `AdvancedIndexerV2` (Line: 22~227)
 - **[METHOD]** `AdvancedIndexerV2.__init__` (Line: 31~39)
 - **[METHOD]** `AdvancedIndexerV2._get_sha256` (Line: 41~42)
-  - 🔗 *Calls (호출하는 것)*: `sha256, encode, hexdigest`
+  - 🔗 *Calls (호출하는 것)*: `encode, hexdigest, sha256`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/indexer.py::AdvancedIndexerV2.index_file`
 - **[METHOD]** `AdvancedIndexerV2._extract_skeleton` (Line: 44~60)
-  - 🔗 *Calls (호출하는 것)*: `parse, join, append, isinstance`
+  - 🔗 *Calls (호출하는 것)*: `parse, isinstance, join, append`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/indexer.py::AdvancedIndexerV2.index_file`
 - **[METHOD]** `AdvancedIndexerV2.parse_protocols_and_registries` (Line: 62~95)
-  - 🔗 *Calls (호출하는 것)*: `parse, isinstance, lower, type`
+  - 🔗 *Calls (호출하는 것)*: `parse, type, isinstance, lower`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/indexer.py::AdvancedIndexerV2.index_file`
 - **[METHOD]** `AdvancedIndexerV2.index_file` (Line: 97~168)
-  - 🔗 *Calls (호출하는 것)*: `append, int, _extract_skeleton, _get_sha256, parse, isinstance, getattr, set, relative_to, dump, list, stat, open, as_posix, walk, read, parse_protocols_and_registries`
+  - 🔗 *Calls (호출하는 것)*: `list, parse, open, stat, getattr, parse_protocols_and_registries, _get_sha256, as_posix, _extract_skeleton, read, walk, int, relative_to, dump, set, isinstance, append`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/indexer.py::AdvancedIndexerV2.scan_project`
 - **[METHOD]** `AdvancedIndexerV2.scan_project` (Line: 170~227)
-  - 🔗 *Calls (호출하는 것)*: `print, append, makedirs, exists, index_file, set, endswith, walk, list, get, sorted, open, dump, replace, any, Path`
+  - 🔗 *Calls (호출하는 것)*: `list, exists, open, print, append, Path, walk, set, any, get, dump, makedirs, index_file, replace, endswith, sorted`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -167,15 +167,15 @@ def show_skeleton(...):
 - **[METHOD]** `JjapRetriever.__init__` (Line: 16~21)
   - 🔗 *Calls (호출하는 것)*: `_load_symbols`
 - **[METHOD]** `JjapRetriever._load_symbols` (Line: 23~37)
-  - 🔗 *Calls (호출하는 것)*: `print, exists, load, len, get, open`
+  - 🔗 *Calls (호출하는 것)*: `exists, open, print, load, get, len`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/jjap_retriever.py::JjapRetriever.__init__`
 - **[METHOD]** `JjapRetriever.retrieve_symbol` (Line: 39~98)
-  - 🔗 *Calls (호출하는 것)*: `_find_best_match, append, print, exists, readlines, join, min, startswith, extend, strip, rstrip, len, next, get, open, max, _safe_truncate`
+  - 🔗 *Calls (호출하는 것)*: `exists, open, print, _safe_truncate, rstrip, join, extend, next, _find_best_match, readlines, get, startswith, strip, max, min, len, append`
 - **[METHOD]** `JjapRetriever._find_best_match` (Line: 100~117)
-  - 🔗 *Calls (호출하는 것)*: `print, get, lower`
+  - 🔗 *Calls (호출하는 것)*: `get, print, lower`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol`
 - **[METHOD]** `JjapRetriever._safe_truncate` (Line: 119~129)
-  - 🔗 *Calls (호출하는 것)*: `append, join, print, len, splitlines`
+  - 🔗 *Calls (호출하는 것)*: `print, join, splitlines, len, append`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol`
 - **[FUNCTION]** `main` (Line: 132~140)
 
@@ -206,7 +206,7 @@ def main(...):
 - **[CLASS]** `CodeChangeHandler` (Line: 76~99)
 - **[METHOD]** `CodeChangeHandler.__init__` (Line: 77~79)
 - **[METHOD]** `CodeChangeHandler.dispatch` (Line: 81~99)
-  - 🔗 *Calls (호출하는 것)*: `print, time, run_pipeline, as_posix, any, Path`
+  - 🔗 *Calls (호출하는 것)*: `print, Path, as_posix, any, run_pipeline, time`
 - **[FUNCTION]** `main` (Line: 101~127)
 
 #### 🧱 Code Skeleton:

@@ -24,19 +24,29 @@ class SemanticNavigator:
         except Exception:
             return {"symbols": []}
 
+    # [📂 실제경로] tools/python_agent_tools/agent_navigator.py
+# [📂 실제경로] tools/python_agent_tools/agent_navigator.py
+
     def extract_multi_slices(self, raw_prompt: str):
         """
-        [Multi-Target Protocol Parser]
-        형님이 입력한 프롬프트에서 '파일경로:시작줄-끝줄' 또는 '파일경로:줄번호' 규격을 
-        정규식으로 전부 추출하여, 요청된 순서대로 코드를 줄줄이 엮어서 반환합니다.
-        
-        ➕ 플러스 알파 (+α): 사용자가 요청한 구역 내의 심볼을 탐지하고, 
-        이를 호출해서 사용하는(used_by) 전역 파일들의 함수부까지 자동으로 연쇄 슬라이싱하여 결합합니다.
+        [Multi-Target Protocol Parser - 경로 및 클래스명 종속성 완전 격파 버전]
+        1. 입력 프롬프트에서 '파일경로:시작줄-끝줄'을 정규식으로 사냥합니다.
+        2. [형님의 2차 탐색 기전] 1단계로 슬라이싱된 텍스트 본체에서 def/class 명칭을 직접 추출합니다.
+        3. .jjap_symbols.json 장부와 대조 시, 'tools/' 경로 프리픽스 불일치 및 used_by 내부의 
+           'AdvancedIndexerV2.scan_project' vs 'scan_project' 같은 클래스명 유무 오차를 유연하게 필터링하여 2차 기습 징집합니다.
         """
+        
+        print("\n" + "="*60)
+        print("🚨 [DEBUGGER ON] 내비게이터 멀티 슬라이싱 파이프라인 기동!!!")
+        print(f"📥 유저 입력 프롬프트: {repr(raw_prompt)}")
+        print("="*60)
+
         pattern = r"([a-zA-Z0-9_\-\./]+)\s*:\s*(\d+)(?:\s*-\s*(\d+))?"
         matches = re.findall(pattern, raw_prompt)
 
+        print(f"🔍 정규식 1차 타겟 스캔 결과: {matches}")
         if not matches:
+            print("⚠️ [DEBUG] 매칭되는 파일 경로 및 라인 규격이 없습니다. 빈 배열 리턴.")
             return []
 
         extracted_slices = []
@@ -47,24 +57,30 @@ class SemanticNavigator:
             start_line = int(match[1])
             end_line = int(match[2]) if match[2] else start_line
 
-            # 1. 메인 타겟 파일 슬라이싱 추출
+            print(f"\n🎯 [요청 #{req_num}] 메인 타겟 분석 시작 -> {file_rel_path} ({start_line} ~ {end_line} 라인)")
+
+            # [1단계] 메인 타겟 파일 슬라이싱 추출
             target_file_path = self.root_dir / file_rel_path
+            print(f"   📂 검증할 하드디스크 물리 경로: {target_file_path}")
+            
             if not target_file_path.exists():
+                print(f"   ❌ [ERROR] 해당 파일이 실제 경로에 존재하지 않습니다! 패스합니다.")
                 continue
 
             try:
                 with open(target_file_path, "r", encoding="utf-8") as f:
                     lines = f.readlines()
                 
-                # IndexError 방어망 구축 (줄 범위 안전 보정)
                 total_lines = len(lines)
                 safe_start = max(1, min(start_line, total_lines))
                 safe_end = max(safe_start, min(end_line, total_lines))
+                print(f"   📏 파일 전체 줄 수: {total_lines} | 보정된 안전 범위: {safe_start} ~ {safe_end}")
 
                 slice_lines = lines[safe_start - 1 : safe_end]
                 slice_code = "".join(slice_lines)
+                print(f"   🟢 1차 메인 슬라이싱 성공 (길이: {len(slice_code)}자)")
 
-                # 메인 슬라이스 저장
+                # 메인 슬라이스 보따리 안착
                 extracted_slices.append({
                     "req_num": f"{req_num}",
                     "file": file_rel_path,
@@ -72,51 +88,258 @@ class SemanticNavigator:
                     "code": slice_code
                 })
 
-                # 🔗 플러스 알파 (+α) 의존성 추적 가동
-                # 슬라이싱된 텍스트 안에서 정의되거나 사용되는 함수/클래스 명칭 식별하여 used_by 연쇄 징집
-                for s in self.symbols_data.get("symbols", []):
-                    if s.get("file") == file_rel_path:
-                        # 심볼의 라인이 추출 구역 내에 겹치는지 체크
-                        s_start = s.get("start_line", 0)
-                        s_end = s.get("end_line", 0)
-                        if (safe_start <= s_start <= safe_end) or (safe_start <= s_end <= safe_end):
-                            # 나를 부르는 곳(used_by) 연쇄 기습 징집
-                            for ub_id in s.get("used_by", []):
-                                # ub_id 양식 예: "src/map_system/map_engine.py::update"
-                                if "::" in ub_id:
-                                    ub_file, ub_symbol_name = ub_id.split("::", 1)
-                                    # 해당 파일의 심볼 실제 구역 추적
-                                    for target_s in self.symbols_data.get("symbols", []):
-                                        if target_s.get("file") == ub_file and target_s.get("name") == ub_symbol_name:
-                                            ub_file_path = self.root_dir / ub_file
-                                            if ub_file_path.exists():
-                                                with open(ub_file_path, "r", encoding="utf-8") as ubf:
-                                                    ub_lines = ubf.readlines()
-                                                ubs_start = target_s.get("start_line", 1)
-                                                ubs_end = target_s.get("end_line", len(ub_lines))
+                # [2단계] 🔗 플러스 알파 (+α) - 제이슨 기반 2차 심볼 탐색기 가동
+                print(f"   📡 [형님의 2차 사냥기] 잘려 나온 텍스트 내부에서 심볼(def/class) 식별 개시...")
+                defined_names = re.findall(r"(?:def|class)\s+([a-zA-Z0-9_]+)", slice_code)
+                print(f"   📦 발견된 심볼 키워드 목록: {defined_names}")
+                
+                # 장부 메모리 상태 실시간 체크
+                symbols_list = self.symbols_data.get("symbols", [])
+                print(f"   📚 로드된 JSON 장부 총 심볼 개수: {len(symbols_list)}개")
+
+                for target_name in defined_names:
+                    print(f"      🔎 [심볼 대조] 이름: '{target_name}' -> JSON 장부에서 탐색 중...")
+                    match_found = False
+                    
+                    for s in symbols_list:
+                        json_file_path = s.get("file", "")
+                        
+                        # 경로 프리픽스 유연 매칭 (tools/ 유무 방어)
+                        if (json_file_path == file_rel_path) or (file_rel_path.endswith(json_file_path)) or (json_file_path.endswith(file_rel_path)):
+                            if s.get("name") == target_name:
+                                match_found = True
+                                ub_list = s.get("used_by", [])
+                                print(f"      💥 [MATCH!] 장부에서 심볼 일치 확인 -> ID: {s.get('symbol_id')}")
+                                print(f"      🔗 나를 부르는 전역 호출처 목록(used_by): {ub_list}")
+                                
+                                if not ub_list:
+                                    print(f"      ℹ️ '{target_name}'을(를) 참조하는 외부 used_by가 장부에 비어있습니다.")
+
+                                for ub_id in ub_list:
+                                    print(f"         🚀 [2차 기습 징집] 사용처 ID 해부 시작 -> {ub_id}")
+                                    if "::" in ub_id:
+                                        ub_file, ub_symbol_name = ub_id.split("::", 1)
+                                        
+                                        # 클래스명 포함 표기 분리 방어 (예: AdvancedIndexerV2.scan_project -> scan_project)
+                                        if "." in ub_symbol_name:
+                                            ub_symbol_name = ub_symbol_name.split(".")[-1]
+                                        
+                                        # [3단계] 2차 연쇄 슬라이싱 전개
+                                        sub_match_found = False
+                                        for target_s in symbols_list:
+                                            t_file = target_s.get("file", "")
+                                            s_id = target_s.get("symbol_id", "")
+                                            s_name = target_s.get("name", "")
+                                            
+                                            # ✅ 교정 완료: 장부 고유 ID와 완전 일치하거나, 경로가 호환되면서 최종 함수명 단독으로 매칭되는지 정밀 상호 교차 검증
+                                            if (s_id == ub_id) or (ub_id.endswith(s_id)) or (s_name == ub_symbol_name and (t_file == ub_file or ub_file.endswith(t_file) or t_file.endswith(ub_file))):
+                                                sub_match_found = True
                                                 
-                                                # 안전 보정 및 추출
-                                                ubs_start = max(1, min(ubs_start, len(ub_lines)))
-                                                ubs_end = max(ubs_start, min(ubs_end, len(ub_lines)))
+                                                # 디스크에서 읽을 때 사용할 실제 물리 경로 동적 조합
+                                                ub_file_path = self.root_dir / file_rel_path.replace(json_file_path, t_file)
+                                                if not ub_file_path.exists():
+                                                    ub_file_path = self.root_dir / t_file
+                                                    if not ub_file_path.exists():
+                                                        ub_file_path = self.root_dir / "tools" / t_file
                                                 
-                                                ub_slice_code = "".join(ub_lines[ubs_start - 1 : ubs_end])
+                                                print(f"            📌 호출처 물리 위치 확보: {ub_file_path} ({target_s.get('start_line')}~{target_s.get('end_line')}라인)")
                                                 
-                                                # 중복 징집 방지
-                                                if not any(x["file"] == ub_file and x["line_range"] == f"{ubs_start}-{ubs_end}" for x in extracted_slices):
-                                                    extracted_slices.append({
-                                                        "req_num": f"{req_num} 🔗 의존성연동 ({s.get('name')} 호출부 -> {ub_file}의 [{ub_symbol_name}])",
-                                                        "file": ub_file,
-                                                        "line_range": f"{ubs_start}-{ubs_end}",
-                                                        "code": ub_slice_code
-                                                    })
+                                                if ub_file_path.exists():
+                                                    with open(ub_file_path, "r", encoding="utf-8") as ubf:
+                                                        ub_lines = ubf.readlines()
+                                                    
+                                                    ubs_start = target_s.get("start_line", 1)
+                                                    ubs_end = target_s.get("end_line", len(ub_lines))
+                                                    
+                                                    ubs_start = max(1, min(ubs_start, len(ub_lines)))
+                                                    ubs_end = max(ubs_start, min(ubs_end, len(ub_lines)))
+                                                    
+                                                    ub_slice_code = "".join(ub_lines[ubs_start - 1 : ubs_end])
+                                                    
+                                                    # 중복 방지 체크
+                                                    is_duplicate = any(x["file"] == t_file and x["line_range"] == f"{ubs_start}-{ubs_end}" for x in extracted_slices)
+                                                    if not is_duplicate:
+                                                        print(f"            🎁 [CONFIRM] 중복 없음! 2차 슬라이스 최종 보따리에 결합 완수.")
+                                                        extracted_slices.append({
+                                                            "req_num": f"{req_num} 🔗 제이슨연동 ({target_name} 호출부 -> {t_file}의 [{s_name}])",
+                                                            "file": t_file,
+                                                            "line_range": f"{ubs_start}-{ubs_end}",
+                                                            "code": ub_slice_code
+                                                        })
+                                                    else:
+                                                        print(f"            ⚠️ [SKIP] 이미 결합된 중복 슬라이스 구역입니다.")
+                                            
+                                        if not sub_match_found:
+                                            print(f"            ❌ [ERROR] 호출처 구조체 '{ub_id}'의 정의를 JSON 장부 내에서 찾지 못했습니다.")
+                    
+                    if not match_found:
+                        print(f"      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부({file_rel_path})엔 등록 안 된 심볼입니다.")
 
             except Exception as e:
-                print(f"⚠️ 슬라이싱 추출 실패 ({file_rel_path}): {e}")
+                import traceback
+                print(f"💥 [CRITICAL ERROR] 슬라이싱 중 예외 폭발!!!: {e}")
+                traceback.printExec()
 
             req_num += 1
 
+        print("\n" + "="*60)
+        print(f"🏁 [DEBUG] 최종 반환할 총 슬라이스 묶음 개수: {len(extracted_slices)}개")
+        print("="*60 + "\n")
         return extracted_slices
+        """
+        [Multi-Target Protocol Parser - 경로 종속성 무력화 및 제이슨 2차 탐색 완벽 판본]
+        1. 입력 프롬프트에서 '파일경로:시작줄-끝줄'을 정규식으로 사냥합니다.
+        2. [형님의 2차 탐색 기전] 1단계로 슬라이싱된 텍스트 본체에서 def/class 명칭을 직접 추출합니다.
+        3. .jjap_symbols.json 장부와 대조 시, 'tools/' 프리픽스 유무에 상관없이 endswith로 유연하게 경로를 매칭하여 2차 징집합니다.
+        """
+        import re
+        
+        print("\n" + "="*60)
+        print("🚨 [DEBUGGER ON] 내비게이터 멀티 슬라이싱 파이프라인 기동!!!")
+        print(f"📥 유저 입력 프롬프트: {repr(raw_prompt)}")
+        print("="*60)
 
+        pattern = r"([a-zA-Z0-9_\-\./]+)\s*:\s*(\d+)(?:\s*-\s*(\d+))?"
+        matches = re.findall(pattern, raw_prompt)
+
+        print(f"🔍 정규식 1차 타겟 스캔 결과: {matches}")
+        if not matches:
+            print("⚠️ [DEBUG] 매칭되는 파일 경로 및 라인 규격이 없습니다. 빈 배열 리턴.")
+            return []
+
+        extracted_slices = []
+        req_num = 1
+
+        for match in matches:
+            file_rel_path = match[0].strip()
+            start_line = int(match[1])
+            end_line = int(match[2]) if match[2] else start_line
+
+            print(f"\n🎯 [요청 #{req_num}] 메인 타겟 분석 시작 -> {file_rel_path} ({start_line} ~ {end_line} 라인)")
+
+            # [1단계] 메인 타겟 파일 슬라이싱 추출
+            target_file_path = self.root_dir / file_rel_path
+            print(f"   📂 검증할 하드디스크 물리 경로: {target_file_path}")
+            
+            if not target_file_path.exists():
+                print(f"   ❌ [ERROR] 해당 파일이 실제 경로에 존재하지 않습니다! 패스합니다.")
+                continue
+
+            try:
+                with open(target_file_path, "r", encoding="utf-8") as f:
+                    lines = f.readlines()
+                
+                total_lines = len(lines)
+                safe_start = max(1, min(start_line, total_lines))
+                safe_end = max(safe_start, min(end_line, total_lines))
+                print(f"   📏 파일 전체 줄 수: {total_lines} | 보정된 안전 범위: {safe_start} ~ {safe_end}")
+
+                slice_lines = lines[safe_start - 1 : safe_end]
+                slice_code = "".join(slice_lines)
+                print(f"   🟢 1차 메인 슬라이싱 성공 (길이: {len(slice_code)}자)")
+
+                # 메인 슬라이스 보따리 안착
+                extracted_slices.append({
+                    "req_num": f"{req_num}",
+                    "file": file_rel_path,
+                    "line_range": f"{safe_start}-{safe_end}",
+                    "code": slice_code
+                })
+
+                # [2단계] 🔗 플러스 알파 (+α) - 제이슨 기반 2차 심볼 탐색기 가동
+                print(f"   📡 [형님의 2차 사냥기] 잘려 나온 텍스트 내부에서 심볼(def/class) 식별 개시...")
+                defined_names = re.findall(r"(?:def|class)\s+([a-zA-Z0-9_]+)", slice_code)
+                print(f"   📦 발견된 심볼 키워드 목록: {defined_names}")
+                
+                # 장부 메모리 상태 실시간 체크
+                symbols_list = self.symbols_data.get("symbols", [])
+                print(f"   📚 로드된 JSON 장부 총 심볼 개수: {len(symbols_list)}개")
+
+                for target_name in defined_names:
+                    print(f"      🔎 [심볼 대조] 이름: '{target_name}' -> JSON 장부에서 탐색 중...")
+                    match_found = False
+                    
+                    for s in symbols_list:
+                        json_file_path = s.get("file", "")
+                        
+                        # ✅ 핵심 교정 지점: 경로가 완전히 일치하거나 뒷부분(예: python_agent_tools/indexer.py)이 동일한지 상호 검증
+                        if (json_file_path == file_rel_path) or (file_rel_path.endswith(json_file_path)) or (json_file_path.endswith(file_rel_path)):
+                            if s.get("name") == target_name:
+                                match_found = True
+                                ub_list = s.get("used_by", [])
+                                print(f"      💥 [MATCH!] 장부에서 심볼 일치 확인 -> ID: {s.get('symbol_id')}")
+                                print(f"      🔗 나를 부르는 전역 호출처 목록(used_by): {ub_list}")
+                                
+                                if not ub_list:
+                                    print(f"      ℹ️ '{target_name}'을(를) 참조하는 외부 used_by가 장부에 비어있습니다.")
+
+                                for ub_id in ub_list:
+                                    print(f"         🚀 [2차 기습 징집] 사용처 ID 해부 시작 -> {ub_id}")
+                                    if "::" in ub_id:
+                                        ub_file, ub_symbol_name = ub_id.split("::", 1)
+                                        
+                                        # [3단계] 2차 연쇄 슬라이싱 전개
+                                        sub_match_found = False
+                                        for target_s in symbols_list:
+                                            # 호출처 매칭 시에도 유연한 경로 규칙 적용
+                                            t_file = target_s.get("file", "")
+                                            if (t_file == ub_file) or (ub_file.endswith(t_file)) or (t_file.endswith(ub_file)):
+                                                if target_s.get("name") == ub_symbol_name:
+                                                    sub_match_found = True
+                                                    
+                                                    # 디스크에서 읽을 때 사용할 실제 물리 경로 동적 조합
+                                                    ub_file_path = self.root_dir / file_rel_path.replace(json_file_path, t_file)
+                                                    if not ub_file_path.exists():
+                                                        # 차선책: 그냥 루트 하위 경로 추적
+                                                        ub_file_path = self.root_dir / t_file
+                                                        if not ub_file_path.exists():
+                                                            ub_file_path = self.root_dir / "tools" / t_file
+                                                    
+                                                    print(f"            📌 호출처 물리 위치 확보: {ub_file_path} ({target_s.get('start_line')}~{target_s.get('end_line')}라인)")
+                                                    
+                                                    if ub_file_path.exists():
+                                                        with open(ub_file_path, "r", encoding="utf-8") as ubf:
+                                                            ub_lines = ubf.readlines()
+                                                        
+                                                        ubs_start = target_s.get("start_line", 1)
+                                                        ubs_end = target_s.get("end_line", len(ub_lines))
+                                                        
+                                                        ubs_start = max(1, min(ubs_start, len(ub_lines)))
+                                                        ubs_end = max(ubs_start, min(ubs_end, len(ub_lines)))
+                                                        
+                                                        ub_slice_code = "".join(ub_lines[ubs_start - 1 : ubs_end])
+                                                        
+                                                        # 중복 방지 체크
+                                                        is_duplicate = any(x["file"] == t_file and x["line_range"] == f"{ubs_start}-{ubs_end}" for x in extracted_slices)
+                                                        if not is_duplicate:
+                                                            print(f"            🎁 [CONFIRM] 중복 없음! 2차 슬라이스 최종 보따리에 결합 완수.")
+                                                            extracted_slices.append({
+                                                                "req_num": f"{req_num} 🔗 제이슨연동 ({target_name} 호출부 -> {t_file}의 [{ub_symbol_name}])",
+                                                                "file": t_file,
+                                                                "line_range": f"{ubs_start}-{ubs_end}",
+                                                                "code": ub_slice_code
+                                                            })
+                                                        else:
+                                                            print(f"            ⚠️ [SKIP] 이미 결합된 중복 슬라이스 구역입니다.")
+                                            
+                                        if not sub_match_found:
+                                            print(f"            ❌ [ERROR] 호출처 구조체 '{ub_id}'의 정의를 JSON 장부 내에서 찾지 못했습니다.")
+                    
+                    if not match_found:
+                        print(f"      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부({file_rel_path})엔 등록 안 된 심볼입니다.")
+
+            except Exception as e:
+                import traceback
+                print(f"💥 [CRITICAL ERROR] 슬라이싱 중 예외 폭발!!!: {e}")
+                traceback.print_exc()
+
+            req_num += 1
+
+        print("\n" + "="*60)
+        print(f"🏁 [DEBUG] 최종 반환할 총 슬라이스 묶음 개수: {len(extracted_slices)}개")
+        print("="*60 + "\n")
+        return extracted_slices
+    
 # =====================================================================
 # 🎨 GUI INTERFACE LAYER (UPGRADED VERSION)
 # =====================================================================
@@ -244,10 +467,14 @@ class JjapCursorNavigatorGUI:
                 messagebox.showerror("내보내기 실패", f"파일 저장 중 에러가 발생했습니다: {e}")
 
 if __name__ == "__main__":
-    # 실행 컨텍스트 루트 자동 정렬
+    # 실행 컨텍스트 루트 자동 정렬 (신규 2단계 깊이 tools/python_agent_tools/ 구조 반영)
     current_dir = Path(__file__).parent.resolve()
-    # 만약 cline_tools 폴더 내에 있다면 상위를 루트로 잡고, 아니면 현재 폴더를 루트로 보장
-    project_root = current_dir.parent if current_dir.name == "cline_tools" else current_dir
+    if current_dir.name == "python_agent_tools" and current_dir.parent.name == "tools":
+        project_root = current_dir.parent.parent
+    elif current_dir.name == "cline_tools":
+        project_root = current_dir.parent
+    else:
+        project_root = current_dir
 
     root_window = tk.Tk()
     app = JjapCursorNavigatorGUI(root_window, project_root)

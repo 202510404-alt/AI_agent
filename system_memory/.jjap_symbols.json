@@ -8,10 +8,10 @@
       "parent": null,
       "file": "python_agent_tools/agent_navigator.py",
       "start_line": 11,
-      "end_line": 118,
+      "end_line": 342,
       "range": [
         11,
-        118
+        342
       ],
       "decorators": [],
       "signature": "class SemanticNavigator",
@@ -56,8 +56,8 @@
       "decorators": [],
       "signature": "def _load_database(...)",
       "calls": [
-        "open",
         "exists",
+        "open",
         "load"
       ],
       "used_by": [
@@ -71,30 +71,35 @@
       "type": "method",
       "parent": "SemanticNavigator",
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 27,
-      "end_line": 118,
+      "start_line": 30,
+      "end_line": 342,
       "range": [
-        27,
-        118
+        30,
+        342
       ],
       "decorators": [],
       "signature": "def extract_multi_slices(...)",
       "calls": [
-        "append",
-        "int",
-        "join",
-        "exists",
         "findall",
-        "readlines",
-        "min",
-        "print",
-        "strip",
-        "len",
-        "get",
-        "split",
-        "open",
         "max",
-        "any"
+        "append",
+        "len",
+        "repr",
+        "endswith",
+        "exists",
+        "join",
+        "readlines",
+        "printExec",
+        "open",
+        "print",
+        "split",
+        "int",
+        "any",
+        "get",
+        "min",
+        "strip",
+        "print_exc",
+        "replace"
       ],
       "used_by": [
         "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
@@ -107,11 +112,11 @@
       "type": "class",
       "parent": null,
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 123,
-      "end_line": 244,
+      "start_line": 347,
+      "end_line": 468,
       "range": [
-        123,
-        244
+        347,
+        468
       ],
       "decorators": [],
       "signature": "class JjapCursorNavigatorGUI",
@@ -125,24 +130,24 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 124,
-      "end_line": 173,
+      "start_line": 348,
+      "end_line": 397,
       "range": [
-        124,
-        173
+        348,
+        397
       ],
       "decorators": [],
       "signature": "def __init__(...)",
       "calls": [
-        "Label",
-        "Text",
-        "insert",
-        "title",
-        "geometry",
+        "SemanticNavigator",
         "Button",
+        "title",
+        "Label",
+        "insert",
+        "geometry",
+        "Text",
         "Frame",
-        "pack",
-        "SemanticNavigator"
+        "pack"
       ],
       "used_by": []
     },
@@ -153,29 +158,29 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 175,
-      "end_line": 225,
+      "start_line": 399,
+      "end_line": 449,
       "range": [
-        175,
-        225
+        399,
+        449
       ],
       "decorators": [],
       "signature": "def execute_slicing_pipeline(...)",
       "calls": [
-        "append",
-        "join",
+        "open",
+        "rstrip",
         "config",
-        "write",
-        "delete",
+        "join",
         "insert",
+        "delete",
+        "write",
+        "showerror",
         "startswith",
         "strip",
-        "showerror",
-        "rstrip",
-        "extract_multi_slices",
         "get",
-        "showwarning",
-        "open"
+        "extract_multi_slices",
+        "append",
+        "showwarning"
       ],
       "used_by": []
     },
@@ -186,21 +191,21 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 227,
-      "end_line": 244,
+      "start_line": 451,
+      "end_line": 468,
       "range": [
-        227,
-        244
+        451,
+        468
       ],
       "decorators": [],
       "signature": "def manual_export_file(...)",
       "calls": [
-        "write",
-        "asksaveasfilename",
-        "str",
+        "open",
         "showinfo",
+        "write",
         "showerror",
-        "open"
+        "str",
+        "asksaveasfilename"
       ],
       "used_by": []
     },
@@ -258,17 +263,17 @@
       "decorators": [],
       "signature": "def read_and_clean_file(...)",
       "calls": [
-        "append",
-        "join",
-        "readlines",
         "exists",
+        "open",
+        "join",
+        "split",
+        "readlines",
         "startswith",
         "strip",
-        "endswith",
         "len",
-        "split",
-        "FileNotFoundError",
-        "open"
+        "append",
+        "endswith",
+        "FileNotFoundError"
       ],
       "used_by": [
         "python_agent_tools/context_builder.py::ContextBuilder.assemble_ai_prompt"
@@ -290,10 +295,10 @@
       "decorators": [],
       "signature": "def assemble_ai_prompt(...)",
       "calls": [
-        "append",
-        "join",
+        "read_and_clean_file",
         "str",
-        "read_and_clean_file"
+        "join",
+        "append"
       ],
       "used_by": []
     },
@@ -457,9 +462,9 @@
       "decorators": [],
       "signature": "def _get_sha256(...)",
       "calls": [
-        "sha256",
         "encode",
-        "hexdigest"
+        "hexdigest",
+        "sha256"
       ],
       "used_by": [
         "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -482,9 +487,9 @@
       "signature": "def _extract_skeleton(...)",
       "calls": [
         "parse",
+        "isinstance",
         "join",
-        "append",
-        "isinstance"
+        "append"
       ],
       "used_by": [
         "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -507,9 +512,9 @@
       "signature": "def parse_protocols_and_registries(...)",
       "calls": [
         "parse",
+        "type",
         "isinstance",
-        "lower",
-        "type"
+        "lower"
       ],
       "used_by": [
         "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -531,23 +536,23 @@
       "decorators": [],
       "signature": "def index_file(...)",
       "calls": [
-        "append",
-        "int",
-        "_extract_skeleton",
-        "_get_sha256",
+        "list",
         "parse",
-        "isinstance",
+        "open",
+        "stat",
         "getattr",
-        "set",
+        "parse_protocols_and_registries",
+        "_get_sha256",
+        "as_posix",
+        "_extract_skeleton",
+        "read",
+        "walk",
+        "int",
         "relative_to",
         "dump",
-        "list",
-        "stat",
-        "open",
-        "as_posix",
-        "walk",
-        "read",
-        "parse_protocols_and_registries"
+        "set",
+        "isinstance",
+        "append"
       ],
       "used_by": [
         "python_agent_tools/indexer.py::AdvancedIndexerV2.scan_project"
@@ -569,22 +574,22 @@
       "decorators": [],
       "signature": "def scan_project(...)",
       "calls": [
+        "list",
+        "exists",
+        "open",
         "print",
         "append",
-        "makedirs",
-        "exists",
-        "index_file",
-        "set",
-        "endswith",
+        "Path",
         "walk",
-        "list",
-        "get",
-        "sorted",
-        "open",
-        "dump",
-        "replace",
+        "set",
         "any",
-        "Path"
+        "get",
+        "dump",
+        "makedirs",
+        "index_file",
+        "replace",
+        "endswith",
+        "sorted"
       ],
       "used_by": []
     },
@@ -696,12 +701,12 @@
       "decorators": [],
       "signature": "def _load_symbols(...)",
       "calls": [
-        "print",
         "exists",
+        "open",
+        "print",
         "load",
-        "len",
         "get",
-        "open"
+        "len"
       ],
       "used_by": [
         "python_agent_tools/jjap_retriever.py::JjapRetriever.__init__"
@@ -723,23 +728,23 @@
       "decorators": [],
       "signature": "def retrieve_symbol(...)",
       "calls": [
-        "_find_best_match",
-        "append",
-        "print",
         "exists",
-        "readlines",
-        "join",
-        "min",
-        "startswith",
-        "extend",
-        "strip",
-        "rstrip",
-        "len",
-        "next",
-        "get",
         "open",
+        "print",
+        "_safe_truncate",
+        "rstrip",
+        "join",
+        "extend",
+        "next",
+        "_find_best_match",
+        "readlines",
+        "get",
+        "startswith",
+        "strip",
         "max",
-        "_safe_truncate"
+        "min",
+        "len",
+        "append"
       ],
       "used_by": []
     },
@@ -759,8 +764,8 @@
       "decorators": [],
       "signature": "def _find_best_match(...)",
       "calls": [
-        "print",
         "get",
+        "print",
         "lower"
       ],
       "used_by": [
@@ -783,11 +788,11 @@
       "decorators": [],
       "signature": "def _safe_truncate(...)",
       "calls": [
-        "append",
-        "join",
         "print",
+        "join",
+        "splitlines",
         "len",
-        "splitlines"
+        "append"
       ],
       "used_by": [
         "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
@@ -902,11 +907,11 @@
       "signature": "def dispatch(...)",
       "calls": [
         "print",
-        "time",
-        "run_pipeline",
+        "Path",
         "as_posix",
         "any",
-        "Path"
+        "run_pipeline",
+        "time"
       ],
       "used_by": []
     },
