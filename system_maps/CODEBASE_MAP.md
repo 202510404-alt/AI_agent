@@ -16,22 +16,22 @@
 ## 💀 [Skeleton & Dependency 명세서]
 ### 📄 python_agent_tools/agent_navigator.py
 #### 🔍 내부 심볼 및 의존성 관계:
-- **[CLASS]** `SemanticNavigator` (Line: 11~342)
+- **[CLASS]** `SemanticNavigator` (Line: 11~341)
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__`
 - **[METHOD]** `SemanticNavigator.__init__` (Line: 12~16)
   - 🔗 *Calls (호출하는 것)*: `_load_database`
 - **[METHOD]** `SemanticNavigator._load_database` (Line: 18~25)
   - 🔗 *Calls (호출하는 것)*: `exists, open, load`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/agent_navigator.py::SemanticNavigator.__init__`
-- **[METHOD]** `SemanticNavigator.extract_multi_slices` (Line: 30~342)
+- **[METHOD]** `SemanticNavigator.extract_multi_slices` (Line: 30~341)
   - 🔗 *Calls (호출하는 것)*: `findall, max, append, len, repr, endswith, exists, join, readlines, printExec, open, print, split, int, any, get, min, strip, print_exc, replace`
   - 🎯 *Used By (나를 부르는 곳)*: `python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline`
-- **[CLASS]** `JjapCursorNavigatorGUI` (Line: 347~468)
-- **[METHOD]** `JjapCursorNavigatorGUI.__init__` (Line: 348~397)
+- **[CLASS]** `JjapCursorNavigatorGUI` (Line: 346~467)
+- **[METHOD]** `JjapCursorNavigatorGUI.__init__` (Line: 347~396)
   - 🔗 *Calls (호출하는 것)*: `SemanticNavigator, Button, title, Label, insert, geometry, Text, Frame, pack`
-- **[METHOD]** `JjapCursorNavigatorGUI.execute_slicing_pipeline` (Line: 399~449)
+- **[METHOD]** `JjapCursorNavigatorGUI.execute_slicing_pipeline` (Line: 398~448)
   - 🔗 *Calls (호출하는 것)*: `open, rstrip, config, join, insert, delete, write, showerror, startswith, strip, get, extract_multi_slices, append, showwarning`
-- **[METHOD]** `JjapCursorNavigatorGUI.manual_export_file` (Line: 451~468)
+- **[METHOD]** `JjapCursorNavigatorGUI.manual_export_file` (Line: 450~467)
   - 🔗 *Calls (호출하는 것)*: `open, showinfo, write, showerror, str, asksaveasfilename`
 
 #### 🧱 Code Skeleton:

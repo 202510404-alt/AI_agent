@@ -8,10 +8,10 @@
       "parent": null,
       "file": "python_agent_tools/agent_navigator.py",
       "start_line": 11,
-      "end_line": 342,
+      "end_line": 341,
       "range": [
         11,
-        342
+        341
       ],
       "decorators": [],
       "signature": "class SemanticNavigator",
@@ -72,10 +72,10 @@
       "parent": "SemanticNavigator",
       "file": "python_agent_tools/agent_navigator.py",
       "start_line": 30,
-      "end_line": 342,
+      "end_line": 341,
       "range": [
         30,
-        342
+        341
       ],
       "decorators": [],
       "signature": "def extract_multi_slices(...)",
@@ -112,11 +112,11 @@
       "type": "class",
       "parent": null,
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 347,
-      "end_line": 468,
+      "start_line": 346,
+      "end_line": 467,
       "range": [
-        347,
-        468
+        346,
+        467
       ],
       "decorators": [],
       "signature": "class JjapCursorNavigatorGUI",
@@ -130,11 +130,11 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 348,
-      "end_line": 397,
+      "start_line": 347,
+      "end_line": 396,
       "range": [
-        348,
-        397
+        347,
+        396
       ],
       "decorators": [],
       "signature": "def __init__(...)",
@@ -158,11 +158,11 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 399,
-      "end_line": 449,
+      "start_line": 398,
+      "end_line": 448,
       "range": [
-        399,
-        449
+        398,
+        448
       ],
       "decorators": [],
       "signature": "def execute_slicing_pipeline(...)",
@@ -191,11 +191,11 @@
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
       "file": "python_agent_tools/agent_navigator.py",
-      "start_line": 451,
-      "end_line": 468,
+      "start_line": 450,
+      "end_line": 467,
       "range": [
-        451,
-        468
+        450,
+        467
       ],
       "decorators": [],
       "signature": "def manual_export_file(...)",
