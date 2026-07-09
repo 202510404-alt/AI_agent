@@ -23,7 +23,7 @@
   "AdvancedIndexerV2._extract_skeleton": "python_agent_tools/indexer.py:47",
   "AdvancedIndexerV2.parse_protocols_and_registries": "python_agent_tools/indexer.py:65",
   "AdvancedIndexerV2.index_file": "python_agent_tools/indexer.py:100",
-  "AdvancedIndexerV2.scan_project": "python_agent_tools/indexer.py:175",
+  "AdvancedIndexerV2.scan_project": "python_agent_tools/indexer.py:231",
   "load_json": "python_agent_tools/jjap_lookup.py:9",
   "lookup_symbol": "python_agent_tools/jjap_lookup.py:16",
   "show_skeleton": "python_agent_tools/jjap_lookup.py:45",

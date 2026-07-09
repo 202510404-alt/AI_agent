@@ -150,7 +150,7 @@ class SemanticNavigator:
 
                             # ⬅️ [역방향 사냥] 나를 부르는 상위 호출처(used_by) 추적
                             # 단, 내가 직접 정의한 함수(defined_names) 목록에 속할 때만 상위 역추적 가동
-                            if target_name in defined_names:
+                            if (target_name in defined_names) or (s.get("file") == file_rel_path):
                                 ub_list = s.get("used_by", [])
                                 if ub_list:
                                     print(f"         ⬅️ [역방향] 나를 부르는 전역 호출처 목록(used_by): {ub_list}")

@@ -54,8 +54,8 @@
       "signature": "def _load_database(...)",
       "calls": [
         "open",
-        "exists",
-        "load"
+        "load",
+        "exists"
       ],
       "used_by": [
         "python_agent_tools/agent_navigator.py::SemanticNavigator.__init__"
@@ -76,27 +76,27 @@
       ],
       "signature": "def extract_multi_slices(...)",
       "calls": [
-        "len",
-        "split",
-        "strip",
-        "open",
-        "int",
-        "print_exc",
-        "join",
-        "replace",
-        "get",
-        "max",
-        "list",
-        "readlines",
-        "endswith",
-        "any",
-        "repr",
-        "append",
-        "set",
-        "min",
-        "exists",
         "print",
-        "findall"
+        "any",
+        "min",
+        "readlines",
+        "join",
+        "print_exc",
+        "int",
+        "get",
+        "len",
+        "repr",
+        "set",
+        "exists",
+        "endswith",
+        "replace",
+        "strip",
+        "max",
+        "findall",
+        "split",
+        "open",
+        "list",
+        "append"
       ],
       "used_by": [
         "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
@@ -134,15 +134,15 @@
       ],
       "signature": "def __init__(...)",
       "calls": [
+        "SemanticNavigator",
+        "geometry",
+        "Label",
+        "Text",
+        "Button",
         "Frame",
         "insert",
-        "title",
-        "Button",
-        "Label",
-        "SemanticNavigator",
         "pack",
-        "Text",
-        "geometry"
+        "title"
       ],
       "used_by": []
     },
@@ -161,20 +161,20 @@
       ],
       "signature": "def execute_slicing_pipeline(...)",
       "calls": [
-        "insert",
-        "config",
-        "rstrip",
-        "startswith",
-        "strip",
-        "delete",
-        "join",
-        "open",
-        "append",
-        "showerror",
-        "extract_multi_slices",
         "get",
+        "extract_multi_slices",
+        "insert",
+        "open",
         "write",
-        "showwarning"
+        "join",
+        "showerror",
+        "startswith",
+        "showwarning",
+        "strip",
+        "config",
+        "append",
+        "rstrip",
+        "delete"
       ],
       "used_by": []
     },
@@ -193,12 +193,12 @@
       ],
       "signature": "def manual_export_file(...)",
       "calls": [
-        "asksaveasfilename",
-        "showerror",
+        "write",
         "open",
         "showinfo",
-        "str",
-        "write"
+        "asksaveasfilename",
+        "showerror",
+        "str"
       ],
       "used_by": []
     },
@@ -253,18 +253,18 @@
       ],
       "signature": "def read_and_clean_file(...)",
       "calls": [
-        "len",
+        "FileNotFoundError",
         "split",
-        "startswith",
-        "readlines",
-        "strip",
-        "endswith",
-        "join",
-        "open",
-        "append",
-        "enumerate",
         "exists",
-        "FileNotFoundError"
+        "open",
+        "readlines",
+        "join",
+        "endswith",
+        "startswith",
+        "enumerate",
+        "strip",
+        "append",
+        "len"
       ],
       "used_by": [
         "python_agent_tools/context_builder.py::ContextBuilder.assemble_ai_prompt"
@@ -285,10 +285,10 @@
       ],
       "signature": "def assemble_ai_prompt(...)",
       "calls": [
-        "join",
-        "str",
+        "read_and_clean_file",
         "append",
-        "read_and_clean_file"
+        "str",
+        "join"
       ],
       "used_by": []
     },
@@ -307,18 +307,18 @@
       ],
       "signature": "def parse_python_file(...)",
       "calls": [
-        "sorted",
-        "parse",
-        "isinstance",
         "getattr",
-        "list",
-        "remove",
-        "read",
+        "parse",
+        "set",
         "open",
         "extend",
+        "remove",
+        "list",
         "join",
+        "isinstance",
+        "read",
         "append",
-        "set"
+        "sorted"
       ],
       "used_by": [
         "python_agent_tools/create_ai_map.py::main"
@@ -339,14 +339,14 @@
       ],
       "signature": "def collect_target_files(...)",
       "calls": [
-        "sorted",
-        "Path",
-        "any",
-        "append",
-        "replace",
-        "exists",
         "print",
-        "walk"
+        "any",
+        "exists",
+        "replace",
+        "walk",
+        "append",
+        "sorted",
+        "Path"
       ],
       "used_by": [
         "python_agent_tools/create_ai_map.py::main"
@@ -367,17 +367,17 @@
       ],
       "signature": "def load_registry(...)",
       "calls": [
-        "as_posix",
-        "load",
-        "Path",
-        "open",
-        "rpartition",
-        "append",
-        "items",
-        "exists",
-        "get",
         "print",
-        "setdefault"
+        "get",
+        "items",
+        "rpartition",
+        "exists",
+        "open",
+        "setdefault",
+        "as_posix",
+        "append",
+        "load",
+        "Path"
       ],
       "used_by": [
         "python_agent_tools/create_ai_map.py::main"
@@ -398,16 +398,16 @@
       ],
       "signature": "def load_protocols(...)",
       "calls": [
-        "as_posix",
-        "load",
-        "Path",
-        "open",
-        "append",
+        "print",
+        "get",
         "items",
         "exists",
-        "get",
-        "print",
-        "setdefault"
+        "open",
+        "setdefault",
+        "as_posix",
+        "append",
+        "load",
+        "Path"
       ],
       "used_by": [
         "python_agent_tools/create_ai_map.py::main"
@@ -428,27 +428,27 @@
       ],
       "signature": "def main(...)",
       "calls": [
+        "print",
+        "join",
+        "unlink",
+        "parse_python_file",
+        "items",
+        "write",
+        "range",
+        "relative_to",
+        "mkdir",
         "len",
         "load_registry",
-        "open",
-        "items",
-        "unlink",
-        "write",
-        "Path",
-        "mkdir",
-        "join",
-        "parse_python_file",
-        "replace",
-        "endswith",
         "set",
         "exists",
-        "print",
-        "as_posix",
         "load_protocols",
-        "range",
-        "collect_target_files",
+        "endswith",
+        "replace",
+        "as_posix",
+        "open",
         "add",
-        "relative_to"
+        "collect_target_files",
+        "Path"
       ],
       "used_by": [
         "python_agent_tools/create_ai_map.py::generate_ai_optimized_map"
@@ -483,10 +483,10 @@
       "parent": null,
       "file": "python_agent_tools/indexer.py",
       "start_line": 25,
-      "end_line": 310,
+      "end_line": 295,
       "range": [
         25,
-        310
+        295
       ],
       "signature": "class AdvancedIndexerV2:",
       "calls": [],
@@ -526,9 +526,9 @@
       ],
       "signature": "def _get_sha256(...)",
       "calls": [
-        "hexdigest",
+        "sha256",
         "encode",
-        "sha256"
+        "hexdigest"
       ],
       "used_by": [
         "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -549,10 +549,10 @@
       ],
       "signature": "def _extract_skeleton(...)",
       "calls": [
-        "join",
-        "append",
         "parse",
-        "isinstance"
+        "isinstance",
+        "append",
+        "join"
       ],
       "used_by": [
         "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
@@ -574,8 +574,8 @@
       "signature": "def parse_protocols_and_registries(...)",
       "calls": [
         "parse",
-        "lower",
         "isinstance",
+        "lower",
         "type"
       ],
       "used_by": [
@@ -590,38 +590,32 @@
       "parent": "AdvancedIndexerV2",
       "file": "python_agent_tools/indexer.py",
       "start_line": 100,
-      "end_line": 229,
+      "end_line": 214,
       "range": [
         100,
-        229
+        214
       ],
       "signature": "def index_file(...)",
       "calls": [
-        "parse",
-        "isinstance",
-        "len",
-        "open",
-        "items",
-        "type",
-        "keys",
-        "int",
-        "read",
-        "load",
-        "_get_sha256",
-        "list",
-        "upper",
-        "append",
-        "set",
         "print",
-        "walk",
+        "_get_sha256",
+        "int",
         "parse_protocols_and_registries",
-        "as_posix",
         "stat",
-        "getattr",
+        "isinstance",
         "relative_to",
         "str",
-        "lower",
-        "_extract_skeleton"
+        "parse",
+        "set",
+        "read",
+        "as_posix",
+        "getattr",
+        "upper",
+        "open",
+        "list",
+        "_extract_skeleton",
+        "walk",
+        "append"
       ],
       "used_by": [
         "python_agent_tools/indexer.py::AdvancedIndexerV2.scan_project"
@@ -634,30 +628,30 @@
       "type": "method",
       "parent": "AdvancedIndexerV2",
       "file": "python_agent_tools/indexer.py",
-      "start_line": 231,
-      "end_line": 310,
+      "start_line": 216,
+      "end_line": 295,
       "range": [
-        231,
-        310
+        216,
+        295
       ],
       "signature": "def scan_project(...)",
       "calls": [
-        "sorted",
-        "as_posix",
-        "Path",
-        "list",
         "makedirs",
-        "dump",
-        "open",
-        "any",
-        "append",
-        "set",
-        "replace",
-        "exists",
-        "get",
         "print",
+        "get",
+        "any",
+        "set",
+        "exists",
+        "open",
+        "dump",
+        "list",
+        "replace",
+        "as_posix",
+        "walk",
+        "append",
+        "sorted",
         "index_file",
-        "walk"
+        "Path"
       ],
       "used_by": [
         "python_agent_tools/jjap_watcher.py::run_pipeline"
@@ -678,11 +672,11 @@
       ],
       "signature": "def load_json(...)",
       "calls": [
-        "load",
-        "exit",
-        "open",
+        "print",
         "exists",
-        "print"
+        "open",
+        "load",
+        "exit"
       ],
       "used_by": [
         "python_agent_tools/jjap_lookup.py::lookup_symbol",
@@ -704,12 +698,12 @@
       ],
       "signature": "def lookup_symbol(...)",
       "calls": [
-        "len",
-        "upper",
-        "print",
         "get",
+        "print",
+        "upper",
         "load_json",
-        "lower"
+        "lower",
+        "len"
       ],
       "used_by": []
     },
@@ -730,8 +724,8 @@
       "calls": [
         "keys",
         "get",
-        "load_json",
-        "print"
+        "print",
+        "load_json"
       ],
       "used_by": []
     },
@@ -788,12 +782,12 @@
       ],
       "signature": "def _load_symbols(...)",
       "calls": [
-        "load",
-        "len",
-        "open",
-        "exists",
+        "print",
         "get",
-        "print"
+        "exists",
+        "open",
+        "load",
+        "len"
       ],
       "used_by": [
         "python_agent_tools/jjap_retriever.py::JjapRetriever.__init__"
@@ -814,23 +808,23 @@
       ],
       "signature": "def retrieve_symbol(...)",
       "calls": [
-        "rstrip",
-        "len",
-        "next",
-        "startswith",
-        "_safe_truncate",
-        "readlines",
-        "strip",
-        "open",
-        "extend",
-        "join",
-        "append",
-        "_find_best_match",
-        "min",
-        "exists",
         "get",
         "print",
-        "max"
+        "_find_best_match",
+        "_safe_truncate",
+        "exists",
+        "open",
+        "rstrip",
+        "extend",
+        "min",
+        "readlines",
+        "join",
+        "startswith",
+        "len",
+        "strip",
+        "append",
+        "max",
+        "next"
       ],
       "used_by": [
         "python_agent_tools/jjap_retriever.py::main"
@@ -874,11 +868,11 @@
       ],
       "signature": "def _safe_truncate(...)",
       "calls": [
-        "len",
-        "join",
-        "append",
         "print",
-        "splitlines"
+        "join",
+        "splitlines",
+        "append",
+        "len"
       ],
       "used_by": [
         "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
@@ -899,11 +893,11 @@
       ],
       "signature": "def main(...)",
       "calls": [
-        "len",
-        "JjapRetriever",
         "print",
+        "cwd",
         "retrieve_symbol",
-        "cwd"
+        "JjapRetriever",
+        "len"
       ],
       "used_by": [
         "python_agent_tools/create_ai_map.py::generate_ai_optimized_map"
@@ -925,10 +919,10 @@
       "signature": "def import_file_directly(...)",
       "calls": [
         "ImportError",
+        "spec_from_file_location",
         "module_from_spec",
         "exec_module",
-        "str",
-        "spec_from_file_location"
+        "str"
       ],
       "used_by": [
         "python_agent_tools/jjap_watcher.py::run_pipeline"
@@ -949,14 +943,14 @@
       ],
       "signature": "def run_pipeline(...)",
       "calls": [
-        "generate_ai_optimized_map",
-        "update_map",
-        "import_file_directly",
-        "scan_project",
-        "print_exc",
         "AdvancedIndexerV2",
+        "print",
         "get",
-        "print"
+        "update_map",
+        "scan_project",
+        "generate_ai_optimized_map",
+        "print_exc",
+        "import_file_directly"
       ],
       "used_by": [
         "python_agent_tools/jjap_watcher.py::CodeChangeHandler.dispatch",
@@ -1014,12 +1008,12 @@
       ],
       "signature": "def dispatch(...)",
       "calls": [
-        "as_posix",
-        "Path",
-        "time",
+        "print",
         "any",
         "run_pipeline",
-        "print"
+        "as_posix",
+        "time",
+        "Path"
       ],
       "used_by": []
     },
@@ -1038,16 +1032,16 @@
       ],
       "signature": "def main(...)",
       "calls": [
-        "CodeChangeHandler",
-        "schedule",
-        "join",
-        "start",
-        "str",
-        "run_pipeline",
         "print",
-        "Observer",
         "stop",
-        "sleep"
+        "CodeChangeHandler",
+        "Observer",
+        "join",
+        "sleep",
+        "run_pipeline",
+        "start",
+        "schedule",
+        "str"
       ],
       "used_by": [
         "python_agent_tools/create_ai_map.py::generate_ai_optimized_map"
@@ -1068,22 +1062,22 @@
       ],
       "signature": "def update_map(...)",
       "calls": [
-        "sorted",
-        "Path",
-        "load",
-        "len",
-        "upper",
-        "strip",
-        "open",
-        "any",
-        "join",
-        "append",
-        "items",
-        "keys",
-        "exists",
-        "get",
         "print",
-        "write"
+        "get",
+        "items",
+        "any",
+        "exists",
+        "upper",
+        "open",
+        "write",
+        "join",
+        "keys",
+        "len",
+        "strip",
+        "append",
+        "load",
+        "sorted",
+        "Path"
       ],
       "used_by": [
         "python_agent_tools/jjap_watcher.py::run_pipeline"

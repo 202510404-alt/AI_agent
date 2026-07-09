@@ -108,60 +108,116 @@ class AdvancedIndexerV2:
             file_hash = self._get_sha256(content)
 
             # 💡 [형님 맞춤형 분기] 파이썬 파일일 때만 내부 클래스/함수 정밀 분석
-            # 💡 [형님 맞춤형 분기] 파이썬 파일일 때만 내부 클래스/함수 정밀 분석
             if file_path.suffix == ".py":
                 skeleton = self._extract_skeleton(content)
                 self.parse_protocols_and_registries(content, rel_path_str)
                 
                 # 심볼 맵 구성 로직 및 양방향 추적용 symbols 장부 적재
-                # 💡 tools/python_agent_tools/indexer.py 내부의 ast.parse 순회 구역 교정
                 try:
                     tree = ast.parse(content)
                     for node in tree.body:
                         if isinstance(node, ast.ClassDef):
                             self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
                             
-                            # ➡️ [중요] "type": "class" 규격을 칼같이 주입합니다.
+                            # 🟢 1. 클래스 심볼 등록 (Full Schema 규격 동기화)
+                            class_id = f"{rel_path_str}::{node.name}"
                             self.symbols.append({
+                                "symbol_id": class_id,
+                                "full_name": node.name,
                                 "name": node.name,
-                                "type": "class", # 👈 🚨 여기에 타잎을 명시해야 워처가 안 죽습니다!
+                                "type": "class",
+                                "parent": None,
                                 "file": rel_path_str,
                                 "start_line": node.lineno,
                                 "end_line": getattr(node, "end_lineno", node.lineno),
+                                "range": [node.lineno, getattr(node, "end_lineno", node.lineno)],
+                                "signature": f"class {node.name}:",
+                                "calls": [],
                                 "used_by": []
                             })
                             
                             for sub in node.body:
                                 if isinstance(sub, ast.FunctionDef):
                                     self.definition_map[f"{node.name}.{sub.name}"] = f"{rel_path_str}:{sub.lineno}"
+                                    sub_end_lineno = getattr(sub, "end_lineno", sub.lineno)
                                     
-                                    # ➡️ [중요] 클래스 내부 메서드도 함수 규격 주입
+                                    # 🎯 [Calls 정밀 사냥 엔진 - 클래스 내부 메서드용]
+                                    calls = []
+                                    for child in ast.walk(sub):
+                                        if isinstance(child, ast.Call):
+                                            if isinstance(child.func, ast.Name):
+                                                calls.append(child.func.id)
+                                            elif isinstance(child.func, ast.Attribute):
+                                                calls.append(child.func.attr)
+                                    
+                                    method_id = f"{rel_path_str}::{node.name}.{sub.name}"
+                                    
+                                    # 🟢 2. 클래스 내부 메서드 심볼 등록
                                     self.symbols.append({
+                                        "symbol_id": method_id,
+                                        "full_name": f"{node.name}.{sub.name}",
                                         "name": sub.name,
-                                        "type": "function", # 👈 🚨 타잎 주입!
+                                        "type": "method",
+                                        "parent": node.name,
                                         "file": rel_path_str,
                                         "start_line": sub.lineno,
-                                        "end_line": getattr(sub, "end_lineno", sub.lineno),
+                                        "end_line": sub_end_lineno,
+                                        "range": [sub.lineno, sub_end_lineno],
+                                        "signature": f"def {sub.name}(...)",
+                                        "calls": list(set(calls)),
                                         "used_by": []
                                     })
                                     
                         elif isinstance(node, ast.FunctionDef):
                             self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
+                            sub_end_lineno = getattr(node, "end_lineno", node.lineno)
                             
-                            # ➡️ [중요] 일반 전역 함수 규격 주입
+                            # 🎯 [Calls 정밀 사냥 엔진 - 일반 전역 함수용 복구 완료!]
+                            calls = []
+                            for child in ast.walk(node):
+                                if isinstance(child, ast.Call):
+                                    if isinstance(child.func, ast.Name):
+                                        calls.append(child.func.id)
+                                    elif isinstance(child.func, ast.Attribute):
+                                        calls.append(child.func.attr)
+                                        
+                            func_id = f"{rel_path_str}::{node.name}"
+                            
+                            # 🟢 3. 일반 전역 함수 심볼 등록 (Full Schema 규격 동기화)
                             self.symbols.append({
+                                "symbol_id": func_id,
+                                "full_name": node.name,
                                 "name": node.name,
-                                "type": "function", # 👈 🚨 타잎 주입!
+                                "type": "function",
+                                "parent": None,
                                 "file": rel_path_str,
                                 "start_line": node.lineno,
-                                "end_line": getattr(node, "end_lineno", node.lineno),
+                                "end_line": sub_end_lineno,
+                                "range": [node.lineno, sub_end_lineno],
+                                "signature": f"def {node.name}(...)",
+                                "calls": list(set(calls)),
                                 "used_by": []
                             })
                 except Exception:
                     pass
             else:
-                # 💡 [형님 맞춤형 분기] 비-파이썬 파일은 문법 에러를 내지 않고 안전하게 경로와 기본 정보만 보존!
-                skeleton = f"Non-Python File ({file_path.suffix.upper()})"
+                # 💡 [JSON 정밀 프리뷰 분기 추가] 복잡한 분석 없이 AI에게 힌트만 제공!
+                if file_path.suffix.lower() == ".json":
+                    try:
+                        # JSON을 살짝 읽어서 최상위 구조만 요약본(Skeleton)으로 채택
+                        with open(file_path, "r", encoding="utf-8", errors="ignore") as jf:
+                            js_data = json.load(jf)
+                        if isinstance(js_data, dict):
+                            # 딕셔너리면 상위 키(Key)들과 내부 타입 힌트만 보기 좋게 축약
+                            keys_summary = {k: list(v.keys()) if isinstance(v, dict) else type(v).__name__ for k, v in js_data.items()}
+                            skeleton = f"JSON Structural Preview: {str(keys_summary)}"
+                        else:
+                            skeleton = f"JSON Array Data (Length: {len(js_data)})"
+                    except Exception:
+                        skeleton = "JSON File (Corrupted or Empty)"
+                else:
+                    # JSON이 아닌 다른 텍스트/마크다운 파일들은 기존처럼 안전하게 패스
+                    skeleton = f"Non-Python File ({file_path.suffix.upper()})"
 
             # 장부에 안전하게 세이브
             self.files_context[rel_path_str] = {
@@ -217,12 +273,24 @@ class AdvancedIndexerV2:
                 # 🎯 안전하게 수집 엔진으로 입고
                 self.index_file(file_path)
 
-        for s in self.symbols:
-            name_to_check = s["name"]
-            for target in self.symbols:
-                if name_to_check in target.get("calls", []) and s["symbol_id"] != target["symbol_id"]:
-                    s["used_by"].append(target["symbol_id"])
-            s["used_by"] = sorted(list(set(s["used_by"])))
+                # ⭕ 안전핀만 채운 교체 코드 (기존 기능 유지, 에러만 차단)
+                for s in self.symbols:
+                    name_to_check = s.get("name")
+                    s_id = s.get("symbol_id", "")  # 클래스 등 symbol_id가 없는 경우 방어
+                    
+                    if not name_to_check:
+                        continue
+                        
+                    for target in self.symbols:
+                        target_calls = target.get("calls", [])
+                        target_id = target.get("symbol_id", "")
+                        
+                        # 안전하게 키가 존재할 때만 대조하여 종속성 연결
+                        if name_to_check in target_calls and s_id and target_id and s_id != target_id:
+                            if target_id not in s["used_by"]:
+                                s["used_by"].append(target_id)
+                                
+                    s["used_by"] = sorted(list(set(s["used_by"])))
 
         # 🛠️ [격리 개조 포인트 2] 진짜 최상위 PROJECT_ROOT 기준으로 타깃 경로 절대 고정
         TARGET_MEMORY_DIR = PROJECT_ROOT / "system_memory"
