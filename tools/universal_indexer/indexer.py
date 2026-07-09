@@ -3,6 +3,7 @@ import ast
 import json
 import hashlib
 import os
+import importlib.util
 from pathlib import Path
 from typing import Dict, Any, List
 
@@ -29,19 +30,81 @@ class AdvancedIndexerV2:
     
     🛠️ 형님의 무제한 범용성 계약 조건 완벽 반영:
       - 특정 폴더 제한 완전 철폐! 설정에 따라 프로젝트 전체 혹은 src/ 내부를 자동 스캔합니다.
-      - 파일 내부에 'Variables'나 'vars'가 들어간 클래스가 있으면 데이터 프로토콜 장부로 자동 분류.
-      - 그 외에 일반적인 엔티티, 플랫폼, 카메라 등의 모든 핵심 클래스는 레지스트리 상수로 100% 자동 징집.
+      - core_parsers 폴더의 파서들을 동적 로드하여 다국어/다양한 포맷을 확장 흡수합니다.
     """
+
     def __init__(self, project_root: Path):
+        """⚙️ 클래스 내부로 올바르게 편입된 생성자 마스터 엔진"""
         self.project_root = project_root
         self.symbols: List[Dict[str, Any]] = []
         self.files_context: Dict[str, Any] = {}
         self.definition_map: Dict[str, str] = {}
-        
-        # 🎯 [보조 지식 장부 변수]
         self.data_protocols: Dict[str, Any] = {}
-        self.registry_constants: Dict[str, str] = {}
+        self.registry_constants: List[str] = []
+        
+        # 🧠 [형님의 확장자 자동화 장부 계좌 개설]
+        self.parsers = {}
+        
+        # 🚀 인덱서 기동과 동시에 core_parsers 레이더 가동!
+        self._auto_load_parsers()
 
+    def _auto_load_parsers(self):
+        """
+        📡 [Auto-Discovery Engine]
+        core_parsers 폴더 내부의 파일을 자동 스캔하여 형님과의 단일 마스터 함수 계약을 검증합니다.
+        성공/실패 사유를 터미널에 실시간으로 자백합니다.
+        """
+        parsers_dir = Path(__file__).parent / "core_parsers"
+        
+        print("\n" + "="*70)
+        print("⚡ [Jjap-Compiler] core_parsers 플러그인 자동 징집 레이더 가동...")
+        print(f"📂 탐색 기지 경로: {parsers_dir}")
+        print("="*70)
+
+        if not parsers_dir.exists():
+            print("ℹ️ [엔진 안내] core_parsers 폴더가 존재하지 않아 동적 로드를 스킵합니다.")
+            print("="*70 + "\n")
+            return
+
+        for parser_file in parsers_dir.glob("*_parser.py"):
+            if parser_file.name == "__init__.py":
+                continue
+                
+            file_name = parser_file.name
+            
+            try:
+                parts = file_name.split('_')
+                if len(parts) < 2:
+                    print(f"❌ [불러오기 실패] 파일명 규격 미달: '{file_name}' (형식은 '[확장자]_parser.py' 여야 합니다.)")
+                    continue
+                    
+                ext = f".{parts[0]}".lower()
+                
+                # 실시간 물리 스크립트 로드
+                spec = importlib.util.spec_from_file_location(parser_file.stem, parser_file)
+                if spec is None or spec.loader is None:
+                    print(f"❌ [불러오기 실패] Spec 추출 불가: '{file_name}'")
+                    continue
+                    
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                
+                # 🤝 단일 마스터 함수 계약 검증
+                if hasattr(module, "extract_symbols"):
+                    self.parsers[ext] = module.extract_symbols
+                    print(f"✅ [임포트 성공 / 형식 통과] 확장자 [{ext}] 처리 엔진 탑재 완료!")
+                    print(f"    └─ 파일: {file_name}")
+                else:
+                    print(f"⚠️ [임포트 성공 / 계약 위반 탈락] 파일 로드는 성공했으나 규격 미달!")
+                    print(f"    └─ 파일: {file_name}")
+                    print(f"    └─ 탈락 사유: 내부에 'extract_symbols' 함수가 존재하지 않습니다.")
+                    
+            except Exception as e:
+                print(f"❌ [불러오기 실패] '{file_name}' 컴파일/실행 단계에서 예외 크래시 발생!")
+                print(f"    └─ 치명적 에러 내용: {e}")
+                
+        print("="*70 + "\n")
+        
     def _get_sha256(self, content: str) -> str:
         return hashlib.sha256(content.encode('utf-8')).hexdigest()
 
@@ -99,135 +162,38 @@ class AdvancedIndexerV2:
             pass
 
     def index_file(self, file_path: Path):
-        # 마스터 루트 기준의 올바른 상대 경로 추출
-        rel_path_str = file_path.relative_to(self.project_root).as_posix()
+        """
+        ⚡ [Jjap-Compiler Core Router]
+        더 이상 if/elif로 확장자를 구걸하지 않습니다. 
+        core_parsers에서 동적 임포트된 플러그인 장부를 기반으로 무제한 자동 라우팅을 수행합니다.
+        """
+        ext = file_path.suffix.lower()
         
-        try:
-            mtime = int(file_path.stat().st_mtime)
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                content = f.read()
-            file_hash = self._get_sha256(content)
-
-            # 💡 [형님 맞춤형 분기] 파이썬 파일일 때만 내부 클래스/함수 정밀 분석
-            if file_path.suffix == ".py":
-                skeleton = self._extract_skeleton(content)
-                self.parse_protocols_and_registries(content, rel_path_str)
+        # 🎯 1. 레이더 장부(self.parsers)에 현재 파일의 확장자가 등록되어 있는지 핀포인트 체크!
+        if ext in self.parsers:
+            # 장부에서 함수 오브젝트 자체를 낚아챕니다. (예: py_parser의 extract_symbols)
+            extract_func = self.parsers[ext]
+            
+            try:
+                # 🤝 약속된 마스터 단일 계약 조건에 따라 5대 장부를 통째로 징집합니다.
+                symbols, file_ctx, def_map, protocols, registries = extract_func(file_path, self.project_root)
                 
-                # 심볼 맵 구성 로직 및 양방향 추적용 symbols 장부 적재
-                try:
-                    tree = ast.parse(content)
-                    for node in tree.body:
-                        if isinstance(node, ast.ClassDef):
-                            self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
-                            
-                            # 🟢 1. 클래스 심볼 등록 (Full Schema 규격 동기화)
-                            class_id = f"{rel_path_str}::{node.name}"
-                            self.symbols.append({
-                                "symbol_id": class_id,
-                                "full_name": node.name,
-                                "name": node.name,
-                                "type": "class",
-                                "parent": None,
-                                "file": rel_path_str,
-                                "start_line": node.lineno,
-                                "end_line": getattr(node, "end_lineno", node.lineno),
-                                "range": [node.lineno, getattr(node, "end_lineno", node.lineno)],
-                                "signature": f"class {node.name}:",
-                                "calls": [],
-                                "used_by": []
-                            })
-                            
-                            for sub in node.body:
-                                if isinstance(sub, ast.FunctionDef):
-                                    self.definition_map[f"{node.name}.{sub.name}"] = f"{rel_path_str}:{sub.lineno}"
-                                    sub_end_lineno = getattr(sub, "end_lineno", sub.lineno)
-                                    
-                                    # 🎯 [Calls 정밀 사냥 엔진 - 클래스 내부 메서드용]
-                                    calls = []
-                                    for child in ast.walk(sub):
-                                        if isinstance(child, ast.Call):
-                                            if isinstance(child.func, ast.Name):
-                                                calls.append(child.func.id)
-                                            elif isinstance(child.func, ast.Attribute):
-                                                calls.append(child.func.attr)
-                                    
-                                    method_id = f"{rel_path_str}::{node.name}.{sub.name}"
-                                    
-                                    # 🟢 2. 클래스 내부 메서드 심볼 등록
-                                    self.symbols.append({
-                                        "symbol_id": method_id,
-                                        "full_name": f"{node.name}.{sub.name}",
-                                        "name": sub.name,
-                                        "type": "method",
-                                        "parent": node.name,
-                                        "file": rel_path_str,
-                                        "start_line": sub.lineno,
-                                        "end_line": sub_end_lineno,
-                                        "range": [sub.lineno, sub_end_lineno],
-                                        "signature": f"def {sub.name}(...)",
-                                        "calls": list(set(calls)),
-                                        "used_by": []
-                                    })
-                                    
-                        elif isinstance(node, ast.FunctionDef):
-                            self.definition_map[node.name] = f"{rel_path_str}:{node.lineno}"
-                            sub_end_lineno = getattr(node, "end_lineno", node.lineno)
-                            
-                            # 🎯 [Calls 정밀 사냥 엔진 - 일반 전역 함수용 복구 완료!]
-                            calls = []
-                            for child in ast.walk(node):
-                                if isinstance(child, ast.Call):
-                                    if isinstance(child.func, ast.Name):
-                                        calls.append(child.func.id)
-                                    elif isinstance(child.func, ast.Attribute):
-                                        calls.append(child.func.attr)
-                                        
-                            func_id = f"{rel_path_str}::{node.name}"
-                            
-                            # 🟢 3. 일반 전역 함수 심볼 등록 (Full Schema 규격 동기화)
-                            self.symbols.append({
-                                "symbol_id": func_id,
-                                "full_name": node.name,
-                                "name": node.name,
-                                "type": "function",
-                                "parent": None,
-                                "file": rel_path_str,
-                                "start_line": node.lineno,
-                                "end_line": sub_end_lineno,
-                                "range": [node.lineno, sub_end_lineno],
-                                "signature": f"def {node.name}(...)",
-                                "calls": list(set(calls)),
-                                "used_by": []
-                            })
-                except Exception:
-                    pass
-            else:
-                # 💡 [JSON 정밀 프리뷰 분기 추가] 복잡한 분석 없이 AI에게 힌트만 제공!
-                if file_path.suffix.lower() == ".json":
-                    try:
-                        # JSON을 살짝 읽어서 최상위 구조만 요약본(Skeleton)으로 채택
-                        with open(file_path, "r", encoding="utf-8", errors="ignore") as jf:
-                            js_data = json.load(jf)
-                        if isinstance(js_data, dict):
-                            # 딕셔너리면 상위 키(Key)들과 내부 타입 힌트만 보기 좋게 축약
-                            keys_summary = {k: list(v.keys()) if isinstance(v, dict) else type(v).__name__ for k, v in js_data.items()}
-                            skeleton = f"JSON Structural Preview: {str(keys_summary)}"
-                        else:
-                            skeleton = f"JSON Array Data (Length: {len(js_data)})"
-                    except Exception:
-                        skeleton = "JSON File (Corrupted or Empty)"
-                else:
-                    # JSON이 아닌 다른 텍스트/마크다운 파일들은 기존처럼 안전하게 패스
-                    skeleton = f"Non-Python File ({file_path.suffix.upper()})"
-
-            # 장부에 안전하게 세이브
-            self.files_context[rel_path_str] = {
-                "hash": file_hash,
-                "mtime": mtime,
-                "skeleton": skeleton
-            }
-        except Exception as e:
-            print(f"⚠️ [파일 수집 예외 패스] {rel_path_str}: {str(e)}")
+                # 💾 징집된 파서의 데이터를 메인 인덱서 통합 저장소에 실시간 누적 병합(Merge)
+                self.symbols.extend(symbols)
+                self.files_context.update(file_ctx)
+                self.definition_map.update(def_map)
+                self.data_protocols.update(protocols)
+                
+                # 중복 방지를 고려한 레지스트리 상수 등록
+                for reg in registries:
+                    if reg not in self.registry_constants:
+                        self.registry_constants.append(reg)
+                        
+            except Exception as e:
+                print(f"❌ [라우터 치명적 에러] {file_path.name} 파싱 중 외부 파서 플러그인 크래시 발생: {e}")
+        else:
+            # ℹ️ 지원하지 않는 확장자나 빈 파일은 가볍게 패스해 주는 방어선
+            pass
 
     def scan_project(self):
         if SCAN_MODE == "ROOT":

@@ -131,38 +131,113 @@ def collect_target_files():
 
 
 def load_registry():
-    """registered_entities: {"ClassName": "rel/path.py::ClassName"} 포맷을 file -> [class,...] 로 역매핑"""
-    path_to_registry = {}
-    if REGISTRY_JSON_PATH.exists():
-        try:
-            with open(REGISTRY_JSON_PATH, "r", encoding="utf-8") as f:
-                reg_data = json.load(f).get("registered_entities", {})
-            for class_name, loc_str in reg_data.items():
-                if "::" in loc_str:
-                    file_part, _, _cname = loc_str.rpartition("::")
-                    posix_path = Path(file_part).as_posix()
-                    path_to_registry.setdefault(posix_path, []).append(class_name)
-        except Exception as e:
-            print(f"⚠️ 레지스트리 로드 실패: {e}")
-    return path_to_registry
+    """
+    🔑 [Universal Registry Loader]
+    신형 인덱서가 내뱉는 어떠한 형태의 데이터 구조도 유연하게 수용합니다.
+    자바스크립트, C# 등 미래의 노동자 파서가 합류하여 형식이 변해도 절대 크래시가 나지 않습니다.
+    """
+    if not REGISTRY_JSON_PATH.exists():
+        return set()
+    try:
+        with open(REGISTRY_JSON_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+            # Case A: {"registered_entities": [...]} 로 감싸진 완벽한 신형 포맷
+            if isinstance(data, dict) and "registered_entities" in data:
+                entities = data["registered_entities"]
+                if isinstance(entities, list):
+                    return set(entities)
+                elif isinstance(entities, dict):
+                    return set(entities.keys())
+
+            # Case B: 파일 경로별 딕셔너리 구조 { "path": [...] } 로 유입될 경우 호환
+            if isinstance(data, dict):
+                extracted = set()
+                for k, v in data.items():
+                    if isinstance(v, list):
+                        for item in v: extracted.add(str(item))
+                    else:
+                        extracted.add(str(k))
+                return extracted
+
+            # Case C: 단순 순정 리스트 구조로 유입될 경우
+            if isinstance(data, list):
+                return set(str(x) for x in data)
+
+            return set()
+    except Exception as e:
+        print(f"⚠️ [맵메이커 방어선] 레지스트리 로드 실패 우회: {e}")
+        return set()
 
 
 def load_protocols():
-    """protocols: {"ClassName": {"defined_in": path, "fields": {...}}} 포맷을 file -> [(proto_name, fields), ...] 로 역매핑"""
+    """
+    📊 [Universal Protocol Loader]
+    신형 인덱서의 {"protocols": {...}} 마스터 구조를 안전하게 분해 및 흡수합니다.
+    """
+    if not PROTOCOL_JSON_PATH.exists():
+        return {}
+    try:
+        with open(PROTOCOL_JSON_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            
+            # Case A: {"protocols": {...}} 신형 포맷 대응
+            if isinstance(data, dict) and "protocols" in data:
+                return data["protocols"]
+                
+            # Case B: 평평한 순정 딕셔너리 구조
+            if isinstance(data, dict):
+                return data
+                
+            return {}
+    except Exception as e:
+        print(f"⚠️ [맵메이커 방어선] 프로토콜 로드 실패 우회: {e}")
+        return {}
+
+
+def parse_protocols_and_registries():
+    """
+    🧠 [Dynamic Map Matcher]
+    장부에서 수집된 레지스트리와 프로토콜 데이터를 기반으로 
+    소스코드 맵에 이정표(🔑, 📊)를 꽂아주기 위한 매칭 딕셔너리를 유연하게 생성합니다.
+    """
+    path_to_registry = {}
     path_to_protocol = {}
-    if PROTOCOL_JSON_PATH.exists():
+
+    # 유연하게 진화한 로더를 통해 데이터를 정제된 형태로 징집
+    registry_set = load_registry()
+    protocols_dict = load_protocols()
+
+    # 인덱서가 가공해 둔 컨텍스트 장부(.jjap_context.json)를 참조하여 파일별 매칭 링크를 완성합니다.
+    context_path = PROJECT_ROOT / "system_memory" / ".jjap_context.json"
+    if context_path.exists():
         try:
-            with open(PROTOCOL_JSON_PATH, "r", encoding="utf-8") as f:
-                proto_data = json.load(f).get("protocols", {})
-            for proto_name, info in proto_data.items():
-                file_rel = info.get("defined_in")
-                fields = info.get("fields", {})
-                if file_rel:
-                    posix_path = Path(file_rel).as_posix()
-                    path_to_protocol.setdefault(posix_path, []).append((proto_name, fields))
+            with open(context_path, "r", encoding="utf-8") as f:
+                ctx_data = json.load(f)
+                files_info = ctx_data.get("files", {})
+                
+                for rel_path, f_meta in files_info.items():
+                    # 해당 파일에 포함된 클래스 목록 추적
+                    classes_in_file = f_meta.get("classes", [])
+                    
+                    # 1. 레지스트리 매칭
+                    for cls in classes_in_file:
+                        if cls in registry_set:
+                            if rel_path not in path_to_registry:
+                                path_to_registry[rel_path] = []
+                            if cls not in path_to_registry[rel_path]:
+                                path_to_registry[rel_path].append(cls)
+                                
+                    # 2. 프로토콜 매칭
+                    for cls in classes_in_file:
+                        if cls in protocols_dict:
+                            if rel_path not in path_to_protocol:
+                                path_to_protocol[rel_path] = []
+                            path_to_protocol[rel_path].append((cls, protocols_dict[cls]))
         except Exception as e:
-            print(f"⚠️ 프로토콜 로드 실패: {e}")
-    return path_to_protocol
+            print(f"⚠️ [맵메이커 방어선] 컨텍스트 연동 중 오류 발생: {e}")
+
+    return path_to_registry, path_to_protocol
 
 
 def main():
