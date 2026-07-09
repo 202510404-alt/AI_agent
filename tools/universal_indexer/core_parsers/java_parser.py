@@ -104,7 +104,7 @@ def extract_symbols(file_path: Path, project_root: Path):
             class_start_idx = idx
             end_line = _find_matching_curly_brace(lines, idx)
             
-            symbols_info_strings.append(f"🧬 class {c_name} [L{line_num}-{end_line}]")
+            symbols_info_strings.append(f"🧬 class {c_name}")
             skeleton_segments.append(f"class {c_name} {{ // L{line_num}-{end_line}")
             
             symbols.append({
@@ -116,16 +116,27 @@ def extract_symbols(file_path: Path, project_root: Path):
             definition_map[c_name] = f"{rel_path_str}:{line_num}"
             continue
 
-        # B. 메서드 탐지 (메서드는 소괄호와 중괄호 진입점이 매칭되어야 함)
+# B. 메서드 탐지 및 인자(파라미터) 정밀 추출로 변경
         method_match = method_patt.search(line)
         if method_match and ("(" in line_stripped and "import " not in line_stripped):
             m_name = method_match.group(1)
             
-            # 자바 기본 키워드 오감지 방어
             if m_name in ["if", "for", "while", "switch", "catch", "return"]:
                 continue
                 
+            # 💡 [추가] 메서드 선언 전체 라인에서 괄호 ( ) 내부의 인자 정보만 파싱
+            param_match = re.search(r'\((.*?)\)', line_stripped)
+            params_str = ""
+            if param_match:
+                # 예: "String player, int score" -> "String, int" 형태로 타입만 콤팩트하게 정렬
+                raw_params = param_match.group(1).strip()
+                if raw_params:
+                    # 공백 기준으로 나눠서 변수명은 버리고 타입명만 수집
+                    param_types = [p.strip().split()[0] for p in raw_params.split(",") if p.strip()]
+                    params_str = ", ".join(param_types)
+
             end_line = _find_matching_curly_brace(lines, idx)
+            
             
             # 메서드 바디 본문 추출 (내부 호출 함수 파싱용)
             body_lines = lines[idx:end_line]
