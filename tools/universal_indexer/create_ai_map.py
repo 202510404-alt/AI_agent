@@ -100,6 +100,11 @@ def parse_python_file(file_path: Path):
 
 def collect_target_files():
     """[수정] .py 제한을 해제하고, 제외 키워드가 없는 프로젝트 내의 '모든 파일'을 수집합니다."""
+    print("=" * 80)
+    print("[DEBUG] collect_target_files() 시작")
+    print(f"[DEBUG] PROJECT_ROOT = {PROJECT_ROOT}")
+    print(f"[DEBUG] SCAN_MODE    = {SCAN_MODE}")
+    print("=" * 80)
     if SCAN_MODE == "ROOT":
         scan_target = PROJECT_ROOT
         print("🎯 [create_ai_map] Mode: ROOT (프로젝트 전체 경로를 직접 스캔합니다)")
@@ -111,21 +116,45 @@ def collect_target_files():
         print(f"❌ [오류] 스캔 대상 경로가 존재하지 않습니다: {scan_target}")
         return []
 
+    print(f"[DEBUG] SCAN_TARGET  = {scan_target}")
+
     target_files = []
     for root, dirs, files in os.walk(scan_target, followlinks=True):
         normalized_root = root.replace("\\", "/")
 
+        print("\n------------------------------------------------------")
+        print(f"[DEBUG] WALK ROOT : {root}")
+        print(f"[DEBUG] DIR COUNT : {len(dirs)}")
+        print(f"[DEBUG] FILE COUNT: {len(files)}")
+
         if "src/project_root/src" in normalized_root:
+            print(f"[SKIP] duplicated path : {normalized_root}")
             continue
         if any(kw in normalized_root for kw in EXCLUDE_KEYWORDS):
+            print(f"[SKIP] excluded keyword : {normalized_root}")
             continue
+
+        print("[DIRS]")
+        for d in dirs:
+            print("   ", d)
+
+        print("[FILES]")
+        for file in files:
+            print("   ", file)
 
         for file in files:
             if file == "start.py" and SCAN_MODE == "SRC":
                 continue
             
             # 💡 [교정] 특정 확장자 차단 해제 -> 모든 파일을 수집 대상으로 포함
-            target_files.append(Path(root) / file)
+            full_path = Path(root) / file
+            print(f"[ADD] {full_path}")
+            target_files.append(full_path)
+
+    print("=" * 80)
+    print("[DEBUG] collect_target_files END")
+    print(f"[DEBUG] TOTAL FILES = {len(target_files)}")
+    print("=" * 80)
 
     return sorted(target_files)
 
@@ -242,6 +271,7 @@ def parse_protocols_and_registries():
 
 def main():
     target_files = collect_target_files()
+    print(f"[MAIN] target_files received : {len(target_files)}")
     if not target_files:
         return
 
@@ -268,12 +298,18 @@ def main():
         printed_dirs = set()
 
         for file_path in target_files:
+            print(f"[WRITE] {file_path}")
             rel_path = file_path.relative_to(PROJECT_ROOT)
             parts = rel_path.parts
 
+            print(f"[REL] {rel_path}")
+            print(f"[PARTS] {parts}")
+
             # 디렉터리 트리 라인 출력 생성
+            print("[DIR CREATE]")
             for i in range(1, len(parts)):
                 current_dir_path = Path(*parts[:i])
+                print(current_dir_path)
                 if current_dir_path not in printed_dirs:
                     dir_indent = "│   " * (i - 1)
                     f.write(f"{dir_indent}├── {parts[i-1]}/\n")
@@ -281,6 +317,7 @@ def main():
 
             indent = "│   " * (len(parts) - 1)
             file_name = parts[-1]
+            print(f"[WRITE FILE] {file_name}")
             posix_rel_path = rel_path.as_posix()
 
             # 💡 [교정] 파이썬 파일일 때만 내부 심볼(AST)을 분석하고, 나머지는 경로만 출력합니다.
@@ -310,8 +347,16 @@ def main():
                     chunks = [field_items[x:x + 4] for x in range(0, len(field_items), 4)]
                     for chunk in chunks:
                         f.write(f"{indent}│     │     ├── {', '.join(chunk)}\n")
+    print("=" * 80)
+    print("[SUMMARY]")
+    print(f"Directories Printed : {len(printed_dirs)}")
+    print(f"Files Written       : {len(target_files)}")
+    print("=" * 80)
 
-        f.write("```\n")
+    with open("scan_debug.txt", "w", encoding="utf-8") as dbg:
+        dbg.write("==== ALL FILES ====\n")
+        for p in target_files:
+            dbg.write(str(p) + "\n")
 
     print(f"🎯 [마스터 공장] 'system_maps/AI_CODEBASE_MAP.md'가 모든 파일 구조를 포함하여 안전하게 자동 갱신되었습니다 형님!")
 

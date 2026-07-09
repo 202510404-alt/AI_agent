@@ -1,603 +1,810 @@
 {
   "symbols": [
     {
-      "symbol_id": "start.py::get_best_python",
-      "name": "get_best_python",
-      "full_name": "get_best_python",
-      "type": "function",
-      "path": "start.py",
-      "start_line": 34,
-      "end_line": 50,
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent",
+      "name": "deathevent",
+      "full_name": "deathevent",
+      "type": "class",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 32,
+      "end_line": 223,
       "calls": [],
       "used_by": []
     },
     {
-      "symbol_id": "start.py::auto_install_dependencies",
-      "name": "auto_install_dependencies",
-      "full_name": "auto_install_dependencies",
-      "type": "function",
-      "path": "start.py",
-      "start_line": 59,
-      "end_line": 80,
-      "calls": [],
-      "used_by": [
-        "start.py::main"
-      ]
-    },
-    {
-      "symbol_id": "start.py::main",
-      "name": "main",
-      "full_name": "main",
-      "type": "function",
-      "path": "start.py",
-      "start_line": 82,
-      "end_line": 202,
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.onPlayerDeath",
+      "name": "onPlayerDeath",
+      "full_name": "deathevent.onPlayerDeath",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 38,
+      "end_line": 51,
       "calls": [
-        "auto_install_dependencies"
+        "respawn",
+        "startsWith",
+        "setKeepInventory",
+        "getPluginManager",
+        "getPlugin",
+        "getName",
+        "spigot",
+        "runTaskLater",
+        "getEntity",
+        "clear",
+        "getDrops",
+        "getWorld",
+        "getScheduler"
       ],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
-      ]
+      "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator",
-      "name": "SemanticNavigator",
-      "full_name": "SemanticNavigator",
-      "type": "class",
-      "path": "tools/universal_indexer/agent_navigator.py",
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.onPlayerRespawn",
+      "name": "onPlayerRespawn",
+      "full_name": "deathevent.onPlayerRespawn",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 54,
+      "end_line": 73,
+      "calls": [
+        "cancelTimer",
+        "startsWith",
+        "setRespawnLocation",
+        "setGameMode",
+        "getUniqueId",
+        "getPluginManager",
+        "text",
+        "remove",
+        "getPlugin",
+        "getPlayer",
+        "getName",
+        "runTaskLater",
+        "sendMessage",
+        "color",
+        "getWorld",
+        "getLocation",
+        "getScheduler"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 66,
+      "end_line": 76,
+      "calls": [
+        "text",
+        "getUniqueId",
+        "onPlayerMove",
+        "sendMessage",
+        "color"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.onPlayerMove",
+      "name": "onPlayerMove",
+      "full_name": "deathevent.onPlayerMove",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 76,
+      "end_line": 123,
+      "calls": [
+        "containsKey",
+        "decorate",
+        "getPlugin",
+        "sendMessage",
+        "getWorld",
+        "startsWith",
+        "isOnline",
+        "add",
+        "append",
+        "run",
+        "getGameMode",
+        "text",
+        "clickEvent",
+        "runTaskTimer",
+        "isSneaking",
+        "runCommand",
+        "cancelTimer",
+        "BukkitRunnable",
+        "contains",
+        "getUniqueId",
+        "getPluginManager",
+        "getPlayer",
+        "getName",
+        "put",
+        "color"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.run",
+      "name": "run",
+      "full_name": "deathevent.run",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 91,
+      "end_line": 114,
+      "calls": [
+        "getGameMode",
+        "isOnline",
+        "text",
+        "clickEvent",
+        "add",
+        "decorate",
+        "isSneaking",
+        "append",
+        "sendMessage",
+        "runCommand",
+        "color",
+        "cancelTimer"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 93,
+      "end_line": 96,
+      "calls": [
+        "isSneaking"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 98,
+      "end_line": 102,
+      "calls": [],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 106,
+      "end_line": 119,
+      "calls": [
+        "text",
+        "clickEvent",
+        "add",
+        "runTaskTimer",
+        "decorate",
+        "append",
+        "put",
+        "sendMessage",
+        "runCommand",
+        "color"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 125,
+      "end_line": 130,
+      "calls": [
+        "containsKey",
+        "get",
+        "cancel",
+        "remove"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.onPlayerJoin",
+      "name": "onPlayerJoin",
+      "full_name": "deathevent.onPlayerJoin",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 133,
+      "end_line": 148,
+      "calls": [
+        "startsWith",
+        "getUniqueId",
+        "setGameMode",
+        "teleport",
+        "getPlayer",
+        "getName",
+        "unloadAndDeleteInstance",
+        "Location",
+        "getWorld",
+        "cancelTimer"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 139,
+      "end_line": 146,
+      "calls": [
+        "startsWith",
+        "setGameMode",
+        "getUniqueId",
+        "teleport",
+        "unloadAndDeleteInstance",
+        "Location"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.unloadAndDeleteInstance",
+      "name": "unloadAndDeleteInstance",
+      "full_name": "deathevent.unloadAndDeleteInstance",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 145,
+      "end_line": 151,
+      "calls": [
+        "onPlayerCommand"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.onPlayerCommand",
+      "name": "onPlayerCommand",
+      "full_name": "deathevent.onPlayerCommand",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 151,
+      "end_line": 178,
+      "calls": [
+        "startsWith",
+        "getUniqueId",
+        "setGameMode",
+        "text",
+        "equalsIgnoreCase",
+        "remove",
+        "teleport",
+        "getPlayer",
+        "getName",
+        "setCancelled",
+        "unloadAndDeleteInstance",
+        "Location",
+        "sendMessage",
+        "color",
+        "getWorld",
+        "getMessage",
+        "cancelTimer"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 161,
+      "end_line": 170,
+      "calls": [
+        "startsWith",
+        "setGameMode",
+        "getUniqueId",
+        "text",
+        "teleport",
+        "unloadAndDeleteInstance",
+        "Location",
+        "sendMessage",
+        "color"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.unloadAndDeleteInstance",
+      "name": "unloadAndDeleteInstance",
+      "full_name": "deathevent.unloadAndDeleteInstance",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 169,
+      "end_line": 172,
+      "calls": [
+        "equalsIgnoreCase"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.cancelTimer",
+      "name": "cancelTimer",
+      "full_name": "deathevent.cancelTimer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 175,
+      "end_line": 181,
+      "calls": [
+        "text",
+        "getUniqueId",
+        "unloadAndDeleteInstance",
+        "sendMessage",
+        "color"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.unloadAndDeleteInstance",
+      "name": "unloadAndDeleteInstance",
+      "full_name": "deathevent.unloadAndDeleteInstance",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 181,
+      "end_line": 205,
+      "calls": [
+        "File",
+        "exists",
+        "toPath",
+        "getPluginManager",
+        "deleteDirectoryNative",
+        "getPlugin",
+        "getWorldContainer",
+        "getPlayers",
+        "runTaskLater",
+        "getLogger",
+        "warning",
+        "isEmpty",
+        "unloadWorld",
+        "runTaskAsynchronously",
+        "getWorld",
+        "getScheduler"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.deleteDirectoryNative",
+      "name": "deleteDirectoryNative",
+      "full_name": "deathevent.deleteDirectoryNative",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 196,
+      "end_line": 197,
+      "calls": [
+        "toPath"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.deleteDirectoryNative",
+      "name": "deleteDirectoryNative",
+      "full_name": "deathevent.deleteDirectoryNative",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 208,
+      "end_line": 222,
+      "calls": [
+        "postVisitDirectory",
+        "delete",
+        "walkFileTree",
+        "visitFile"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.visitFile",
+      "name": "visitFile",
+      "full_name": "deathevent.visitFile",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 211,
+      "end_line": 214,
+      "calls": [
+        "delete"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/deathevent.java::deathevent.postVisitDirectory",
+      "name": "postVisitDirectory",
+      "full_name": "deathevent.postVisitDirectory",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/deathevent.java",
+      "start_line": 217,
+      "end_line": 220,
+      "calls": [
+        "delete"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/DesertCore.java::onEnable",
+      "name": "onEnable",
+      "full_name": "onEnable",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/DesertCore.java",
+      "start_line": 8,
+      "end_line": 14,
+      "calls": [
+        "info",
+        "setExecutor",
+        "getPluginManager",
+        "deathevent",
+        "samakportal",
+        "marendumbul",
+        "getCommand",
+        "getLogger",
+        "registerEvents",
+        "getServer",
+        "lobbycmd"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/DesertCore.java::getServer",
+      "name": "getServer",
+      "full_name": "getServer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/DesertCore.java",
+      "start_line": 9,
+      "end_line": 17,
+      "calls": [
+        "info",
+        "setExecutor",
+        "onDisable",
+        "getPluginManager",
+        "samakportal",
+        "marendumbul",
+        "getCommand",
+        "getLogger",
+        "registerEvents",
+        "deathevent",
+        "lobbycmd"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/DesertCore.java::getLogger",
+      "name": "getLogger",
+      "full_name": "getLogger",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/DesertCore.java",
+      "start_line": 10,
+      "end_line": 17,
+      "calls": [
+        "info",
+        "setExecutor",
+        "onDisable",
+        "getPluginManager",
+        "deathevent",
+        "samakportal",
+        "getCommand",
+        "registerEvents",
+        "getServer",
+        "lobbycmd"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/DesertCore.java::getServer",
+      "name": "getServer",
+      "full_name": "getServer",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/DesertCore.java",
       "start_line": 11,
-      "end_line": 208,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.__init__"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator.__init__",
-      "name": "__init__",
-      "full_name": "SemanticNavigator.__init__",
-      "type": "method",
-      "path": "tools/universal_indexer/agent_navigator.py",
-      "start_line": 12,
-      "end_line": 16,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator._load_database",
-      "name": "_load_database",
-      "full_name": "SemanticNavigator._load_database",
-      "type": "method",
-      "path": "tools/universal_indexer/agent_navigator.py",
-      "start_line": 18,
-      "end_line": 25,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator.extract_multi_slices",
-      "name": "extract_multi_slices",
-      "full_name": "SemanticNavigator.extract_multi_slices",
-      "type": "method",
-      "path": "tools/universal_indexer/agent_navigator.py",
-      "start_line": 30,
-      "end_line": 208,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI",
-      "name": "JjapCursorNavigatorGUI",
-      "full_name": "JjapCursorNavigatorGUI",
-      "type": "class",
-      "path": "tools/universal_indexer/agent_navigator.py",
-      "start_line": 213,
-      "end_line": 339,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.__init__",
-      "name": "__init__",
-      "full_name": "JjapCursorNavigatorGUI.__init__",
-      "type": "method",
-      "path": "tools/universal_indexer/agent_navigator.py",
-      "start_line": 214,
-      "end_line": 263,
+      "end_line": 17,
       "calls": [
-        "SemanticNavigator"
+        "setExecutor",
+        "onDisable",
+        "getPluginManager",
+        "samakportal",
+        "getCommand",
+        "registerEvents",
+        "deathevent",
+        "lobbycmd"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline",
-      "name": "execute_slicing_pipeline",
-      "full_name": "JjapCursorNavigatorGUI.execute_slicing_pipeline",
+      "symbol_id": "src/main/java/com/desertcore/DesertCore.java::getServer",
+      "name": "getServer",
+      "full_name": "getServer",
       "type": "method",
-      "path": "tools/universal_indexer/agent_navigator.py",
-      "start_line": 265,
-      "end_line": 320,
-      "calls": [],
+      "path": "src/main/java/com/desertcore/DesertCore.java",
+      "start_line": 12,
+      "end_line": 17,
+      "calls": [
+        "setExecutor",
+        "onDisable",
+        "getPluginManager",
+        "getCommand",
+        "registerEvents",
+        "deathevent",
+        "lobbycmd"
+      ],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.manual_export_file",
-      "name": "manual_export_file",
-      "full_name": "JjapCursorNavigatorGUI.manual_export_file",
+      "symbol_id": "src/main/java/com/desertcore/DesertCore.java::getCommand",
+      "name": "getCommand",
+      "full_name": "getCommand",
       "type": "method",
-      "path": "tools/universal_indexer/agent_navigator.py",
-      "start_line": 322,
-      "end_line": 339,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder",
-      "name": "ContextBuilder",
-      "full_name": "ContextBuilder",
-      "type": "class",
-      "path": "tools/universal_indexer/context_builder.py",
+      "path": "src/main/java/com/desertcore/DesertCore.java",
       "start_line": 13,
-      "end_line": 107,
-      "calls": [],
+      "end_line": 17,
+      "calls": [
+        "setExecutor",
+        "lobbycmd",
+        "onDisable"
+      ],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder.__init__",
-      "name": "__init__",
-      "full_name": "ContextBuilder.__init__",
+      "symbol_id": "src/main/java/com/desertcore/DesertCore.java::onDisable",
+      "name": "onDisable",
+      "full_name": "onDisable",
       "type": "method",
-      "path": "tools/universal_indexer/context_builder.py",
-      "start_line": 16,
+      "path": "src/main/java/com/desertcore/DesertCore.java",
+      "start_line": 17,
       "end_line": 18,
       "calls": [],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder.read_and_clean_file",
-      "name": "read_and_clean_file",
-      "full_name": "ContextBuilder.read_and_clean_file",
-      "type": "method",
-      "path": "tools/universal_indexer/context_builder.py",
-      "start_line": 20,
-      "end_line": 78,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder.assemble_ai_prompt",
-      "name": "assemble_ai_prompt",
-      "full_name": "ContextBuilder.assemble_ai_prompt",
-      "type": "method",
-      "path": "tools/universal_indexer/context_builder.py",
-      "start_line": 80,
-      "end_line": 107,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/create_ai_map.py::parse_python_file",
-      "name": "parse_python_file",
-      "full_name": "parse_python_file",
-      "type": "function",
-      "path": "tools/universal_indexer/create_ai_map.py",
-      "start_line": 37,
-      "end_line": 98,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::main"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/create_ai_map.py::collect_target_files",
-      "name": "collect_target_files",
-      "full_name": "collect_target_files",
-      "type": "function",
-      "path": "tools/universal_indexer/create_ai_map.py",
-      "start_line": 101,
-      "end_line": 130,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::main"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/create_ai_map.py::load_registry",
-      "name": "load_registry",
-      "full_name": "load_registry",
-      "type": "function",
-      "path": "tools/universal_indexer/create_ai_map.py",
-      "start_line": 133,
-      "end_line": 170,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::main",
-        "tools/universal_indexer/create_ai_map.py::parse_protocols_and_registries"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/create_ai_map.py::load_protocols",
-      "name": "load_protocols",
-      "full_name": "load_protocols",
-      "type": "function",
-      "path": "tools/universal_indexer/create_ai_map.py",
-      "start_line": 173,
-      "end_line": 195,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::main",
-        "tools/universal_indexer/create_ai_map.py::parse_protocols_and_registries"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/create_ai_map.py::parse_protocols_and_registries",
-      "name": "parse_protocols_and_registries",
-      "full_name": "parse_protocols_and_registries",
-      "type": "function",
-      "path": "tools/universal_indexer/create_ai_map.py",
-      "start_line": 198,
-      "end_line": 240,
-      "calls": [
-        "load_protocols",
-        "load_registry"
-      ],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/create_ai_map.py::main",
-      "name": "main",
-      "full_name": "main",
-      "type": "function",
-      "path": "tools/universal_indexer/create_ai_map.py",
-      "start_line": 243,
-      "end_line": 316,
-      "calls": [
-        "load_protocols",
-        "parse_python_file",
-        "load_registry",
-        "collect_target_files"
-      ],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map",
-      "name": "generate_ai_optimized_map",
-      "full_name": "generate_ai_optimized_map",
-      "type": "function",
-      "path": "tools/universal_indexer/create_ai_map.py",
-      "start_line": 323,
-      "end_line": 325,
-      "calls": [
-        "main"
-      ],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2",
-      "name": "AdvancedIndexerV2",
-      "full_name": "AdvancedIndexerV2",
+      "symbol_id": "src/main/java/com/desertcore/lobbycmd.java::lobbycmd",
+      "name": "lobbycmd",
+      "full_name": "lobbycmd",
       "type": "class",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 27,
-      "end_line": 277,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.__init__",
-      "name": "__init__",
-      "full_name": "AdvancedIndexerV2.__init__",
-      "type": "method",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 36,
+      "path": "src/main/java/com/desertcore/lobbycmd.java",
+      "start_line": 15,
       "end_line": 49,
       "calls": [],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2._auto_load_parsers",
-      "name": "_auto_load_parsers",
-      "full_name": "AdvancedIndexerV2._auto_load_parsers",
+      "symbol_id": "src/main/java/com/desertcore/lobbycmd.java::lobbycmd.onCommand",
+      "name": "onCommand",
+      "full_name": "lobbycmd.onCommand",
       "type": "method",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 51,
-      "end_line": 106,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2._get_sha256",
-      "name": "_get_sha256",
-      "full_name": "AdvancedIndexerV2._get_sha256",
-      "type": "method",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 108,
-      "end_line": 109,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2._extract_skeleton",
-      "name": "_extract_skeleton",
-      "full_name": "AdvancedIndexerV2._extract_skeleton",
-      "type": "method",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 111,
-      "end_line": 127,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.parse_protocols_and_registries",
-      "name": "parse_protocols_and_registries",
-      "full_name": "AdvancedIndexerV2.parse_protocols_and_registries",
-      "type": "method",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 129,
-      "end_line": 162,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.index_file",
-      "name": "index_file",
-      "full_name": "AdvancedIndexerV2.index_file",
-      "type": "method",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 164,
-      "end_line": 196,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.scan_project",
-      "name": "scan_project",
-      "full_name": "AdvancedIndexerV2.scan_project",
-      "type": "method",
-      "path": "tools/universal_indexer/indexer.py",
-      "start_line": 198,
-      "end_line": 277,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_lookup.py::load_json",
-      "name": "load_json",
-      "full_name": "load_json",
-      "type": "function",
-      "path": "tools/universal_indexer/jjap_lookup.py",
-      "start_line": 17,
-      "end_line": 22,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/jjap_lookup.py::lookup_symbol",
-        "tools/universal_indexer/jjap_lookup.py::show_skeleton"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_lookup.py::lookup_symbol",
-      "name": "lookup_symbol",
-      "full_name": "lookup_symbol",
-      "type": "function",
-      "path": "tools/universal_indexer/jjap_lookup.py",
-      "start_line": 24,
-      "end_line": 51,
+      "path": "src/main/java/com/desertcore/lobbycmd.java",
+      "start_line": 18,
+      "end_line": 48,
       "calls": [
-        "load_json"
+        "text",
+        "setGameMode",
+        "teleport",
+        "isOp",
+        "Location",
+        "sendMessage",
+        "color",
+        "getWorld"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/jjap_lookup.py::show_skeleton",
-      "name": "show_skeleton",
-      "full_name": "show_skeleton",
-      "type": "function",
-      "path": "tools/universal_indexer/jjap_lookup.py",
-      "start_line": 53,
+      "symbol_id": "src/main/java/com/desertcore/marendumbul.java::marendumbul",
+      "name": "marendumbul",
+      "full_name": "marendumbul",
+      "type": "class",
+      "path": "src/main/java/com/desertcore/marendumbul.java",
+      "start_line": 13,
+      "end_line": 62,
+      "calls": [],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/marendumbul.java::marendumbul.onPlayerJoin",
+      "name": "onPlayerJoin",
+      "full_name": "marendumbul.onPlayerJoin",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/marendumbul.java",
+      "start_line": 19,
+      "end_line": 61,
+      "calls": [
+        "info",
+        "isOnline",
+        "getPluginManager",
+        "nextDouble",
+        "getPlugin",
+        "getPlayer",
+        "getBlockAt",
+        "abs",
+        "runTaskLater",
+        "getLogger",
+        "getType",
+        "setType",
+        "max",
+        "getWorld",
+        "getScheduler"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal",
+      "name": "samakportal",
+      "full_name": "samakportal",
+      "type": "class",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 22,
+      "end_line": 133,
+      "calls": [],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.onVillagerClick",
+      "name": "onVillagerClick",
+      "full_name": "samakportal.onVillagerClick",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 25,
+      "end_line": 95,
+      "calls": [
+        "createWorld",
+        "substring",
+        "runTaskAsynchronously",
+        "runTask",
+        "getPlugin",
+        "getLogger",
+        "warning",
+        "sendMessage",
+        "getWorld",
+        "toPath",
+        "startsWith",
+        "setGameMode",
+        "delete",
+        "setCancelled",
+        "log",
+        "exists",
+        "WorldCreator",
+        "text",
+        "deleteDirectoryNative",
+        "teleport",
+        "getWorldContainer",
+        "getRightClicked",
+        "contains",
+        "getUniqueId",
+        "getPluginManager",
+        "copyDirectoryNative",
+        "getPlayer",
+        "getName",
+        "getScoreboardTags",
+        "toString",
+        "Location",
+        "File",
+        "color",
+        "getScheduler"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.deleteDirectoryNative",
+      "name": "deleteDirectoryNative",
+      "full_name": "samakportal.deleteDirectoryNative",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 61,
       "end_line": 69,
       "calls": [
-        "load_json"
+        "File",
+        "copyDirectoryNative",
+        "exists",
+        "toPath"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever",
-      "name": "JjapRetriever",
-      "full_name": "JjapRetriever",
-      "type": "class",
-      "path": "tools/universal_indexer/jjap_retriever.py",
-      "start_line": 9,
-      "end_line": 129,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/jjap_retriever.py::main"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever.__init__",
-      "name": "__init__",
-      "full_name": "JjapRetriever.__init__",
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.copyDirectoryNative",
+      "name": "copyDirectoryNative",
+      "full_name": "samakportal.copyDirectoryNative",
       "type": "method",
-      "path": "tools/universal_indexer/jjap_retriever.py",
-      "start_line": 16,
-      "end_line": 21,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever._load_symbols",
-      "name": "_load_symbols",
-      "full_name": "JjapRetriever._load_symbols",
-      "type": "method",
-      "path": "tools/universal_indexer/jjap_retriever.py",
-      "start_line": 23,
-      "end_line": 37,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever.retrieve_symbol",
-      "name": "retrieve_symbol",
-      "full_name": "JjapRetriever.retrieve_symbol",
-      "type": "method",
-      "path": "tools/universal_indexer/jjap_retriever.py",
-      "start_line": 39,
-      "end_line": 98,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever._find_best_match",
-      "name": "_find_best_match",
-      "full_name": "JjapRetriever._find_best_match",
-      "type": "method",
-      "path": "tools/universal_indexer/jjap_retriever.py",
-      "start_line": 100,
-      "end_line": 117,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever._safe_truncate",
-      "name": "_safe_truncate",
-      "full_name": "JjapRetriever._safe_truncate",
-      "type": "method",
-      "path": "tools/universal_indexer/jjap_retriever.py",
-      "start_line": 119,
-      "end_line": 129,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_retriever.py::main",
-      "name": "main",
-      "full_name": "main",
-      "type": "function",
-      "path": "tools/universal_indexer/jjap_retriever.py",
-      "start_line": 132,
-      "end_line": 140,
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 65,
+      "end_line": 74,
       "calls": [
-        "JjapRetriever"
-      ],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_watcher.py::import_file_directly",
-      "name": "import_file_directly",
-      "full_name": "import_file_directly",
-      "type": "function",
-      "path": "tools/universal_indexer/jjap_watcher.py",
-      "start_line": 25,
-      "end_line": 33,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/jjap_watcher.py::run_pipeline"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_watcher.py::run_pipeline",
-      "name": "run_pipeline",
-      "full_name": "run_pipeline",
-      "type": "function",
-      "path": "tools/universal_indexer/jjap_watcher.py",
-      "start_line": 35,
-      "end_line": 78,
-      "calls": [
-        "import_file_directly"
-      ],
-      "used_by": [
-        "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler.dispatch",
-        "tools/universal_indexer/jjap_watcher.py::main"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler",
-      "name": "CodeChangeHandler",
-      "full_name": "CodeChangeHandler",
-      "type": "class",
-      "path": "tools/universal_indexer/jjap_watcher.py",
-      "start_line": 81,
-      "end_line": 104,
-      "calls": [],
-      "used_by": [
-        "tools/universal_indexer/jjap_watcher.py::main"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler.__init__",
-      "name": "__init__",
-      "full_name": "CodeChangeHandler.__init__",
-      "type": "method",
-      "path": "tools/universal_indexer/jjap_watcher.py",
-      "start_line": 82,
-      "end_line": 84,
-      "calls": [],
-      "used_by": []
-    },
-    {
-      "symbol_id": "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler.dispatch",
-      "name": "dispatch",
-      "full_name": "CodeChangeHandler.dispatch",
-      "type": "method",
-      "path": "tools/universal_indexer/jjap_watcher.py",
-      "start_line": 86,
-      "end_line": 104,
-      "calls": [
-        "run_pipeline"
+        "delete",
+        "getLogger",
+        "warning",
+        "File",
+        "exists",
+        "toPath"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/jjap_watcher.py::main",
-      "name": "main",
-      "full_name": "main",
-      "type": "function",
-      "path": "tools/universal_indexer/jjap_watcher.py",
-      "start_line": 106,
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.copyDirectoryNative",
+      "name": "copyDirectoryNative",
+      "full_name": "samakportal.copyDirectoryNative",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 98,
+      "end_line": 115,
+      "calls": [
+        "createDirectories",
+        "walkFileTree",
+        "copy",
+        "resolve",
+        "preVisitDirectory",
+        "relativize",
+        "exists",
+        "visitFile"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.preVisitDirectory",
+      "name": "preVisitDirectory",
+      "full_name": "samakportal.preVisitDirectory",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 101,
+      "end_line": 107,
+      "calls": [
+        "relativize",
+        "resolve",
+        "exists",
+        "createDirectories"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.visitFile",
+      "name": "visitFile",
+      "full_name": "samakportal.visitFile",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 110,
+      "end_line": 113,
+      "calls": [
+        "relativize",
+        "resolve",
+        "copy"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.deleteDirectoryNative",
+      "name": "deleteDirectoryNative",
+      "full_name": "samakportal.deleteDirectoryNative",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 118,
       "end_line": 132,
       "calls": [
-        "run_pipeline",
-        "CodeChangeHandler"
+        "postVisitDirectory",
+        "delete",
+        "walkFileTree",
+        "visitFile"
       ],
-      "used_by": [
-        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
-      ]
-    },
-    {
-      "symbol_id": "tools/universal_indexer/update_map.py::update_map",
-      "name": "update_map",
-      "full_name": "update_map",
-      "type": "function",
-      "path": "tools/universal_indexer/update_map.py",
-      "start_line": 4,
-      "end_line": 94,
-      "calls": [],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/core_parsers/json_parser.py::extract_symbols",
-      "name": "extract_symbols",
-      "full_name": "extract_symbols",
-      "type": "function",
-      "path": "tools/universal_indexer/core_parsers/json_parser.py",
-      "start_line": 5,
-      "end_line": 97,
-      "calls": [],
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.visitFile",
+      "name": "visitFile",
+      "full_name": "samakportal.visitFile",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 121,
+      "end_line": 124,
+      "calls": [
+        "delete"
+      ],
       "used_by": []
     },
     {
-      "symbol_id": "tools/universal_indexer/core_parsers/py_parser.py::extract_symbols",
-      "name": "extract_symbols",
-      "full_name": "extract_symbols",
-      "type": "function",
-      "path": "tools/universal_indexer/core_parsers/py_parser.py",
-      "start_line": 5,
-      "end_line": 158,
-      "calls": [],
+      "symbol_id": "src/main/java/com/desertcore/samakportal.java::samakportal.postVisitDirectory",
+      "name": "postVisitDirectory",
+      "full_name": "samakportal.postVisitDirectory",
+      "type": "method",
+      "path": "src/main/java/com/desertcore/samakportal.java",
+      "start_line": 127,
+      "end_line": 130,
+      "calls": [
+        "delete"
+      ],
       "used_by": []
     }
   ]

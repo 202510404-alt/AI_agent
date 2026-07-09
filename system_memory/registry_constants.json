@@ -1,9 +1,3 @@
 {
-  "registered_entities": [
-    "SemanticNavigator",
-    "JjapCursorNavigatorGUI",
-    "AdvancedIndexerV2",
-    "JjapRetriever",
-    "CodeChangeHandler"
-  ]
+  "registered_entities": []
 }
