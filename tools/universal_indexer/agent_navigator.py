@@ -339,12 +339,12 @@ class JjapCursorNavigatorGUI:
                 messagebox.showerror("내보내기 실패", f"파일 저장 중 에러가 발생했습니다: {e}")
 
 if __name__ == "__main__":
-    # 실행 컨텍스트 루트 자동 정렬 (신규 2단계 깊이 tools/python_agent_tools/ 구조 반영)
+    # 🔄 실행 컨텍스트 루트 자동 정렬 (신규 2단계 깊이 tools/universal_indexer/ 구조 전면 동기화)
     current_dir = Path(__file__).parent.resolve()
-    if current_dir.name == "python_agent_tools" and current_dir.parent.name == "tools":
+    
+    # 구형 폴더명들을 걷어내고, 현재 새롭게 안착한 universal_indexer 명칭으로 마스터 루트를 확보합니다.
+    if current_dir.name == "universal_indexer" and current_dir.parent.name == "tools":
         project_root = current_dir.parent.parent
-    elif current_dir.name == "cline_tools":
-        project_root = current_dir.parent
     else:
         project_root = current_dir
 

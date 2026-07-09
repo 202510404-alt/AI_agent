@@ -3,25 +3,21 @@ import ast
 import json
 from pathlib import Path
 
-# ======================================================================
-# 🎯 [스캔 모드 연동] indexer.py와 완전히 동일한 방식으로 switch.py를 참조합니다.
-# tools.python_agent_tools를 패키지로 import 할 수 없는 실행 환경이면 기본값 "ROOT"로 안전하게 폴백합니다.
-# ======================================================================
 try:
-    from tools.python_agent_tools.switch import SCAN_MODE
+    from tools.universal_indexer.switch import SCAN_MODE
 except ImportError:
     SCAN_MODE = "ROOT"
-
 # ======================================================================
 # 🎯 [경로 방어선 절대 고정]
 # 현재 스크립트 파일 위치를 기준으로 진짜 프로젝트 마스터 루트를 추적합니다.
-# 폴더 구조가 tools/python_agent_tools/ 로 1단계 더 깊어졌으므로,
-# "python_agent_tools" 폴더 안에 있고 그 상위 폴더가 "tools"일 때만
+# 폴더 구조가 tools/universal_indexer/ 로 1단계 더 깊어졌으므로,
+# "universal_indexer" 폴더 안에 있고 그 상위 폴더가 "tools"일 때만
 # 두 단계 위(.parent.parent)를 진짜 루트로 판정합니다.
 # 그 외의 경우(예: 단독 실행, 다른 위치로 복사됨 등)는 현재 폴더를 루트로 안전하게 폴백합니다.
 # ======================================================================
 SCRIPT_DIR = Path(__file__).parent.resolve()
-if SCRIPT_DIR.name == "python_agent_tools" and SCRIPT_DIR.parent.name == "tools":
+# 🔄 폴더 물리 명칭이 변경되었으므로 검사 타깃 문자열을 똑같이 싱크해 줍니다.
+if SCRIPT_DIR.name == "universal_indexer" and SCRIPT_DIR.parent.name == "tools":
     PROJECT_ROOT = SCRIPT_DIR.parent.parent
 else:
     PROJECT_ROOT = SCRIPT_DIR

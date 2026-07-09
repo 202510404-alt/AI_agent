@@ -1,12 +1,89 @@
 {
   "symbols": [
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator",
+      "symbol_id": "start.py::get_best_python",
+      "full_name": "get_best_python",
+      "name": "get_best_python",
+      "type": "function",
+      "parent": null,
+      "file": "start.py",
+      "start_line": 34,
+      "end_line": 50,
+      "range": [
+        34,
+        50
+      ],
+      "signature": "def get_best_python(...)",
+      "calls": [
+        "print",
+        "exists",
+        "str"
+      ],
+      "used_by": []
+    },
+    {
+      "symbol_id": "start.py::auto_install_dependencies",
+      "full_name": "auto_install_dependencies",
+      "name": "auto_install_dependencies",
+      "type": "function",
+      "parent": null,
+      "file": "start.py",
+      "start_line": 59,
+      "end_line": 80,
+      "range": [
+        59,
+        80
+      ],
+      "signature": "def auto_install_dependencies(...)",
+      "calls": [
+        "print",
+        "run"
+      ],
+      "used_by": [
+        "start.py::main"
+      ]
+    },
+    {
+      "symbol_id": "start.py::main",
+      "full_name": "main",
+      "name": "main",
+      "type": "function",
+      "parent": null,
+      "file": "start.py",
+      "start_line": 82,
+      "end_line": 202,
+      "range": [
+        82,
+        202
+      ],
+      "signature": "def main(...)",
+      "calls": [
+        "print",
+        "wait",
+        "terminate",
+        "sleep",
+        "str",
+        "join",
+        "exists",
+        "kill",
+        "get",
+        "poll",
+        "copy",
+        "run",
+        "auto_install_dependencies",
+        "Popen"
+      ],
+      "used_by": [
+        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
+      ]
+    },
+    {
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator",
       "full_name": "SemanticNavigator",
       "name": "SemanticNavigator",
       "type": "class",
       "parent": null,
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 11,
       "end_line": 208,
       "range": [
@@ -16,16 +93,16 @@
       "signature": "class SemanticNavigator:",
       "calls": [],
       "used_by": [
-        "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__"
+        "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.__init__"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator.__init__",
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator.__init__",
       "full_name": "SemanticNavigator.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "SemanticNavigator",
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 12,
       "end_line": 16,
       "range": [
@@ -39,12 +116,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator._load_database",
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator._load_database",
       "full_name": "SemanticNavigator._load_database",
       "name": "_load_database",
       "type": "method",
       "parent": "SemanticNavigator",
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 18,
       "end_line": 25,
       "range": [
@@ -53,21 +130,21 @@
       ],
       "signature": "def _load_database(...)",
       "calls": [
-        "open",
         "exists",
-        "load"
+        "load",
+        "open"
       ],
       "used_by": [
-        "python_agent_tools/agent_navigator.py::SemanticNavigator.__init__"
+        "tools/universal_indexer/agent_navigator.py::SemanticNavigator.__init__"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::SemanticNavigator.extract_multi_slices",
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::SemanticNavigator.extract_multi_slices",
       "full_name": "SemanticNavigator.extract_multi_slices",
       "name": "extract_multi_slices",
       "type": "method",
       "parent": "SemanticNavigator",
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 30,
       "end_line": 208,
       "range": [
@@ -76,39 +153,39 @@
       ],
       "signature": "def extract_multi_slices(...)",
       "calls": [
-        "len",
-        "split",
-        "strip",
-        "open",
-        "int",
         "print_exc",
-        "join",
-        "replace",
-        "get",
-        "max",
-        "list",
-        "readlines",
-        "endswith",
         "any",
-        "repr",
         "append",
+        "open",
+        "readlines",
         "set",
+        "int",
+        "findall",
+        "replace",
         "min",
         "exists",
+        "strip",
+        "split",
         "print",
-        "findall"
+        "max",
+        "join",
+        "get",
+        "repr",
+        "endswith",
+        "list",
+        "len"
       ],
       "used_by": [
-        "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
+        "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI",
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI",
       "full_name": "JjapCursorNavigatorGUI",
       "name": "JjapCursorNavigatorGUI",
       "type": "class",
       "parent": null,
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 213,
       "end_line": 339,
       "range": [
@@ -120,12 +197,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.__init__",
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.__init__",
       "full_name": "JjapCursorNavigatorGUI.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 214,
       "end_line": 263,
       "range": [
@@ -134,25 +211,25 @@
       ],
       "signature": "def __init__(...)",
       "calls": [
-        "Frame",
-        "insert",
+        "geometry",
+        "Text",
         "title",
+        "insert",
         "Button",
-        "Label",
         "SemanticNavigator",
         "pack",
-        "Text",
-        "geometry"
+        "Label",
+        "Frame"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline",
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.execute_slicing_pipeline",
       "full_name": "JjapCursorNavigatorGUI.execute_slicing_pipeline",
       "name": "execute_slicing_pipeline",
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 265,
       "end_line": 320,
       "range": [
@@ -161,30 +238,30 @@
       ],
       "signature": "def execute_slicing_pipeline(...)",
       "calls": [
-        "insert",
-        "config",
-        "rstrip",
         "startswith",
-        "strip",
-        "delete",
-        "join",
-        "open",
-        "append",
         "showerror",
         "extract_multi_slices",
-        "get",
         "write",
-        "showwarning"
+        "join",
+        "strip",
+        "insert",
+        "delete",
+        "get",
+        "append",
+        "config",
+        "showwarning",
+        "open",
+        "rstrip"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI.manual_export_file",
+      "symbol_id": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI.manual_export_file",
       "full_name": "JjapCursorNavigatorGUI.manual_export_file",
       "name": "manual_export_file",
       "type": "method",
       "parent": "JjapCursorNavigatorGUI",
-      "file": "python_agent_tools/agent_navigator.py",
+      "file": "tools/universal_indexer/agent_navigator.py",
       "start_line": 322,
       "end_line": 339,
       "range": [
@@ -193,22 +270,22 @@
       ],
       "signature": "def manual_export_file(...)",
       "calls": [
-        "asksaveasfilename",
         "showerror",
-        "open",
         "showinfo",
+        "write",
         "str",
-        "write"
+        "asksaveasfilename",
+        "open"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder",
+      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder",
       "full_name": "ContextBuilder",
       "name": "ContextBuilder",
       "type": "class",
       "parent": null,
-      "file": "python_agent_tools/context_builder.py",
+      "file": "tools/universal_indexer/context_builder.py",
       "start_line": 13,
       "end_line": 107,
       "range": [
@@ -220,12 +297,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder.__init__",
+      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder.__init__",
       "full_name": "ContextBuilder.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "ContextBuilder",
-      "file": "python_agent_tools/context_builder.py",
+      "file": "tools/universal_indexer/context_builder.py",
       "start_line": 16,
       "end_line": 18,
       "range": [
@@ -239,12 +316,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder.read_and_clean_file",
+      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder.read_and_clean_file",
       "full_name": "ContextBuilder.read_and_clean_file",
       "name": "read_and_clean_file",
       "type": "method",
       "parent": "ContextBuilder",
-      "file": "python_agent_tools/context_builder.py",
+      "file": "tools/universal_indexer/context_builder.py",
       "start_line": 20,
       "end_line": 78,
       "range": [
@@ -253,30 +330,30 @@
       ],
       "signature": "def read_and_clean_file(...)",
       "calls": [
-        "len",
-        "split",
+        "FileNotFoundError",
         "startswith",
-        "readlines",
-        "strip",
-        "endswith",
         "join",
-        "open",
-        "append",
-        "enumerate",
         "exists",
-        "FileNotFoundError"
+        "strip",
+        "len",
+        "append",
+        "open",
+        "enumerate",
+        "readlines",
+        "split",
+        "endswith"
       ],
       "used_by": [
-        "python_agent_tools/context_builder.py::ContextBuilder.assemble_ai_prompt"
+        "tools/universal_indexer/context_builder.py::ContextBuilder.assemble_ai_prompt"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/context_builder.py::ContextBuilder.assemble_ai_prompt",
+      "symbol_id": "tools/universal_indexer/context_builder.py::ContextBuilder.assemble_ai_prompt",
       "full_name": "ContextBuilder.assemble_ai_prompt",
       "name": "assemble_ai_prompt",
       "type": "method",
       "parent": "ContextBuilder",
-      "file": "python_agent_tools/context_builder.py",
+      "file": "tools/universal_indexer/context_builder.py",
       "start_line": 80,
       "end_line": 107,
       "range": [
@@ -286,462 +363,462 @@
       "signature": "def assemble_ai_prompt(...)",
       "calls": [
         "join",
-        "str",
+        "read_and_clean_file",
         "append",
-        "read_and_clean_file"
+        "str"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/create_ai_map.py::parse_python_file",
+      "symbol_id": "tools/universal_indexer/create_ai_map.py::parse_python_file",
       "full_name": "parse_python_file",
       "name": "parse_python_file",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/create_ai_map.py",
-      "start_line": 41,
-      "end_line": 102,
+      "file": "tools/universal_indexer/create_ai_map.py",
+      "start_line": 37,
+      "end_line": 98,
       "range": [
-        41,
-        102
+        37,
+        98
       ],
       "signature": "def parse_python_file(...)",
       "calls": [
+        "getattr",
         "sorted",
         "parse",
-        "isinstance",
-        "getattr",
-        "list",
-        "remove",
-        "read",
-        "open",
         "extend",
+        "isinstance",
         "join",
+        "read",
         "append",
+        "remove",
+        "open",
+        "list",
         "set"
       ],
       "used_by": [
-        "python_agent_tools/create_ai_map.py::main"
+        "tools/universal_indexer/create_ai_map.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/create_ai_map.py::collect_target_files",
+      "symbol_id": "tools/universal_indexer/create_ai_map.py::collect_target_files",
       "full_name": "collect_target_files",
       "name": "collect_target_files",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/create_ai_map.py",
-      "start_line": 105,
-      "end_line": 134,
+      "file": "tools/universal_indexer/create_ai_map.py",
+      "start_line": 101,
+      "end_line": 130,
       "range": [
-        105,
-        134
+        101,
+        130
       ],
       "signature": "def collect_target_files(...)",
       "calls": [
+        "print",
+        "replace",
         "sorted",
-        "Path",
+        "walk",
+        "exists",
         "any",
         "append",
-        "replace",
-        "exists",
-        "print",
-        "walk"
+        "Path"
       ],
       "used_by": [
-        "python_agent_tools/create_ai_map.py::main"
+        "tools/universal_indexer/create_ai_map.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/create_ai_map.py::load_registry",
+      "symbol_id": "tools/universal_indexer/create_ai_map.py::load_registry",
       "full_name": "load_registry",
       "name": "load_registry",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/create_ai_map.py",
-      "start_line": 137,
-      "end_line": 151,
+      "file": "tools/universal_indexer/create_ai_map.py",
+      "start_line": 133,
+      "end_line": 147,
       "range": [
-        137,
-        151
+        133,
+        147
       ],
       "signature": "def load_registry(...)",
       "calls": [
-        "as_posix",
-        "load",
-        "Path",
-        "open",
-        "rpartition",
-        "append",
-        "items",
+        "print",
+        "setdefault",
         "exists",
         "get",
-        "print",
-        "setdefault"
+        "items",
+        "append",
+        "open",
+        "rpartition",
+        "as_posix",
+        "load",
+        "Path"
       ],
       "used_by": [
-        "python_agent_tools/create_ai_map.py::main"
+        "tools/universal_indexer/create_ai_map.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/create_ai_map.py::load_protocols",
+      "symbol_id": "tools/universal_indexer/create_ai_map.py::load_protocols",
       "full_name": "load_protocols",
       "name": "load_protocols",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/create_ai_map.py",
-      "start_line": 154,
-      "end_line": 169,
+      "file": "tools/universal_indexer/create_ai_map.py",
+      "start_line": 150,
+      "end_line": 165,
       "range": [
-        154,
-        169
+        150,
+        165
       ],
       "signature": "def load_protocols(...)",
       "calls": [
-        "as_posix",
-        "load",
-        "Path",
-        "open",
-        "append",
-        "items",
+        "print",
+        "setdefault",
         "exists",
         "get",
-        "print",
-        "setdefault"
+        "items",
+        "append",
+        "open",
+        "as_posix",
+        "load",
+        "Path"
       ],
       "used_by": [
-        "python_agent_tools/create_ai_map.py::main"
+        "tools/universal_indexer/create_ai_map.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/create_ai_map.py::main",
+      "symbol_id": "tools/universal_indexer/create_ai_map.py::main",
       "full_name": "main",
       "name": "main",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/create_ai_map.py",
-      "start_line": 172,
-      "end_line": 245,
+      "file": "tools/universal_indexer/create_ai_map.py",
+      "start_line": 168,
+      "end_line": 241,
       "range": [
-        172,
-        245
+        168,
+        241
       ],
       "signature": "def main(...)",
       "calls": [
-        "len",
-        "load_registry",
-        "open",
-        "items",
-        "unlink",
         "write",
-        "Path",
-        "mkdir",
-        "join",
-        "parse_python_file",
-        "replace",
-        "endswith",
+        "open",
+        "load_registry",
         "set",
+        "unlink",
+        "add",
+        "items",
+        "range",
+        "as_posix",
+        "mkdir",
+        "replace",
+        "relative_to",
         "exists",
         "print",
-        "as_posix",
-        "load_protocols",
-        "range",
         "collect_target_files",
-        "add",
-        "relative_to"
+        "join",
+        "parse_python_file",
+        "endswith",
+        "len",
+        "load_protocols",
+        "Path"
       ],
       "used_by": [
-        "python_agent_tools/create_ai_map.py::generate_ai_optimized_map"
+        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/create_ai_map.py::generate_ai_optimized_map",
+      "symbol_id": "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map",
       "full_name": "generate_ai_optimized_map",
       "name": "generate_ai_optimized_map",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/create_ai_map.py",
-      "start_line": 252,
-      "end_line": 254,
+      "file": "tools/universal_indexer/create_ai_map.py",
+      "start_line": 248,
+      "end_line": 250,
       "range": [
-        252,
-        254
+        248,
+        250
       ],
       "signature": "def generate_ai_optimized_map(...)",
       "calls": [
         "main"
       ],
       "used_by": [
-        "python_agent_tools/jjap_watcher.py::run_pipeline"
+        "tools/universal_indexer/jjap_watcher.py::run_pipeline"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2",
+      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2",
       "full_name": "AdvancedIndexerV2",
       "name": "AdvancedIndexerV2",
       "type": "class",
       "parent": null,
-      "file": "python_agent_tools/indexer.py",
-      "start_line": 25,
-      "end_line": 310,
+      "file": "tools/universal_indexer/indexer.py",
+      "start_line": 26,
+      "end_line": 311,
       "range": [
-        25,
-        310
+        26,
+        311
       ],
       "signature": "class AdvancedIndexerV2:",
       "calls": [],
       "used_by": [
-        "python_agent_tools/jjap_watcher.py::run_pipeline"
+        "tools/universal_indexer/jjap_watcher.py::run_pipeline"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.__init__",
+      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.__init__",
       "full_name": "AdvancedIndexerV2.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "python_agent_tools/indexer.py",
-      "start_line": 34,
-      "end_line": 42,
+      "file": "tools/universal_indexer/indexer.py",
+      "start_line": 35,
+      "end_line": 43,
       "range": [
-        34,
-        42
+        35,
+        43
       ],
       "signature": "def __init__(...)",
       "calls": [],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2._get_sha256",
+      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2._get_sha256",
       "full_name": "AdvancedIndexerV2._get_sha256",
       "name": "_get_sha256",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "python_agent_tools/indexer.py",
-      "start_line": 44,
-      "end_line": 45,
+      "file": "tools/universal_indexer/indexer.py",
+      "start_line": 45,
+      "end_line": 46,
       "range": [
-        44,
-        45
+        45,
+        46
       ],
       "signature": "def _get_sha256(...)",
       "calls": [
         "hexdigest",
-        "encode",
-        "sha256"
+        "sha256",
+        "encode"
       ],
       "used_by": [
-        "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
+        "tools/universal_indexer/indexer.py::AdvancedIndexerV2.index_file"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2._extract_skeleton",
+      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2._extract_skeleton",
       "full_name": "AdvancedIndexerV2._extract_skeleton",
       "name": "_extract_skeleton",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "python_agent_tools/indexer.py",
-      "start_line": 47,
-      "end_line": 63,
+      "file": "tools/universal_indexer/indexer.py",
+      "start_line": 48,
+      "end_line": 64,
       "range": [
-        47,
-        63
+        48,
+        64
       ],
       "signature": "def _extract_skeleton(...)",
       "calls": [
         "join",
+        "isinstance",
         "append",
-        "parse",
-        "isinstance"
+        "parse"
       ],
       "used_by": [
-        "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
+        "tools/universal_indexer/indexer.py::AdvancedIndexerV2.index_file"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.parse_protocols_and_registries",
+      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.parse_protocols_and_registries",
       "full_name": "AdvancedIndexerV2.parse_protocols_and_registries",
       "name": "parse_protocols_and_registries",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "python_agent_tools/indexer.py",
-      "start_line": 65,
-      "end_line": 98,
+      "file": "tools/universal_indexer/indexer.py",
+      "start_line": 66,
+      "end_line": 99,
       "range": [
-        65,
-        98
+        66,
+        99
       ],
       "signature": "def parse_protocols_and_registries(...)",
       "calls": [
-        "parse",
-        "lower",
         "isinstance",
-        "type"
+        "lower",
+        "type",
+        "parse"
       ],
       "used_by": [
-        "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file"
+        "tools/universal_indexer/indexer.py::AdvancedIndexerV2.index_file"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.index_file",
+      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.index_file",
       "full_name": "AdvancedIndexerV2.index_file",
       "name": "index_file",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "python_agent_tools/indexer.py",
-      "start_line": 100,
-      "end_line": 229,
+      "file": "tools/universal_indexer/indexer.py",
+      "start_line": 101,
+      "end_line": 230,
       "range": [
-        100,
-        229
+        101,
+        230
       ],
       "signature": "def index_file(...)",
       "calls": [
-        "parse",
+        "_extract_skeleton",
         "isinstance",
-        "len",
+        "stat",
+        "append",
         "open",
-        "items",
-        "type",
-        "keys",
+        "set",
         "int",
+        "getattr",
+        "parse_protocols_and_registries",
+        "parse",
+        "walk",
         "read",
-        "load",
+        "items",
+        "lower",
+        "as_posix",
+        "relative_to",
+        "upper",
+        "type",
+        "print",
+        "str",
         "_get_sha256",
         "list",
-        "upper",
-        "append",
-        "set",
-        "print",
-        "walk",
-        "parse_protocols_and_registries",
-        "as_posix",
-        "stat",
-        "getattr",
-        "relative_to",
-        "str",
-        "lower",
-        "_extract_skeleton"
+        "keys",
+        "len",
+        "load"
       ],
       "used_by": [
-        "python_agent_tools/indexer.py::AdvancedIndexerV2.scan_project"
+        "tools/universal_indexer/indexer.py::AdvancedIndexerV2.scan_project"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/indexer.py::AdvancedIndexerV2.scan_project",
+      "symbol_id": "tools/universal_indexer/indexer.py::AdvancedIndexerV2.scan_project",
       "full_name": "AdvancedIndexerV2.scan_project",
       "name": "scan_project",
       "type": "method",
       "parent": "AdvancedIndexerV2",
-      "file": "python_agent_tools/indexer.py",
-      "start_line": 231,
-      "end_line": 310,
+      "file": "tools/universal_indexer/indexer.py",
+      "start_line": 232,
+      "end_line": 311,
       "range": [
-        231,
-        310
+        232,
+        311
       ],
       "signature": "def scan_project(...)",
       "calls": [
-        "sorted",
-        "as_posix",
-        "Path",
-        "list",
-        "makedirs",
-        "dump",
-        "open",
-        "any",
-        "append",
-        "set",
+        "print",
         "replace",
+        "sorted",
+        "dump",
+        "walk",
         "exists",
         "get",
-        "print",
+        "any",
+        "append",
+        "makedirs",
+        "open",
+        "list",
+        "set",
+        "as_posix",
         "index_file",
-        "walk"
+        "Path"
       ],
       "used_by": [
-        "python_agent_tools/jjap_watcher.py::run_pipeline"
+        "tools/universal_indexer/jjap_watcher.py::run_pipeline"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_lookup.py::load_json",
+      "symbol_id": "tools/universal_indexer/jjap_lookup.py::load_json",
       "full_name": "load_json",
       "name": "load_json",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/jjap_lookup.py",
-      "start_line": 9,
-      "end_line": 14,
+      "file": "tools/universal_indexer/jjap_lookup.py",
+      "start_line": 17,
+      "end_line": 22,
       "range": [
-        9,
-        14
+        17,
+        22
       ],
       "signature": "def load_json(...)",
       "calls": [
-        "load",
+        "print",
+        "exists",
         "exit",
         "open",
-        "exists",
-        "print"
+        "load"
       ],
       "used_by": [
-        "python_agent_tools/jjap_lookup.py::lookup_symbol",
-        "python_agent_tools/jjap_lookup.py::show_skeleton"
+        "tools/universal_indexer/jjap_lookup.py::lookup_symbol",
+        "tools/universal_indexer/jjap_lookup.py::show_skeleton"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_lookup.py::lookup_symbol",
+      "symbol_id": "tools/universal_indexer/jjap_lookup.py::lookup_symbol",
       "full_name": "lookup_symbol",
       "name": "lookup_symbol",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/jjap_lookup.py",
-      "start_line": 16,
-      "end_line": 43,
+      "file": "tools/universal_indexer/jjap_lookup.py",
+      "start_line": 24,
+      "end_line": 51,
       "range": [
-        16,
-        43
+        24,
+        51
       ],
       "signature": "def lookup_symbol(...)",
       "calls": [
-        "len",
-        "upper",
         "print",
-        "get",
         "load_json",
+        "upper",
+        "get",
+        "len",
         "lower"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/jjap_lookup.py::show_skeleton",
+      "symbol_id": "tools/universal_indexer/jjap_lookup.py::show_skeleton",
       "full_name": "show_skeleton",
       "name": "show_skeleton",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/jjap_lookup.py",
-      "start_line": 45,
-      "end_line": 61,
+      "file": "tools/universal_indexer/jjap_lookup.py",
+      "start_line": 53,
+      "end_line": 69,
       "range": [
-        45,
-        61
+        53,
+        69
       ],
       "signature": "def show_skeleton(...)",
       "calls": [
-        "keys",
+        "print",
         "get",
-        "load_json",
-        "print"
+        "keys",
+        "load_json"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever",
+      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever",
       "full_name": "JjapRetriever",
       "name": "JjapRetriever",
       "type": "class",
       "parent": null,
-      "file": "python_agent_tools/jjap_retriever.py",
+      "file": "tools/universal_indexer/jjap_retriever.py",
       "start_line": 9,
       "end_line": 129,
       "range": [
@@ -751,16 +828,16 @@
       "signature": "class JjapRetriever:",
       "calls": [],
       "used_by": [
-        "python_agent_tools/jjap_retriever.py::main"
+        "tools/universal_indexer/jjap_retriever.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever.__init__",
+      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever.__init__",
       "full_name": "JjapRetriever.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "python_agent_tools/jjap_retriever.py",
+      "file": "tools/universal_indexer/jjap_retriever.py",
       "start_line": 16,
       "end_line": 21,
       "range": [
@@ -774,12 +851,12 @@
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever._load_symbols",
+      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever._load_symbols",
       "full_name": "JjapRetriever._load_symbols",
       "name": "_load_symbols",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "python_agent_tools/jjap_retriever.py",
+      "file": "tools/universal_indexer/jjap_retriever.py",
       "start_line": 23,
       "end_line": 37,
       "range": [
@@ -788,24 +865,24 @@
       ],
       "signature": "def _load_symbols(...)",
       "calls": [
-        "load",
-        "len",
-        "open",
+        "print",
         "exists",
         "get",
-        "print"
+        "open",
+        "len",
+        "load"
       ],
       "used_by": [
-        "python_agent_tools/jjap_retriever.py::JjapRetriever.__init__"
+        "tools/universal_indexer/jjap_retriever.py::JjapRetriever.__init__"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol",
+      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever.retrieve_symbol",
       "full_name": "JjapRetriever.retrieve_symbol",
       "name": "retrieve_symbol",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "python_agent_tools/jjap_retriever.py",
+      "file": "tools/universal_indexer/jjap_retriever.py",
       "start_line": 39,
       "end_line": 98,
       "range": [
@@ -814,35 +891,35 @@
       ],
       "signature": "def retrieve_symbol(...)",
       "calls": [
-        "rstrip",
-        "len",
-        "next",
+        "print",
         "startswith",
-        "_safe_truncate",
-        "readlines",
-        "strip",
-        "open",
+        "max",
+        "min",
         "extend",
+        "_find_best_match",
+        "exists",
+        "strip",
+        "get",
         "join",
         "append",
-        "_find_best_match",
-        "min",
-        "exists",
-        "get",
-        "print",
-        "max"
+        "open",
+        "readlines",
+        "next",
+        "len",
+        "rstrip",
+        "_safe_truncate"
       ],
       "used_by": [
-        "python_agent_tools/jjap_retriever.py::main"
+        "tools/universal_indexer/jjap_retriever.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever._find_best_match",
+      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever._find_best_match",
       "full_name": "JjapRetriever._find_best_match",
       "name": "_find_best_match",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "python_agent_tools/jjap_retriever.py",
+      "file": "tools/universal_indexer/jjap_retriever.py",
       "start_line": 100,
       "end_line": 117,
       "range": [
@@ -851,21 +928,21 @@
       ],
       "signature": "def _find_best_match(...)",
       "calls": [
-        "get",
         "print",
-        "lower"
+        "lower",
+        "get"
       ],
       "used_by": [
-        "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
+        "tools/universal_indexer/jjap_retriever.py::JjapRetriever.retrieve_symbol"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_retriever.py::JjapRetriever._safe_truncate",
+      "symbol_id": "tools/universal_indexer/jjap_retriever.py::JjapRetriever._safe_truncate",
       "full_name": "JjapRetriever._safe_truncate",
       "name": "_safe_truncate",
       "type": "method",
       "parent": "JjapRetriever",
-      "file": "python_agent_tools/jjap_retriever.py",
+      "file": "tools/universal_indexer/jjap_retriever.py",
       "start_line": 119,
       "end_line": 129,
       "range": [
@@ -874,23 +951,23 @@
       ],
       "signature": "def _safe_truncate(...)",
       "calls": [
-        "len",
-        "join",
-        "append",
         "print",
-        "splitlines"
+        "join",
+        "splitlines",
+        "append",
+        "len"
       ],
       "used_by": [
-        "python_agent_tools/jjap_retriever.py::JjapRetriever.retrieve_symbol"
+        "tools/universal_indexer/jjap_retriever.py::JjapRetriever.retrieve_symbol"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_retriever.py::main",
+      "symbol_id": "tools/universal_indexer/jjap_retriever.py::main",
       "full_name": "main",
       "name": "main",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/jjap_retriever.py",
+      "file": "tools/universal_indexer/jjap_retriever.py",
       "start_line": 132,
       "end_line": 140,
       "range": [
@@ -899,194 +976,195 @@
       ],
       "signature": "def main(...)",
       "calls": [
-        "len",
-        "JjapRetriever",
         "print",
+        "cwd",
         "retrieve_symbol",
-        "cwd"
+        "len",
+        "JjapRetriever"
       ],
       "used_by": [
-        "python_agent_tools/create_ai_map.py::generate_ai_optimized_map"
+        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_watcher.py::import_file_directly",
+      "symbol_id": "tools/universal_indexer/jjap_watcher.py::import_file_directly",
       "full_name": "import_file_directly",
       "name": "import_file_directly",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/jjap_watcher.py",
-      "start_line": 20,
-      "end_line": 28,
+      "file": "tools/universal_indexer/jjap_watcher.py",
+      "start_line": 25,
+      "end_line": 33,
       "range": [
-        20,
-        28
+        25,
+        33
       ],
       "signature": "def import_file_directly(...)",
       "calls": [
+        "str",
         "ImportError",
         "module_from_spec",
         "exec_module",
-        "str",
         "spec_from_file_location"
       ],
       "used_by": [
-        "python_agent_tools/jjap_watcher.py::run_pipeline"
+        "tools/universal_indexer/jjap_watcher.py::run_pipeline"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_watcher.py::run_pipeline",
+      "symbol_id": "tools/universal_indexer/jjap_watcher.py::run_pipeline",
       "full_name": "run_pipeline",
       "name": "run_pipeline",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/jjap_watcher.py",
-      "start_line": 30,
-      "end_line": 73,
+      "file": "tools/universal_indexer/jjap_watcher.py",
+      "start_line": 35,
+      "end_line": 78,
       "range": [
-        30,
-        73
+        35,
+        78
       ],
       "signature": "def run_pipeline(...)",
       "calls": [
-        "generate_ai_optimized_map",
-        "update_map",
+        "print",
         "import_file_directly",
-        "scan_project",
         "print_exc",
-        "AdvancedIndexerV2",
         "get",
-        "print"
+        "scan_project",
+        "generate_ai_optimized_map",
+        "AdvancedIndexerV2",
+        "update_map"
       ],
       "used_by": [
-        "python_agent_tools/jjap_watcher.py::CodeChangeHandler.dispatch",
-        "python_agent_tools/jjap_watcher.py::main"
+        "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler.dispatch",
+        "tools/universal_indexer/jjap_watcher.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_watcher.py::CodeChangeHandler",
+      "symbol_id": "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler",
       "full_name": "CodeChangeHandler",
       "name": "CodeChangeHandler",
       "type": "class",
       "parent": null,
-      "file": "python_agent_tools/jjap_watcher.py",
-      "start_line": 76,
-      "end_line": 99,
+      "file": "tools/universal_indexer/jjap_watcher.py",
+      "start_line": 81,
+      "end_line": 104,
       "range": [
-        76,
-        99
+        81,
+        104
       ],
       "signature": "class CodeChangeHandler:",
       "calls": [],
       "used_by": [
-        "python_agent_tools/jjap_watcher.py::main"
+        "tools/universal_indexer/jjap_watcher.py::main"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/jjap_watcher.py::CodeChangeHandler.__init__",
+      "symbol_id": "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler.__init__",
       "full_name": "CodeChangeHandler.__init__",
       "name": "__init__",
       "type": "method",
       "parent": "CodeChangeHandler",
-      "file": "python_agent_tools/jjap_watcher.py",
-      "start_line": 77,
-      "end_line": 79,
+      "file": "tools/universal_indexer/jjap_watcher.py",
+      "start_line": 82,
+      "end_line": 84,
       "range": [
-        77,
-        79
+        82,
+        84
       ],
       "signature": "def __init__(...)",
       "calls": [],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/jjap_watcher.py::CodeChangeHandler.dispatch",
+      "symbol_id": "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler.dispatch",
       "full_name": "CodeChangeHandler.dispatch",
       "name": "dispatch",
       "type": "method",
       "parent": "CodeChangeHandler",
-      "file": "python_agent_tools/jjap_watcher.py",
-      "start_line": 81,
-      "end_line": 99,
+      "file": "tools/universal_indexer/jjap_watcher.py",
+      "start_line": 86,
+      "end_line": 104,
       "range": [
-        81,
-        99
+        86,
+        104
       ],
       "signature": "def dispatch(...)",
       "calls": [
-        "as_posix",
-        "Path",
-        "time",
+        "print",
         "any",
         "run_pipeline",
-        "print"
+        "as_posix",
+        "time",
+        "Path"
       ],
       "used_by": []
     },
     {
-      "symbol_id": "python_agent_tools/jjap_watcher.py::main",
+      "symbol_id": "tools/universal_indexer/jjap_watcher.py::main",
       "full_name": "main",
       "name": "main",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/jjap_watcher.py",
-      "start_line": 101,
-      "end_line": 127,
+      "file": "tools/universal_indexer/jjap_watcher.py",
+      "start_line": 106,
+      "end_line": 132,
       "range": [
-        101,
-        127
+        106,
+        132
       ],
       "signature": "def main(...)",
       "calls": [
-        "CodeChangeHandler",
-        "schedule",
-        "join",
-        "start",
-        "str",
-        "run_pipeline",
         "print",
-        "Observer",
         "stop",
-        "sleep"
+        "str",
+        "CodeChangeHandler",
+        "join",
+        "sleep",
+        "schedule",
+        "run_pipeline",
+        "start",
+        "Observer"
       ],
       "used_by": [
-        "python_agent_tools/create_ai_map.py::generate_ai_optimized_map"
+        "tools/universal_indexer/create_ai_map.py::generate_ai_optimized_map"
       ]
     },
     {
-      "symbol_id": "python_agent_tools/update_map.py::update_map",
+      "symbol_id": "tools/universal_indexer/update_map.py::update_map",
       "full_name": "update_map",
       "name": "update_map",
       "type": "function",
       "parent": null,
-      "file": "python_agent_tools/update_map.py",
+      "file": "tools/universal_indexer/update_map.py",
       "start_line": 4,
-      "end_line": 89,
+      "end_line": 94,
       "range": [
         4,
-        89
+        94
       ],
       "signature": "def update_map(...)",
       "calls": [
-        "sorted",
-        "Path",
-        "load",
-        "len",
-        "upper",
-        "strip",
-        "open",
-        "any",
-        "join",
-        "append",
-        "items",
-        "keys",
-        "exists",
-        "get",
         "print",
-        "write"
+        "write",
+        "resolve",
+        "sorted",
+        "join",
+        "exists",
+        "strip",
+        "get",
+        "any",
+        "items",
+        "append",
+        "upper",
+        "open",
+        "keys",
+        "len",
+        "load",
+        "Path"
       ],
       "used_by": [
-        "python_agent_tools/jjap_watcher.py::run_pipeline"
+        "tools/universal_indexer/jjap_watcher.py::run_pipeline"
       ]
     }
   ]

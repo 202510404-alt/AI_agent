@@ -3,8 +3,16 @@ import sys
 import argparse
 from pathlib import Path
 
-SYMBOLS_FILE = Path("system_memory") / ".jjap_symbols.json"
-CONTEXT_FILE = Path("system_memory") / ".jjap_context.json"
+# 🔄 [경로 방어선 독립] 어떤 폴더 위치에서 이 스크립트를 단독 실행하더라도 진짜 마스터 루트를 낚아챕니다.
+SCRIPT_DIR = Path(__file__).parent.resolve()
+if SCRIPT_DIR.name == "universal_indexer" and SCRIPT_DIR.parent.name == "tools":
+    PROJECT_ROOT = SCRIPT_DIR.parent.parent
+else:
+    PROJECT_ROOT = SCRIPT_DIR
+
+# 🧠 추적된 마스터 루트 기준으로 장부 보관소 절대 관로를 확실하게 조준합니다.
+SYMBOLS_FILE = PROJECT_ROOT / "system_memory" / ".jjap_symbols.json"
+CONTEXT_FILE = PROJECT_ROOT / "system_memory" / ".jjap_context.json"
 
 def load_json(file_path: Path):
     if not file_path.exists():

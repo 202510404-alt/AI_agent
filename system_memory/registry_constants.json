@@ -1,10 +1,10 @@
 {
   "registered_entities": {
-    "SemanticNavigator": "python_agent_tools/agent_navigator.py::SemanticNavigator",
-    "JjapCursorNavigatorGUI": "python_agent_tools/agent_navigator.py::JjapCursorNavigatorGUI",
-    "ContextBuilder": "python_agent_tools/context_builder.py::ContextBuilder",
-    "AdvancedIndexerV2": "python_agent_tools/indexer.py::AdvancedIndexerV2",
-    "JjapRetriever": "python_agent_tools/jjap_retriever.py::JjapRetriever",
-    "CodeChangeHandler": "python_agent_tools/jjap_watcher.py::CodeChangeHandler"
+    "SemanticNavigator": "tools/universal_indexer/agent_navigator.py::SemanticNavigator",
+    "JjapCursorNavigatorGUI": "tools/universal_indexer/agent_navigator.py::JjapCursorNavigatorGUI",
+    "ContextBuilder": "tools/universal_indexer/context_builder.py::ContextBuilder",
+    "AdvancedIndexerV2": "tools/universal_indexer/indexer.py::AdvancedIndexerV2",
+    "JjapRetriever": "tools/universal_indexer/jjap_retriever.py::JjapRetriever",
+    "CodeChangeHandler": "tools/universal_indexer/jjap_watcher.py::CodeChangeHandler"
   }
 }

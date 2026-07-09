@@ -13,9 +13,14 @@ import importlib.util
 # 🎛️ [절대 규칙 2번] 원터치 디버깅 로그 스위치
 DEBUG_MODE = True
 
-# 물리적 경로 계산
+# 🔄 물리적 경로 계산 (신규 universal_indexer 2단계 깊이 뼈대에 맞춤 수정)
 CURRENT_DIR = Path(__file__).parent.resolve()
-PROJECT_ROOT = CURRENT_DIR.parent.resolve()
+
+# 폴더명이 universal_indexer 이고 부모가 tools 일 때만 진짜 마스터 루트(2단계 위)를 낚아챕니다.
+if CURRENT_DIR.name == "universal_indexer" and CURRENT_DIR.parent.name == "tools":
+    PROJECT_ROOT = CURRENT_DIR.parent.parent
+else:
+    PROJECT_ROOT = CURRENT_DIR
 
 def import_file_directly(module_name: str, file_path: Path):
     """파이썬 모듈 캐시를 우회하고 하드디스크의 파일을 날것 그대로 강제 로드합니다."""

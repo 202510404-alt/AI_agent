@@ -13,7 +13,8 @@ except ImportError:
     SCAN_MODE = "ROOT"
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-if SCRIPT_DIR.name == "python_agent_tools" and SCRIPT_DIR.parent.name == "tools":
+# 🔄 폴더명이 universal_indexer로 변경되었으므로 진입 조건문 검사 명칭을 치환하여 진짜 마스터 루트를 확보합니다.
+if SCRIPT_DIR.name == "universal_indexer" and SCRIPT_DIR.parent.name == "tools":
     PROJECT_ROOT = SCRIPT_DIR.parent.parent
 else:
     PROJECT_ROOT = SCRIPT_DIR
