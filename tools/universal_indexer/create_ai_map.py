@@ -34,68 +34,30 @@ PROTOCOL_JSON_PATH = PROJECT_ROOT / "system_memory" / "data_protocols.json"
 EXCLUDE_KEYWORDS = [".venv", ".git", "__pycache__", "system_memory", "system_maps"]
 
 
-def parse_python_file(file_path: Path):
-    """[형님 원본 규격 100% 완벽 보존] 실시간으로 라인 범위, 클래스/함수, 임포트를 징집합니다."""
-    compact_symbols_info = []
-    imports = []
-    structural_symbols = []
-
-    try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            content = f.read()
-
-        tree = ast.parse(content)
-
-        for node in tree.body:
-            # 1. 외부 모듈 임포트 추적
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                if isinstance(node, ast.Import):
-                    for alias in node.names:
-                        imports.append(alias.name)
-                else:
-                    module_name = node.module or ""
-                    for alias in node.names:
-                        imports.append(f"{module_name}.{alias.name}" if module_name else alias.name)
-
-            # 2. 클래스 정의 및 내부 메서드 추적 (라인 범위 포함)
-            elif isinstance(node, ast.ClassDef):
-                class_start = node.lineno
-                class_end = getattr(node, "end_lineno", class_start)
-                class_info = f"🧬 class {node.name} [L{class_start}-{class_end}]"
-                structural_symbols.append(class_info)
-
-                for sub_node in node.body:
-                    if isinstance(sub_node, ast.FunctionDef):
-                        func_start = sub_node.lineno
-                        func_end = getattr(sub_node, "end_lineno", func_start)
-
-                        args_list = [a.arg for a in sub_node.args.args]
-                        if "self" in args_list:
-                            args_list.remove("self")
-                        args_str = ", ".join(args_list)
-
-                        func_info = f"   └─ def {sub_node.name}({args_str}) [L{func_start}-{func_end}]"
-                        structural_symbols.append(func_info)
-
-            # 3. 단독 전역 함수 추적 (라인 범위 포함)
-            elif isinstance(node, ast.FunctionDef):
-                func_start = node.lineno
-                func_end = getattr(node, "end_lineno", func_start)
-                args_list = [a.arg for a in node.args.args]
-                args_str = ", ".join(args_list)
-                func_info = f"🎯 def {node.name}({args_str}) [L{func_start}-{func_end}]"
-                structural_symbols.append(func_info)
-
-        if imports:
-            clean_imports = sorted(list(set(imports)))[:6]
-            compact_symbols_info.append(f"💡 📦 imp: {', '.join(clean_imports)}")
-        if structural_symbols:
-            compact_symbols_info.extend(structural_symbols)
-
-    except Exception as e:
-        return [f"⚠️ [AST 파싱 실패]: {e}"]
-
-    return compact_symbols_info
+# =====================================================================
+# 🛠️ [수정] 자체 파이썬 AST 파싱 함수를 제거하고, 
+# 인덱서가 이미 만들어둔 .jjap_context.json 통합 장부를 로드하는 함수로 대체합니다.
+# =====================================================================
+def load_jjap_context():
+    """
+    Indexer가 모든 언어(Python, Java, JSON)를 스캔해서 만들어둔 
+    통합 .jjap_context.json 장부를 읽어옵니다. (단일 진실 공급원)
+    """
+    context_path = PROJECT_ROOT / "system_memory" / ".jjap_context.json"
+    if not context_path.exists():
+        # 만약 해당 위치에 없으면 프로젝트 루트 폴더도 확인 (폴백 방어선)
+        context_path = PROJECT_ROOT / ".jjap_context.json"
+        
+    if context_path.exists():
+        try:
+            with open(context_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                return data.get("files", {})
+        except Exception as e:
+            print(f"⚠️ [.jjap_context.json] 로드 중 오류 발생: {e}")
+    else:
+        print("⚠️ [.jjap_context.json] 통합 장부 파일을 찾을 수 없습니다. 인덱서를 먼저 실행해 주세요.")
+    return {}
 
 
 def collect_target_files():
@@ -224,119 +186,126 @@ def load_protocols():
         return {}
 
 
+# =====================================================================
+# 🛠️ [수정] .jjap_context.json에 존재하지 않는 "classes" 키를 조회하던 버그를 잡고,
+# .jjap_symbols.json 장부의 'type' == 'class' 데이터를 기반으로 정밀 매칭합니다.
+# =====================================================================
 def parse_protocols_and_registries():
     """
-    🧠 [Dynamic Map Matcher]
-    장부에서 수집된 레지스트리와 프로토콜 데이터를 기반으로 
-    소스코드 맵에 이정표(🔑, 📊)를 꽂아주기 위한 매칭 딕셔너리를 유연하게 생성합니다.
+    통합 심볼 장부를 기반으로 어떤 파일에 어떤 클래스(Registry, Protocol)가 
+    정의되어 있는지 역추적하여 최종 매칭 테이블을 완성합니다 형님!
     """
     path_to_registry = {}
     path_to_protocol = {}
 
-    # 유연하게 진화한 로더를 통해 데이터를 정제된 형태로 징집
-    registry_set = load_registry()
-    protocols_dict = load_protocols()
+    # 1. 원본 장부 로드 (레지스트리 상수 및 프로토콜 명세 리스트)
+    registry_data = load_registry()      # 기존의 load_registry 활용
+    protocol_data = load_protocols()    # 기존의 load_protocols 활용
 
-    # 인덱서가 가공해 둔 컨텍스트 장부(.jjap_context.json)를 참조하여 파일별 매칭 링크를 완성합니다.
-    context_path = PROJECT_ROOT / "system_memory" / ".jjap_context.json"
-    if context_path.exists():
+    # 2. 글로벌 심볼 장부(.jjap_symbols.json)에서 class 타입 추출
+    symbols_path = PROJECT_ROOT / "system_memory" / ".jjap_symbols.json"
+    if not symbols_path.exists():
+        symbols_path = PROJECT_ROOT / ".jjap_symbols.json"
+
+    all_symbols = []
+    if symbols_path.exists():
         try:
-            with open(context_path, "r", encoding="utf-8") as f:
-                ctx_data = json.load(f)
-                files_info = ctx_data.get("files", {})
-                
-                for rel_path, f_meta in files_info.items():
-                    # 해당 파일에 포함된 클래스 목록 추적
-                    classes_in_file = f_meta.get("classes", [])
-                    
-                    # 1. 레지스트리 매칭
-                    for cls in classes_in_file:
-                        if cls in registry_set:
-                            if rel_path not in path_to_registry:
-                                path_to_registry[rel_path] = []
-                            if cls not in path_to_registry[rel_path]:
-                                path_to_registry[rel_path].append(cls)
-                                
-                    # 2. 프로토콜 매칭
-                    for cls in classes_in_file:
-                        if cls in protocols_dict:
-                            if rel_path not in path_to_protocol:
-                                path_to_protocol[rel_path] = []
-                            path_to_protocol[rel_path].append((cls, protocols_dict[cls]))
+            with open(symbols_path, "r", encoding="utf-8") as f:
+                all_symbols = json.load(f).get("symbols", [])
         except Exception as e:
-            print(f"⚠️ [맵메이커 방어선] 컨텍스트 연동 중 오류 발생: {e}")
+            print(f"⚠️ [.jjap_symbols.json] 읽기 실패: {e}")
+
+    # 3. 심볼 장부를 순회하며 클래스 단위로 레지스트리/프로토콜 싱크 매칭
+    for sym in all_symbols:
+        if sym.get("type") != "class":
+            continue
+            
+        cls_name = sym.get("name")
+        rel_path = sym.get("path") # 예: "src/src/main/java/com/desertcore/lobbycmd.java"
+        
+        if not cls_name or not rel_path:
+            continue
+
+        # Posix 표준 경로 문자열로 정규화
+        posix_rel_path = Path(rel_path).as_posix()
+
+        # [A] 레지스트리 매칭 검사
+        if cls_name in registry_data:
+            if posix_rel_path not in path_to_registry:
+                path_to_registry[posix_rel_path] = set()
+            path_to_registry[posix_rel_path].add(cls_name)
+
+        # [B] 프로토콜 명세 매칭 검사
+        if cls_name in protocol_data:
+            if posix_rel_path not in path_to_protocol:
+                path_to_protocol[posix_rel_path] = []
+            # 중복 추가 방어
+            if (cls_name, protocol_data[cls_name]) not in path_to_protocol[posix_rel_path]:
+                path_to_protocol[posix_rel_path].append((cls_name, protocol_data[cls_name]))
 
     return path_to_registry, path_to_protocol
 
 
 def main():
     target_files = collect_target_files()
-    print(f"[MAIN] target_files received : {len(target_files)}")
-    if not target_files:
-        return
+    
+    # 1. 🛠️ [통합 개조] 인덱서가 작성한 모든 언어의 통합 컨텍스트 장부 미리 로드
+    jjap_context = load_jjap_context()
 
-    print(f"🔍 [디버그] 스캔 타깃 파일 수집 완료: 총 {len(target_files)}개 탐색됨 (비-파이썬 파일 포함)")
+    # 2. 🛠️ [통합 개조] 리팩터링된 글로벌 심볼 기반 레지스트리/프로토콜 역추적 매칭 데이터 획득
+    path_to_registry, path_to_protocol = parse_protocols_and_registries()
 
-    path_to_registry = load_registry()
-    path_to_protocol = load_protocols()
+    printed_dirs = set()
 
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    if OUTPUT_FILE_PATH.exists():
-        try:
-            OUTPUT_FILE_PATH.unlink()
-        except Exception:
-            pass
+    # 출력 타깃 폴더(system_maps/) 자동 확보 안전망
+    OUTPUT_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(OUTPUT_FILE_PATH, "w", encoding="utf-8", newline="") as f:
+    with open(OUTPUT_FILE_PATH, "w", encoding="utf-8") as f:
+        # 마스터 헤더 사양 작성 (순정 코드 100% 유지)
         f.write("# 🏗️ AI-OPTIMIZED ULTRA COMPACT CODEBASE MAP (INTELLIGENT SCAN)\n\n")
         f.write("> **[AI 프로토콜 매뉴얼]** 이 문서는 다른 AI 비서들의 경로 오해를 차단하기 위해 파일마다 **실제 하드디스크 상대 경로 `[📂 실제경로]`**를 강제 명시해 둔 특수 지도입니다.\n")
         f.write("> AI 비서는 절대 눈치로 경로를 추측하지 말고, 파일명 뒤에 박혀있는 `[📂 실제경로]` 규격을 그대로 복사하여 agent_navigator를 호출하십시오.\n\n")
+        f.write("```markdown\nproject_root/\n")
 
-        f.write("```markdown\n")
-        f.write("project_root/\n")
-
-        printed_dirs = set()
-
+        # 파일 스캔 및 맵 생성 순회 루프
         for file_path in target_files:
-            print(f"[WRITE] {file_path}")
             rel_path = file_path.relative_to(PROJECT_ROOT)
+            posix_rel_path = rel_path.as_posix()
+            file_name = file_path.name
+
+            # 🌲 트리 계층 디렉토리 라인 생성 및 중복 출력 방지 (순정 로직)
             parts = rel_path.parts
-
-            print(f"[REL] {rel_path}")
-            print(f"[PARTS] {parts}")
-
-            # 디렉터리 트리 라인 출력 생성
-            print("[DIR CREATE]")
-            for i in range(1, len(parts)):
-                current_dir_path = Path(*parts[:i])
-                print(current_dir_path)
+            for i in range(len(parts) - 1):
+                current_dir_path = Path(*parts[:i + 1]).as_posix()
                 if current_dir_path not in printed_dirs:
-                    dir_indent = "│   " * (i - 1)
-                    f.write(f"{dir_indent}├── {parts[i-1]}/\n")
                     printed_dirs.add(current_dir_path)
+                    indent = "│   " * i
+                    f.write(f"{indent}├── {parts[i]}/\n")
 
             indent = "│   " * (len(parts) - 1)
-            file_name = parts[-1]
-            print(f"[WRITE FILE] {file_name}")
-            posix_rel_path = rel_path.as_posix()
 
-            # 💡 [교정] 파이썬 파일일 때만 내부 심볼(AST)을 분석하고, 나머지는 경로만 출력합니다.
-            if file_name.endswith(".py"):
-                symbols_info = parse_python_file(file_path)
-                symbols_str = " | ".join(symbols_info) if symbols_info else ""
-            else:
-                symbols_str = "" # 파이썬이 아니면 심볼 분석 생략
+            # 🛠️ [핵심 수정] 확장자 하드코딩 분기를 걷어내고, 인덱서 장부에서 통합 요약문 원터치 조회!
+            file_meta = jjap_context.get(posix_rel_path, {})
+            symbols_info = file_meta.get("symbols_summary", "")
 
-            if symbols_str:
-                f.write(f"{indent}├── {file_name} [📂 {posix_rel_path}] -> [{symbols_str}]\n")
+            # 🛠️ [경로 유틸 불일치 폴백 방어선]
+            # Java Parser가 src/src/ 경로를 독자 정규화하여 저장했을 상황을 대비한 유연한 폴백 매칭
+            if not symbols_info and posix_rel_path.startswith("src/src/"):
+                shorter_path = posix_rel_path.replace("src/src/", "src/", 1)
+                symbols_info = jjap_context.get(shorter_path, {}).get("symbols_summary", "")
+
+            # 코드맵에 최종 파일 사양 한 줄 출력 동기화
+            if symbols_info:
+                f.write(f"{indent}├── {file_name} [📂 {posix_rel_path}] -> [{symbols_info}]\n")
             else:
                 f.write(f"{indent}├── {file_name} [📂 {posix_rel_path}]\n")
 
-            # 레지스트리 및 프로토콜 정보 출력 유지
+            # 🔑 하위 레지스트리 매칭 블록 출력 (순정 로직 코드값 완벽 보존)
             if posix_rel_path in path_to_registry:
                 for reg_const in path_to_registry[posix_rel_path]:
                     f.write(f"{indent}│     ├── 🔑 [REGISTRY]: \"{reg_const}\"\n")
 
+            # 📊 하위 프로토콜 청크 매칭 블록 출력 (순정 로직 가공식 완벽 보존)
             if posix_rel_path in path_to_protocol:
                 for proto_name, fields in path_to_protocol[posix_rel_path]:
                     f.write(f"{indent}│     ├── 📊 [PROTOCOL]: \"{proto_name}\"\n")
@@ -347,6 +316,10 @@ def main():
                     chunks = [field_items[x:x + 4] for x in range(0, len(field_items), 4)]
                     for chunk in chunks:
                         f.write(f"{indent}│     │     ├── {', '.join(chunk)}\n")
+                        
+        f.write("```\n")
+    
+    # 하단 디버그 로그 및 요약 보고서 파일 쓰기 (순정 유지)
     print("=" * 80)
     print("[SUMMARY]")
     print(f"Directories Printed : {len(printed_dirs)}")
@@ -359,7 +332,6 @@ def main():
             dbg.write(str(p) + "\n")
 
     print(f"🎯 [마스터 공장] 'system_maps/AI_CODEBASE_MAP.md'가 모든 파일 구조를 포함하여 안전하게 자동 갱신되었습니다 형님!")
-
 
 # ======================================================================
 # 🔗 [파이프라인 결합 방어선]

@@ -8,6 +8,6 @@
 # 🎛️ 마스터 토글 스위치 
 # "ROOT" -> 프로젝트 전체 원본 경로 직접 징집 (경로 불일치 에러 완벽 해결! 실제 경로 유지)
 # "SRC"  -> 기존 방식 (오직 src/ 폴더 내부만 검사)
-SCAN_MODE = "SRC"
+SCAN_MODE = "ROOT"
 
 SYSTEM_EXCLUDES = ["system_memory", "system_maps"]

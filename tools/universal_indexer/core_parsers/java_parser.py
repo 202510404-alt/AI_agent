@@ -55,16 +55,14 @@ def extract_symbols(file_path: Path, project_root: Path):
         log(f"❌ 파일 읽기 실패: {file_path} | 에러: {e}")
         return symbols, {}, {}, {}, []
 
-    # 🚨 [방어선] src/src/ 가 겹쳐서 들어오거나 유동적인 경로가 와도 순수 상대경로로 정규화
+# 🚨 [교정] 독단적인 src/src/ 축약을 제거하고 실제 디스크 상대 경로 규격을 그대로 보존합니다.
     try:
         raw_rel = file_path.relative_to(project_root).as_posix()
     except ValueError:
         raw_rel = file_path.name
 
-    if raw_rel.startswith("src/src/"):
-        rel_path_str = raw_rel.replace("src/src/", "src/", 1)
-    else:
-        rel_path_str = raw_rel
+    # 별도의 치환 없이 디스크 실제 경로를 단일 진실 공급원(Single Source of Truth) 키값으로 확정
+    rel_path_str = raw_rel
 
     file_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
     lines = content.splitlines()
