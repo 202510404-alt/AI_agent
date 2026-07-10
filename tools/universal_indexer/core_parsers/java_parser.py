@@ -104,7 +104,7 @@ def extract_symbols(file_path: Path, project_root: Path):
             class_start_idx = idx
             end_line = _find_matching_curly_brace(lines, idx)
             
-            symbols_info_strings.append(f"🧬 class {c_name}")
+            symbols_info_strings.append(f"🧬 class {c_name} [L{line_num}-{end_line}]")
             skeleton_segments.append(f"class {c_name} {{ // L{line_num}-{end_line}")
             
             symbols.append({
@@ -150,16 +150,21 @@ def extract_symbols(file_path: Path, project_root: Path):
             ]
             detected_calls = list(set(detected_calls))
 
+            # =================================================================
+            # 🎯 [수정 완료] 파이썬 규격과 완벽 동기화하여 줄 범위 [L시작-끝] 복원
+            # =================================================================
             if current_class:
                 m_id = f"{rel_path_str}::{current_class}.{m_name}"
                 full_name = f"{current_class}.{m_name}"
-                symbols_info_strings.append(f"    └─ def {m_name}() [L{line_num}-{end_line}]")
+                # ✅ [교정] 클래스 내부의 메서드 정보와 줄 범위를 정확하게 매핑합니다.
+                symbols_info_strings.append(f"🎯 def {m_name}({params_str}) [L{line_num}-{end_line}]")
                 skeleton_segments.append(f"    {line_stripped} // L{line_num}-{end_line}")
                 def_key = full_name
             else:
                 m_id = f"{rel_path_str}::{m_name}"
                 full_name = m_name
-                symbols_info_strings.append(f"🎯 def {m_name}() [L{line_num}-{end_line}]")
+                # ✅ [교정] 단독 메서드 정보와 줄 범위를 정확하게 매핑합니다.
+                symbols_info_strings.append(f"🎯 def {m_name}({params_str}) [L{line_num}-{end_line}]")
                 skeleton_segments.append(f"{line_stripped} // L{line_num}-{end_line}")
                 def_key = m_name
 

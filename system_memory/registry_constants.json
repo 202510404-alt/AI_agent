@@ -2,8 +2,8 @@
   "registered_entities": [
     "SemanticNavigator",
     "JjapCursorNavigatorGUI",
-    "AdvancedIndexerV2",
     "JjapRetriever",
-    "CodeChangeHandler"
+    "CodeChangeHandler",
+    "AdvancedIndexerV2"
   ]
 }
