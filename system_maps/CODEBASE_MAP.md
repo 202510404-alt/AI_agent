@@ -1298,26 +1298,34 @@ def main():
     # 2. 🛠️ [통합 개조] 리팩터링된 글로벌 심볼 기반 레지스트리/프로토콜 역추적 매칭 데이터 획득
     path_to_registry, path_to_protocol = parse_protocols_and_registries()
 
-    printed_dirs = set()
-
     # 출력 타깃 폴더(system_maps/) 자동 확보 안전망
     OUTPUT_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     with open(OUTPUT_FILE_PATH, "w", encoding="utf-8") as f:
+        # 🎯 [메모리 오염 방어] 바깥에 있던 printed_dirs를 이 안쪽으로 이사시켰습니다 형님!
+        # 파일이 새로 열려 쓰여질 때마다 기존 장부를 깨끗하게 초기화하여 모드 전환 시 뒤엉킴을 막습니다.
+        printed_dirs = set()
+
         # 마스터 헤더 사양 작성 (순정 코드 100% 유지)
         f.write("# 🏗️ AI-OPTIMIZED ULTRA COMPACT CODEBASE MAP (INTELLIGENT SCAN)\n\n")
         f.write("> **[AI 프로토콜 매뉴얼]** 이 문서는 다른 AI 비서들의 경로 오해를 차단하기 위해 파일마다 **실제 하드디스크 상대 경로 `[📂 실제경로]`**를 강제 명시해 둔 특수 지도입니다.\n")
         f.write("> AI 비서는 절대 눈치로 경로를 추측하지 말고, 파일명 뒤에 박혀있는 `[📂 실제경로]` 규격을 그대로 복사하여 agent_navigator를 호출하십시오.\n\n")
         f.write("```markdown\nproject_root/\n")
-
+        
         # 파일 스캔 및 맵 생성 순회 루프
         for file_path in target_files:
             rel_path = file_path.relative_to(PROJECT_ROOT)
             posix_rel_path = rel_path.as_posix()
             file_name = file_path.name
 
-            # 🌲 트리 계층 디렉토리 라인 생성 및 중복 출력 방지 (순정 로직)
-            parts = rel_path.parts
+            # 🎯 [형님 제안 반영] SRC 모드일 때만 가장 바깥의 'src/' 문자열 제거 (출력용 display_path 생성)
+            if SCAN_MODE == "SRC" and posix_rel_path.startswith("src/"):
+                display_path = posix_rel_path[4:]  # "src/" 4글자 컷
+            else:
+                display_path = posix_rel_path
+
+            # 🌲 트리 계층 디렉토리 라인 생성 및 중복 출력 방지 (display_path 기준 트리 생성)
+            parts = Path(display_path).parts
             for i in range(len(parts) - 1):
                 current_dir_path = Path(*parts[:i + 1]).as_posix()
                 if current_dir_path not in printed_dirs:
@@ -1327,28 +1335,27 @@ def main():
 
             indent = "│   " * (len(parts) - 1)
 
-            # 🛠️ [핵심 수정] 확장자 하드코딩 분기를 걷어내고, 인덱서 장부에서 통합 요약문 원터치 조회!
+            # 🛠️ [기존 순정 장부 조회 유지] 데이터 대조용 장부 조회는 원래 수집 경로(posix_rel_path)로 수행하여 누락 방지
             file_meta = jjap_context.get(posix_rel_path, {})
             symbols_info = file_meta.get("symbols_summary", "")
 
-            # 🛠️ [경로 유틸 불일치 폴백 방어선]
-            # Java Parser가 src/src/ 경로를 독자 정규화하여 저장했을 상황을 대비한 유연한 폴백 매칭
+            # 🛠️ [경로 유틸 불일치 폴백 방어선] (순정 유지)
             if not symbols_info and posix_rel_path.startswith("src/src/"):
                 shorter_path = posix_rel_path.replace("src/src/", "src/", 1)
                 symbols_info = jjap_context.get(shorter_path, {}).get("symbols_summary", "")
 
-            # 코드맵에 최종 파일 사양 한 줄 출력 동기화
+            # 코드맵에 최종 파일 사양 한 줄 출력 (출력값만 display_path 적용)
             if symbols_info:
-                f.write(f"{indent}├── {file_name} [📂 {posix_rel_path}] -> [{symbols_info}]\n")
+                f.write(f"{indent}├── {file_name} [📂 {display_path}] -> [{symbols_info}]\n")
             else:
-                f.write(f"{indent}├── {file_name} [📂 {posix_rel_path}]\n")
+                f.write(f"{indent}├── {file_name} [📂 {display_path}]\n")
 
-            # 🔑 하위 레지스트리 매칭 블록 출력 (순정 로직 코드값 완벽 보존)
+            # 🔑 하위 레지스트리 매칭 블록 출력 (순정 원래 키값 유지)
             if posix_rel_path in path_to_registry:
                 for reg_const in path_to_registry[posix_rel_path]:
                     f.write(f"{indent}│     ├── 🔑 [REGISTRY]: \"{reg_const}\"\n")
 
-            # 📊 하위 프로토콜 청크 매칭 블록 출력 (순정 로직 가공식 완벽 보존)
+            # 📊 하위 프로토콜 청크 매칭 블록 출력 (순정 원래 키값 유지)
             if posix_rel_path in path_to_protocol:
                 for proto_name, fields in path_to_protocol[posix_rel_path]:
                     f.write(f"{indent}│     ├── 📊 [PROTOCOL]: \"{proto_name}\"\n")
@@ -1359,8 +1366,6 @@ def main():
                     chunks = [field_items[x:x + 4] for x in range(0, len(field_items), 4)]
                     for chunk in chunks:
                         f.write(f"{indent}│     │     ├── {', '.join(chunk)}\n")
-                        
-        f.write("```\n")
     
     # 하단 디버그 로그 및 요약 보고서 파일 쓰기 (순정 유지)
     print("=" * 80)
