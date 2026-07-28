@@ -1,0 +1,790 @@
+Mode                 LastWriteTime         Length Name                                                                                       
+----                 -------------         ------ ----                                                                                       
+d-----      2026-07-13   오후 3:49                resources                                                                                  
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense
+
+
+Mode                 LastWriteTime         Length Name                                                                                       
+----                 -------------         ------ ----                                                                                       
+-a----      2026-07-20   오후 1:41              0 CoreDefensePlugin.java                                                                     
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\bootstrap
+
+
+Mode                 LastWriteTime         Length Name                                                                                       
+----                 -------------         ------ ----                                                                                       
+-a----      2026-07-20   오후 1:41              0 ModuleInitializer.java                                                                     
+-a----      2026-07-20   오후 1:41              0 ListenerRegistrar.java                                                                     
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\data\storage
+
+
+Mode                 LastWriteTime         Length Name                                                                                       
+----                 -------------         ------ ----                                                                                       
+-a----      2026-07-20   오후 1:41              0 VariableStorage.java                                                                       
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\data\pipeline
+
+
+Mode                 LastWriteTime         Length Name                                                                                       
+----                 -------------         ------ ----                                                                                       
+-a----      2026-07-20   오후 1:41              0 JsonSerializationPipeline.java                                                             
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\entity\base
+
+
+Mode                 LastWriteTime         Length Name                                                                                       
+----                 -------------         ------ ----                                                                                       
+-a----      2026-07-20   오후 1:41              0 BaseEntity.java                                                                            
+-a----      2026-07-20   오후 1:41              0 EntityRegistry.java                                                                        
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\resources
+
+
+Mode                 LastWriteTime         Length Name                                                                                       
+----                 -------------         ------ ----                                                                                       
+-a----      2026-07-20   오후 1:41              0 editor_objects.json                                                                        
+-a----      2026-07-20   오후 1:41              0 plugin.yml                                                                                 
+
+
+PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> 
+ *  History restored 
+
+PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> 
+PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> # 1. 기존 레거시 bin 폴더 및 일부 불일치 리소스 정리
+>> Remove-Item -Recurse -Force -ErrorAction SilentlyContinue bin, src/main/resources/config/player_classes
+>> 
+>> # 2. 개정안 리소스(Resources) 디렉터리 및 파일 생성
+>> Ensure-Path src/main/resources/config/waves, src/main/resources/config/weapons, src/main/resources/config/player_classes, src/main/resources/config/npc, src/main/resources/config/mining, src/main/resources/config/structures, src/main/resources/config/progression, src/main/resources/lang, src/main/resources/schematics, docs/design
+>> $ResourceFiles = @(
+>>     "src/main/resources/config/core_visual_stages.yml",
+>>     "src/main/resources/config/waves/wave_definitions.yml",
+>>     "src/main/resources/config/waves/boss_waves.yml",
+>>     "src/main/resources/config/weapons/guns.yml",
+>>     "src/main/resources/config/weapons/melee.yml",
+>>     "src/main/resources/config/player_classes/classes.yml",
+>>     "src/main/resources/config/player_classes/specializations.yml",
+>>     "src/main/resources/config/npc/npc_traits.yml",
+>>     "src/main/resources/config/npc/npc_recruit_pool.yml",
+>>     "src/main/resources/config/npc/npc_job_promotions.yml",
+>>     "src/main/resources/config/npc/resonance_thresholds.yml",
+>>     "src/main/resources/config/mining/ores.yml",
+>>     "src/main/resources/config/structures/walls.yml",
+>>     "src/main/resources/config/structures/turrets.yml",
+>>     "src/main/resources/config/progression/meta_upgrades.yml",
+>>     "src/main/resources/config/progression/score_weights.yml",
+>>     "src/main/resources/lang/en_US.yml",
+>>     "src/main/resources/lang/ko_KR.yml"
+>> )
+>> foreach ($file in $ResourceFiles) { if (-not (Test-Path $file)) { New-Item -ItemType File -Path $file -Force } }
+>> 
+>> # 3. 개정안 Java 패키지 구조 및 스켈레톤 클래스 일괄 생성
+>> $BaseDir = "src/main/java/com/yourstudio/coredefense"
+>> 
+>> $Classes = @{
+>>     "" = @("CoreDefensePlugin.java")
+>>     "bootstrap" = @("ModuleInitializer.java", "ListenerRegistrar.java", "CommandRegistrar.java")
+>>     "api/event" = @()
+>>     "api/service" = @()
+>>     "common/event" = @("AbstractGameEvent.java", "GameListener.java")
+>>     "common/registry" = @("Registry.java", "AbstractRegistry.java", "RegistryKey.java")
+>>     "common/config" = @("ConfigService.java", "ConfigLoader.java", "ConfigParser.java", "ReloadableConfig.java")
+>>     "common/contract" = @("EnergyConsumer.java", "EnergyPriority.java", "Healable.java")
+>>     "common/util" = @("MathUtils.java", "ParticleUtils.java", "CooldownTracker.java", "RayTraceUtil.java")
+>>     "common/scheduling" = @("GameScheduler.java")
+>>     "common/perf" = @("PerformanceMonitor.java")
+>>     "common/result" = @("ActionResult.java")
+>>     "session" = @("GameSession.java", "GameSessionManager.java", "GameTeam.java", "GameSessionState.java")
+>>     "session/event" = @("GameSessionEndedEvent.java")
+>>     "core" = @("CoreEntity.java", "CoreLevel.java", "CoreLevelRegistry.java", "CoreLevelUpService.java", "CoreEnergyManager.java", "CoreUnlockManager.java", "CoreUnlockConfig.java", "CoreState.java", "CoreStateMachine.java", "CoreVisualFeedbackService.java", "SchematicPasteService.java", "CoreLevelListener.java")
+>>     "core/event" = @("CoreDamagedEvent.java", "CoreLeveledUpEvent.java", "CoreDestroyedEvent.java", "CoreSystemUnlockedEvent.java")
+>>     "wave" = @("WaveManager.java", "WaveState.java", "WaveDefinition.java", "BossWaveDefinition.java", "MonsterSpawnEntry.java", "WaveSpawnScheduler.java", "WaveScalingPolicy.java", "ReadyVoteService.java")
+>>     "wave/spawn" = @("SpawnPointGroup.java")
+>>     "wave/condition" = @("WaveClearCondition.java", "AllMonstersClearedCondition.java", "BossDefeatedCondition.java")
+>>     "wave/state" = @("WaveStateHandler.java", "WaitingStateHandler.java", "SpawningStateHandler.java", "InProgressStateHandler.java", "ClearedStateHandler.java", "RewardStateHandler.java")
+>>     "wave/boss" = @("BossWaveHandler.java")
+>>     "wave/event" = @("WaveStartedEvent.java", "WaveSpawnEvent.java", "WaveClearedEvent.java")
+>>     "combat/weapon" = @("Weapon.java", "AbstractFirearm.java", "SingleShotFirearm.java", "BurstFireFirearm.java", "SniperRifle.java", "WeaponDefinition.java", "WeaponInputHandler.java", "WeaponRegistry.java", "WeaponFactory.java", "WeaponAttachment.java", "WeaponAcquisitionPolicy.java")
+>>     "combat/weapon/strategy" = @("FireModeStrategy.java", "SingleShotStrategy.java", "BurstFireStrategy.java", "SniperShotStrategy.java", "SpreadPolicy.java")
+>>     "combat/weapon/projectile" = @("ProjectileType.java", "BulletProjectile.java", "ArcProjectile.java", "ProjectileFactory.java")
+>>     "combat/weapon/ammo" = @("AmmoType.java", "AmmoInventory.java")
+>>     "combat/melee" = @("MeleeWeapon.java", "MeleeAttackHandler.java")
+>>     "combat/damage" = @("DamageCalculator.java", "DamageSource.java", "DamageModifier.java", "CombatDamageService.java")
+>>     "combat/vfx" = @("WeaponVfxService.java")
+>>     "combat/event" = @("WeaponFiredEvent.java", "EntityDamagedByGameEvent.java")
+>>     "mob" = @("MonsterDefinition.java", "MonsterFactory.java", "MonsterAI.java", "MonsterRegistry.java")
+>>     "mob/ai" = @("TargetSelector.java", "PathingStrategy.java")
+>>     "mob/event" = @("MonsterKilledEvent.java")
+>>     "npc" = @("GameNpc.java", "NpcRole.java", "NpcState.java", "NpcStateMachine.java", "NpcStatSheet.java", "NpcCapacityPolicy.java", "NpcOwnershipPolicy.java")
+>>     "npc/safezone" = @("SafeZoneService.java")
+>>     "npc/safezone/event" = @("SafeZoneBreachedEvent.java")
+>>     "npc/trait" = @("NpcTrait.java", "TraitRegistry.java", "ResonanceCalculator.java", "NpcCollaborationUnlockService.java")
+>>     "npc/vocation" = @("NpcVocation.java", "NpcVocationSkillTree.java", "NpcVocationPromotion.java")
+>>     "npc/recruit" = @("RecruitPool.java", "RecruitOffer.java", "RecruitPoolWeightTable.java", "RecruitmentService.java")
+>>     "npc/death" = @("NpcDeathHandler.java", "ReviveService.java", "LegacyTransferService.java")
+>>     "npc/event" = @("NpcRecruitedEvent.java", "NpcLeveledUpEvent.java", "NpcDiedEvent.java")
+>>     "mining" = @("MiningSession.java", "OreType.java", "OreRegistry.java", "ClickMiningHandler.java", "AutoMiningTicker.java", "MiningEfficiencyPolicy.java")
+>>     "mining/event" = @("OreMinedEvent.java", "OreUnlockedEvent.java")
+>>     "structure" = @("StructureRegistry.java", "StructurePlacementService.java", "BuildableZoneService.java", "BuildPermissionPolicy.java")
+>>     "structure/wall" = @("WallDefinition.java", "WallMaterialTier.java", "WallInstance.java", "WallModule.java")
+>>     "structure/turret" = @("Turret.java", "TurretDefinition.java", "TurretFactory.java", "TurretAmmoSupply.java")
+>>     "structure/turret/targeting" = @("TurretTargeting.java", "NearestTargetStrategy.java", "LowestHpTargetStrategy.java", "HighestThreatTargetStrategy.java")
+>>     "structure/turret/types" = @("ArrowSentryTurret.java", "SlingshotTurret.java", "FlamethrowerTurret.java", "MinigunTurret.java", "BuffTowerTurret.java", "LightGunTurret.java", "AutoCannonTurret.java", "MissileTurret.java", "NukeMissileTurret.java")
+>>     "structure/event" = @("StructurePlacedEvent.java", "StructureDestroyedEvent.java")
+>>     "drone" = @("CombatDrone.java", "DroneCapacityPolicy.java")
+>>     "playerclass" = @("PlayerClass.java", "ClassDefinition.java", "ClassRegistry.java")
+>>     "playerclass/specialization" = @("Specialization.java")
+>>     "playerclass/skill" = @("Skill.java", "ActiveSkill.java", "PassiveSkill.java", "UltimateSkill.java", "UltimateCooldownPool.java", "SkillTree.java", "SkillNode.java", "SkillInputHandler.java")
+>>     "playerclass/heal" = @("HealStrategy.java")
+>>     "playerclass/builder" = @("OverclockSkill.java", "OverclockPenaltyHandler.java")
+>>     "playerclass/builder/event" = @("OverclockActivatedEvent.java", "OverheatTriggeredEvent.java")
+>>     "playerclass/event" = @("ClassSelectedEvent.java", "SkillUsedEvent.java")
+>>     "progression" = @("MetaCurrency.java", "PlayerProgressionData.java", "MetaUpgrade.java", "MetaUpgradeTree.java", "MetaUpgradeNode.java", "UpgradeEffectType.java", "ScoreCalculator.java", "ProgressionService.java", "ProgressionStatsCollector.java")
+>>     "persistence" = @("Repository.java", "DataStoreType.java", "PersistenceService.java", "PlayerDataLock.java", "FailedSaveRetryQueue.java")
+>>     "persistence/file" = @("YamlPlayerRepository.java", "JsonSessionSnapshotRepository.java")
+>>     "persistence/sql" = @("SqlPlayerRepository.java", "SqlSchemaMigrator.java")
+>>     "gui" = @("GameMenu.java", "MenuFactory.java")
+>>     "gui/menus" = @("RecruitMenu.java", "SkillTreeMenu.java", "MetaUpgradeMenu.java", "NpcReplaceMenu.java")
+>>     "command" = @("CoreDefenseCommand.java")
+>>     "command/sub" = @("StartGameSubcommand.java", "AdminReloadSubcommand.java")
+>> }
+>> 
+>> foreach ($pkg in $Classes.Keys) {
+>>     $TargetFolder = if ($pkg -eq "") { $BaseDir } else { "$BaseDir/$pkg" }
+>>     if (-not (Test-Path $TargetFolder)) { New-Item -ItemType Directory -Path $TargetFolder -Force | Out-Null }
+>>     
+>>     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { "." + $pkg.Replace('/', '.') } else { "" })
+>>     
+>>     foreach ($file in $Classes[$pkg]) {
+>>         $FilePath = "$TargetFolder/$file"
+>>         if (-not (Test-Path $FilePath)) {
+>>             $ClassName = $file.Replace(".java", "")
+>>             $Type = if ($file -match "Registry|Service|Manager|Handler|Policy|Tracker|Calculator|Factory|Data|State|Listener|Registrar|Plugin|Command|Menu|DataStoreType") { "class" } else { "interface" }
+>>             if ($file -match "Event") { $Type = "class" }
+>>             
+>>             $Content = "package $PackageName;`n`npublic $Type $ClassName {`n    // TODO: Implement 개정안 스켈레톤`n}"
+>>             Set-Content -Path $FilePath -Value $Content -Encoding utf8
+>>         }
+>>     }
+>> }
+>> Write-Host "✅ 모든 파일 구조 개정안 동기화 완료!" -ForegroundColor Green
+Ensure-Path : 'Ensure-Path' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름
+이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:5 문자:1
++ Ensure-Path src/main/resources/config/waves, src/main/resources/confi ...
++ ~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (Ensure-Path:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 core_visual_stages.yml                                                     
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\waves
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 wave_definitions.yml                                                       
+-a----      2026-07-20   오후 2:01              0 boss_waves.yml                                                             
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\weapons
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 guns.yml                                                                   
+-a----      2026-07-20   오후 2:01              0 melee.yml                                                                  
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\player_classes
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 classes.yml                                                                
+-a----      2026-07-20   오후 2:01              0 specializations.yml                                                        
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\npc
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 npc_traits.yml                                                             
+-a----      2026-07-20   오후 2:01              0 npc_recruit_pool.yml                                                       
+-a----      2026-07-20   오후 2:01              0 npc_job_promotions.yml                                                     
+-a----      2026-07-20   오후 2:01              0 resonance_thresholds.yml                                                   
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\mining
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 ores.yml                                                                   
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\structures
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 walls.yml                                                                  
+-a----      2026-07-20   오후 2:01              0 turrets.yml                                                                
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\progression
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 meta_upgrades.yml                                                          
+-a----      2026-07-20   오후 2:01              0 score_weights.yml                                                          
+
+
+    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\lang
+
+
+Mode                 LastWriteTime         Length Name                                                                       
+----                 -------------         ------ ----                                                                       
+-a----      2026-07-20   오후 2:01              0 en_US.yml                                                                  
+-a----      2026-07-20   오후 2:01              0 ko_KR.yml                                                                  
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
+고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
+위치 줄:103 문자:52
++     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
++                                                    ~~
+    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+✅ 모든 파일 구조 개정안 동기화 완료!
+
+
+PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> 
