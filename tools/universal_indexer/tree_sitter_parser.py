@@ -1,14 +1,12 @@
 import hashlib
 from pathlib import Path
 
-# tree-sitter 라이브러리 불러오기
 try:
     from tree_sitter_languages import get_language, get_parser
     HAS_TREE_SITTER = True
 except ImportError:
     HAS_TREE_SITTER = False
 
-# 확장자별 Tree-sitter 언어 매핑
 LANG_MAP = {
     ".js": "javascript",
     ".jsx": "javascript",
@@ -24,8 +22,8 @@ LANG_MAP = {
 
 def extract_symbols(file_path: Path, project_root: Path):
     """
-    🌳 [Universal Tree-sitter AST Parser v2.1 - Range Formatting Fixed]
-    완전한 문법 트리를 기반으로 어떤 언어든 100% 정밀하게 5대 장부 규격 및 시작-끝 줄 범위를 추출합니다.
+    🌳 [Universal Tree-sitter AST Parser v3.0 - Call & Used_by Graph Engine]
+    양방향 호출 관계(calls / used_by)까지 완벽 추출하는 고도화 파서
     """
     symbols = []
     file_context = {}
@@ -47,7 +45,6 @@ def extract_symbols(file_path: Path, project_root: Path):
     file_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
     ext = file_path.suffix.lower()
 
-    # Tree-sitter 미설치 또는 지원되지 않는 확장자일 경우 (fallback 처리)
     if not HAS_TREE_SITTER or ext not in LANG_MAP:
         file_context[rel_path_str] = {
             "hash": file_hash,
@@ -63,39 +60,41 @@ def extract_symbols(file_path: Path, project_root: Path):
     symbols_summary_list = []
     KEYWORDS = ["entity", "platform", "camera", "sensor", "agent", "navigator", "indexer", "retriever", "handler", "service", "controller"]
 
-    def traverse(node):
-        """AST 노드를 순회하며 함수, 클래스, 인터페이스/타입 선언을 추출"""
+    def traverse(node, current_symbol=None):
+        """
+        AST 재귀 순회: current_symbol 인자를 전달하여 
+        함수 내부에서 발생하는 호출문(call_expression)을 추적합니다.
+        """
         node_type = node.type
-        
-        # 1. 클래스 / 구조체 / 인터페이스 선언 추출
+        active_symbol = current_symbol
+
+        # 1. 클래스 선언 수집
         if node_type in ["class_declaration", "class_definition", "struct_specifier", "interface_declaration"]:
             name_node = node.child_by_field_name("name")
             if name_node:
                 c_name = content[name_node.start_byte:name_node.end_byte]
                 start_line = node.start_point[0] + 1
                 end_line = node.end_point[0] + 1
-                
                 c_id = f"{rel_path_str}::{c_name}"
                 
-                # 🎯 [수정 완료] 시작줄-끝줄 범위 포맷팅
                 line_range = f"L{start_line}-L{end_line}" if start_line != end_line else f"L{start_line}"
                 symbols_summary_list.append(f"🧬 class {c_name} [{line_range}]")
                 
-                symbols.append({
+                sym_obj = {
                     "symbol_id": c_id, "name": c_name, "full_name": c_name, "type": "class",
-                    "path": rel_path_str, "start_line": start_line, "end_line": end_line,
+                    "file": rel_path_str, "path": rel_path_str, "start_line": start_line, "end_line": end_line,
                     "calls": [], "used_by": []
-                })
+                }
+                symbols.append(sym_obj)
                 definition_map[c_name] = f"{rel_path_str}:{start_line}"
-                
+                active_symbol = sym_obj
+
                 if any(kw in c_name.lower() for kw in KEYWORDS):
                     registry_constants.append(c_name)
 
-        # 2. 함수 / 메서드 / 화살표 함수 추출
+        # 2. 함수 / 메서드 선언 수집
         elif node_type in ["function_declaration", "function_definition", "method_definition", "arrow_function"]:
             name_node = node.child_by_field_name("name")
-            
-            # JS 변수 할당형 화살표 함수 (const foo = () => {}) 처리
             if not name_node and node.parent and node.parent.type == "variable_declarator":
                 name_node = node.parent.child_by_field_name("name")
 
@@ -103,25 +102,48 @@ def extract_symbols(file_path: Path, project_root: Path):
                 f_name = content[name_node.start_byte:name_node.end_byte]
                 start_line = node.start_point[0] + 1
                 end_line = node.end_point[0] + 1
-
                 f_id = f"{rel_path_str}::{f_name}"
                 
-                # 🎯 [수정 완료] 시작줄-끝줄 범위 포맷팅
                 line_range = f"L{start_line}-L{end_line}" if start_line != end_line else f"L{start_line}"
                 symbols_summary_list.append(f"🎯 def {f_name}() [{line_range}]")
 
-                symbols.append({
+                sym_obj = {
                     "symbol_id": f_id, "name": f_name, "full_name": f_name, "type": "function",
-                    "path": rel_path_str, "start_line": start_line, "end_line": end_line,
+                    "file": rel_path_str, "path": rel_path_str, "start_line": start_line, "end_line": end_line,
                     "calls": [], "used_by": []
-                })
+                }
+                symbols.append(sym_obj)
                 definition_map[f_name] = f"{rel_path_str}:{start_line}"
+                active_symbol = sym_obj
 
-        # 자식 노드 재귀 탐색
+        # 3. [핵심 추가] 함수 호출문(call) 추적
+        elif node_type in ["call_expression", "function_call"]:
+            func_node = node.child_by_field_name("function") or (node.children[0] if node.children else None)
+            if func_node:
+                called_name = content[func_node.start_byte:func_node.end_byte]
+                # 예: console.log -> log / obj.method -> method
+                if "." in called_name:
+                    called_name = called_name.split(".")[-1]
+                
+                # 내 안에 다른 함수를 호출하는 코드가 있다면 calls에 등록
+                if active_symbol and called_name not in active_symbol["calls"]:
+                    active_symbol["calls"].append(called_name)
+
+        # 자식 노드 재귀 탐색 (현재 활성화된 심볼 전달)
         for child in node.children:
-            traverse(child)
+            traverse(child, active_symbol)
 
     traverse(tree.root_node)
+
+    # 4. [핵심 추가] 파일 내부 후처리: calls 관계를 바탕으로 used_by 역방향 주소 바인딩
+    sym_lookup = {s["name"]: s for s in symbols}
+    for s in symbols:
+        for called_fn in s["calls"]:
+            if called_fn in sym_lookup:
+                target_sym = sym_lookup[called_fn]
+                caller_id = s["symbol_id"]
+                if caller_id not in target_sym["used_by"]:
+                    target_sym["used_by"].append(caller_id)
 
     # Context 조립
     summary_str = " | ".join(symbols_summary_list) if symbols_summary_list else f"📄 File ({ext})"
