@@ -147,8 +147,16 @@ class SemanticNavigator:
                 # [2단계] 🔗 제이슨 기반 2차 심볼 탐색기 가동
                 print(f"   📡 [2차 사냥기] 잘려 나온 텍스트 내부에서 양방향 심볼 식별 개시...")
 
+                # 수정: 일반 함수/클래스 외에 JSON/설정값에 명시된 파일/경로 문자열까지 징집 대상에 추가
                 defined_names = re.findall(r"(?:def|class)\s+([a-zA-Z0-9_]+)", slice_code)
                 called_names = re.findall(r"(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s*\(", slice_code)
+                file_ref_names = re.findall(r'[\'"]([a-zA-Z0-9_\-\./\\]+\.[a-zA-Z0-9]+)[\'"]', slice_code)
+
+                builtin_filters = {"print", "len", "range", "open", "dict", "list", "set", "any", "all", "max", "min", "append", "get", "strip", "split", "exists", "readlines", "join"}
+                filtered_called_names = [name for name in called_names if name not in builtin_filters]
+
+                # 🎯 파일 경로 참조까지 양방향 통합 심볼 목록에 병합
+                target_symbols = list(set(defined_names + filtered_called_names + file_ref_names))
                 builtin_filters = {"print", "len", "range", "open", "dict", "list", "set", "any", "all", "max", "min", "append", "get", "strip", "split", "exists", "readlines", "join"}
                 filtered_called_names = [name for name in called_names if name not in builtin_filters]
 

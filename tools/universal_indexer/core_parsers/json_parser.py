@@ -1,14 +1,15 @@
 import json
 import hashlib
+import re
 from pathlib import Path
 
 def extract_symbols(file_path: Path, project_root: Path):
     """
-    📦 [JSON Core Parser v1.0]
-    새로운 자동화 임포터 인터페이스 계약(5대 장부 리턴 구조)을 100% 준수합니다.
-    JSON 파일 내부의 주요 루트 키(Root Keys) 및 스키마 구조를 탐지하여 스켈레톤과 심볼로 등록합니다.
+    📦 [JSON Core Parser v2.0 - Agent 2-Way Slicing Advanced]
+    기존 5대 장부 리턴 구조를 100% 준수하면서,
+    하위 AI 에이전트가 단번에 연관 파일(Entrypoint, 설정 파일)로 점프할 수 있도록
+    calls 및 used_by 연관 고리를 정밀 추출합니다.
     """
-    # 🤝 새로운 사령탑이 한 번에 흡수할 5대 데이터 규격 초기화
     symbols = []
     file_context = {}
     definition_map = {}
@@ -19,50 +20,81 @@ def extract_symbols(file_path: Path, project_root: Path):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
     except Exception:
-        # 파일 읽기 실패 시 안전 패스 프로토콜
         return symbols, {}, {}, {}, []
 
-    rel_path_str = file_path.relative_to(project_root).as_posix()
-    file_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    try:
+        rel_path_str = file_path.relative_to(project_root).as_posix()
+    except ValueError:
+        rel_path_str = file_path.resolve().relative_to(project_root.resolve()).as_posix()
 
-    # 1. JSON 문법 유효성 검사 및 파싱
+    file_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    lines = content.splitlines()
+
+    # 1. JSON 유효성 검사
     try:
         data = json.loads(content)
     except json.JSONDecodeError:
-        # 깨진 JSON 파일 방어선
         return symbols, {}, {}, {}, []
 
-    # 2. 🧱 스켈레톤(뼈대) 및 요약 텍스트 생성
-    # AI 비서들이 JSON의 전체 덩어리를 다 먹어서 컨텍스트가 터지는 것을 막기 위해,
-    # 최상위 키 레이아웃과 데이터 타입만 예쁘게 요약 요리합니다.
     skeleton_lines = ["📦 [JSON STRUCTURE MAP]"]
     symbols_info_strings = []
 
+    # 2. 파일 내부 경로/의존성 감지용 정규식 패턴 (2차 calls 추적용)
+    # 예: "./src/index.js", "app.py", "config/setting.json" 등
+    path_pattern = re.compile(r'[\'"]([a-zA-Z0-9_\-\./\\]+\.[a-zA-Z0-9]+)[\'"]')
+    detected_file_calls = set()
+
+    # 소스 코드 전체에서 언급되는 상대/절대 파일 경로 징집
+    for match in path_pattern.findall(content):
+        clean_match = match.strip().replace("\\", "/")
+        # 자기 자신 경로 제외 및 의미 있는 파일 확장자 형태 필터링
+        if clean_match != rel_path_str and ("/" in clean_match or clean_match.endswith(('.js', '.ts', '.py', '.java', '.json'))):
+            detected_file_calls.add(clean_match)
+
+    # 3. 최상위 키 및 심볼 추출
     if isinstance(data, dict):
         for key, value in data.items():
             val_type = type(value).__name__
-            # 요소 개수나 문자열 길이 힌트 제공
+            
+            # 줄 번호 탐지 (해당 key가 위치한 소스 코드 줄 계산)
+            start_line = 1
+            for idx, line in enumerate(lines, start=1):
+                if f'"{key}"' in line or f"'{key}'" in line:
+                    start_line = idx
+                    break
+
+            # 힌트 및 스켈레톤 조립
             if isinstance(value, list):
                 hint = f"List (len: {len(value)})"
             elif isinstance(value, dict):
                 hint = f"Dict (keys: {list(value.keys())[:3]}...)"
             else:
-                hint = f"{val_type} (val: {str(value)[:20]})"
+                hint = f"{val_type} (val: {str(value)[:30]})"
 
             skeleton_lines.append(f"  ├── \"{key}\": {hint}")
-            
-            # 심볼 장부 등록용 문자열 적립
             symbols_info_strings.append(f"🔑 \"{key}\" [{val_type}]")
-            
-            # 5대 장부 중 1번 'symbols'에 개별 키를 심볼 ID로 정밀 바느질
+
+            # 🎯 키별 calls 세부 추적 (e.g. main, scripts, extends 등 진입점 연관 파일 바인딩)
+            key_calls = []
+            val_str = str(value)
+            for file_call in detected_file_calls:
+                if file_call in val_str:
+                    key_calls.append(file_call)
+
             s_id = f"{rel_path_str}::{key}"
             symbols.append({
-                "symbol_id": s_id, "name": key, "full_name": f"json.{key}", "type": "json_key",
-                "path": rel_path_str, "start_line": 1, "end_line": 1,
-                "calls": [], "used_by": []
+                "symbol_id": s_id, 
+                "name": key, 
+                "full_name": f"{rel_path_str}::{key}", 
+                "type": "json_key",
+                "file": rel_path_str,
+                "path": rel_path_str, 
+                "start_line": start_line, 
+                "end_line": start_line,
+                "calls": key_calls, 
+                "used_by": []
             })
-            # 정의 맵 매핑 등록 (고유 symbol_id 사용)
-            definition_map[s_id] = f"{rel_path_str}:1"
+            definition_map[key] = f"{rel_path_str}:{start_line}"
 
     elif isinstance(data, list):
         skeleton_lines.append(f"  └── Root Array: List (len: {len(data)})")
@@ -70,9 +102,9 @@ def extract_symbols(file_path: Path, project_root: Path):
 
     skeleton_text = "\n".join(skeleton_lines)
 
-    # 3. 파일 한줄 요약 및 컨텍스트 바느질
+    # 4. 파일 한줄 요약 및 컨텍스트 보관
     summary_parts = [f"💡 📦 json_keys: {len(symbols_info_strings)}개 포착"]
-    summary_parts.extend(symbols_info_strings[:5]) # 너무 길어지면 끊기 (가독성 유지)
+    summary_parts.extend(symbols_info_strings[:5])
     if len(symbols_info_strings) > 5:
         summary_parts.append(f"...외 {len(symbols_info_strings)-5}개")
         
@@ -84,14 +116,12 @@ def extract_symbols(file_path: Path, project_root: Path):
         "skeleton": skeleton_text
     }
 
-    # 4. JSON 파일의 특정 네이밍이 들어올 때 데이터 프로토콜이나 레지스트리로 귀속해주는 유연성 필터
+    # 5. 설정 파일/스펙 문서 레지스트리 분류
     file_name_lower = file_path.name.lower()
     if "protocol" in file_name_lower or "schema" in file_name_lower:
-        # JSON 구조 자체를 데이터 프로토콜 레이아웃으로 복사 탑재
         if isinstance(data, dict):
             data_protocols[file_path.stem] = {k: type(v).__name__ for k, v in data.items()}
-    elif "constant" in file_name_lower or "registry" in file_name_lower:
+    elif "package" in file_name_lower or "config" in file_name_lower or "constant" in file_name_lower:
         registry_constants.append(f"JSON_CONFIG::{file_path.stem.upper()}")
 
-    # 🤝 최종 5대 규격 튜플 리턴
     return symbols, file_context, definition_map, data_protocols, registry_constants

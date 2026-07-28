@@ -104,7 +104,16 @@ def extract_symbols(file_path: Path, project_root: Path):
             class_start_idx = idx
             end_line = _find_matching_curly_brace(lines, idx)
             
-            symbols_info_strings.append(f"🧬 class {c_name} [L{line_num}-{end_line}]")
+            param_match = re.search(r'\((.*?)\)', line_stripped)
+            params_str = ""
+            if param_match:
+                raw_params = param_match.group(1).strip()
+                if raw_params:
+                    param_types = [p.strip().split()[0] for p in raw_params.split(",") if p.strip()]
+                    params_str = ", ".join(param_types)
+
+            # 결과 출력 형식 변경
+            symbols_info_strings.append(f"🎯 def {m_name}({params_str}) [L{line_num}-{end_line}]")
             skeleton_segments.append(f"class {c_name} {{ // L{line_num}-{end_line}")
             
             c_id = f"{rel_path_str}::{c_name}"
