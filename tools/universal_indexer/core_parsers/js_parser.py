@@ -85,7 +85,9 @@ def extract_symbols(file_path: Path, project_root: Path):
     symbols_info_strings = []
 
     class_pattern = re.compile(r'class\s+([A-Za-z0-9_]+)')
-    func_pattern = re.compile(r'(?:async\s+)?function\s+([A-Za-z0-9_]+)|(?:const|let|var)\s+([A-Za-z0-9_]+)\s*=\s*(?:async\s*)?\([^)]*\)\s*=>')
+    func_pattern = re.compile(
+        r'(?:async\s+)?function\s+([A-Za-z0-9_]+)\s*\((.*?)\)|(?:const|let|var)\s+([A-Za-z0-9_]+)\s*=\s*(?:async\s*)?\((.*?)\)\s*=>'
+    )
     object_pattern = re.compile(r'(?:const|let|var)\s+([A-Za-z0-9_]+)\s*=\s*\{([^}]+)\}')
 
     KEYWORDS = ["entity", "platform", "camera", "sensor", "agent", "navigator", "indexer", "retriever", "handler", "service", "controller"]
@@ -115,13 +117,20 @@ def extract_symbols(file_path: Path, project_root: Path):
         # [B] 함수/메서드 스캔
         f_match = func_pattern.search(line_str)
         if f_match:
-            f_name = f_match.group(1) or f_match.group(2)
+            # 💡 [변경 1] f_name: 일반 함수는 group(1), 화살표 함수는 group(3)에 들어옵니다.
+            f_name = f_match.group(1) or f_match.group(3)
+            
+            # 💡 [변경 2] f_args: 일반 함수 인자는 group(2), 화살표 함수 인자는 group(4)에 들어옵니다.
+            f_args = f_match.group(2) if f_match.group(1) is not None else f_match.group(4)
+            f_args = f_args.strip() if f_args else ""
+
             if f_name and f_name not in ["require", "import"]:
                 f_id = f"{rel_path_str}::{f_name}"
                 
                 end_line = find_end_line_by_braces(lines, idx - 1)
 
-                symbols_info_strings.append(f"🎯 def {f_name}() [L{idx}~L{end_line}]")
+                # 💡 [변경 3] () 대신 ({f_args})를 매핑하여 실제 파라미터를 출력합니다.
+                symbols_info_strings.append(f"🎯 def {f_name}({f_args}) [L{idx}~L{end_line}]")
                 symbols.append({
                     "symbol_id": f_id, "name": f_name, "full_name": f_name, "type": "function",
                     "path": rel_path_str, "start_line": idx, "end_line": end_line,

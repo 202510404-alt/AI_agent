@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **18개**
+현재 인덱싱된 총 파일 수: **22개**
 
 ## 🗂️ [Module Index]
 - `extraction_target_project/client/package-lock.json`
@@ -19,6 +19,10 @@
 - `extraction_target_project/client/src/setupTests.js`
 - `extraction_target_project/client/src/socket.js`
 - `extraction_target_project/index.js`
+- `extraction_target_project/just_test_tools/Main.java`
+- `extraction_target_project/just_test_tools/TetrisModel.java`
+- `extraction_target_project/just_test_tools/main.py`
+- `extraction_target_project/just_test_tools/tetris_logic.py`
 - `extraction_target_project/package-lock.json`
 - `extraction_target_project/package.json`
 
@@ -351,6 +355,168 @@ const PORT = process.env.PORT || 7605;
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServ
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/just_test_tools/Main.java
+#### 🧱 Code Skeleton:
+```python
+class Main { // L6-76
+    public Main() { // L10-35
+    setFocusable(true); // L12-25
+    addKeyListener(new KeyAdapter() { // L15-25
+    public void keyPressed(KeyEvent e) { // L17-24
+    repaint(); // L23-28
+    repaint(); // L32-38
+    protected void paintComponent(Graphics g) { // L38-64
+    public static void main(String[] args) { // L66-75
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/just_test_tools/TetrisModel.java
+#### 🧱 Code Skeleton:
+```python
+class TetrisModel { // L3-73
+    public TetrisModel() { // L19-21
+    spawnPiece(); // L20-23
+    public void spawnPiece() { // L23-28
+    public boolean move(int dx, int dy) { // L30-37
+    public boolean canMove(int[][] shape, int newX, int newY) { // L39-56
+    public void lockPiece() { // L58-67
+    spawnPiece(); // L66-69
+    public int[][] getGrid() { return grid; } // L69-69
+    public int[][] getCurrentShape() { return currentShape; } // L70-70
+    public int getCurrentX() { return currentX; } // L71-71
+    public int getCurrentY() { return currentY; } // L72-72
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/just_test_tools/main.py
+#### 🧱 Code Skeleton:
+```python
+def render(board: Board, piece: Tetromino) -> None:
+    """보드와 현재 떨어지는 블록을 터미널에 시각화하는 함수"""
+    # 임시 보드 복사
+    temp_grid = [row[:] for row in board.grid]
+    
+    # 현재 움직이는 블록 그리기
+    for r_idx, row in enumerate(piece.shape):
+        for c_idx, val in enumerate(row):
+            if val:
+                py, px = piece.y + r_idx, piece.x + c_idx
+                if 0 <= py < board.height and 0 <= px < board.width:
+                    temp_grid[py][px] = 2
+
+    print("\033[H\033[J", end="")  # 화면 갱신 (터미널 클리어)
+    print("=" * (board.width * 2 + 2))
+    for row in temp_grid:
+        line = "|" + "".join("■ " if cell else "  " for cell in row) + "|"
+        print(line)
+    print("=" * (board.width * 2 + 2))
+
+def start_game() -> None:
+    board = Board(width=10, height=15)
+    current_piece = Tetromino()
+    score = 0
+
+    while True:
+        render(board, current_piece)
+        time.sleep(0.3)  # 블록이 내려오는 속도 조절
+
+        # 아래로 1칸 이동 시도
+        if board.is_valid_position(current_piece, offset_x=0, offset_y=1):
+            current_piece.y += 1
+        else:
+            # 더 이상 못 내려가면 고정
+            board.lock_piece(current_piece)
+            cleared = board.clear_lines()
+            score += cleared * 100
+            
+            # 새 블록 생성
+            current_piece = Tetromino()
+            
+            # 새 블록 생성 위치가 겹치면 게임 오버
+            if not board.is_valid_position(current_piece):
+                render(board, current_piece)
+                print(f"GAME OVER! 최종 점수: {score}")
+                break
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/just_test_tools/tetris_logic.py
+#### 🧱 Code Skeleton:
+```python
+class Tetromino:
+    """테트리스 블록 데이터 및 회전 로직 관리"""
+    SHAPES = [
+        [[1, 1, 1, 1]],                  # I
+        [[1, 1], [1, 1]],                # O
+        [[0, 1, 0], [1, 1, 1]],          # T
+        [[1, 0, 0], [1, 1, 1]],          # L
+        [[0, 0, 1], [1, 1, 1]],          # J
+        [[0, 1, 1], [1, 0, 0]],          # S
+        [[1, 1, 0], [0, 1, 1]]           # Z
+    ]
+
+    def __init__(self, x: int = 3, y: int = 0):
+        self.x = x
+        self.y = y
+        self.shape = random.choice(self.SHAPES)
+
+    def rotate(self) -> None:
+        """블록을 시계 방향으로 90도 회전"""
+        self.shape = [list(row) for row in zip(*self.shape[::-1])]
+
+class Board:
+    """테트리스 판 및 이동/충돌 감지 로직"""
+    def __init__(self, width: int = 10, height: int = 20):
+        self.width = width
+        self.height = height
+        self.grid = [[0] * width for _ in range(height)]
+
+    def is_valid_position(self, piece: Tetromino, offset_x: int = 0, offset_y: int = 0) -> bool:
+        """해당の位置로 이동이 가능한지 확인 (인자: piece 객체, 오프셋 값)"""
+        for r_idx, row in enumerate(piece.shape):
+            for c_idx, val in enumerate(row):
+                if val:
+                    new_x = piece.x + c_idx + offset_x
+                    new_y = piece.y + r_idx + offset_y
+                    
+                    # 경계선 체크
+                    if new_x < 0 or new_x >= self.width or new_y >= self.height:
+                        return False
+                    # 기존에 쌓인 블록과 충돌 체크
+                    if new_y >= 0 and self.grid[new_y][new_x]:
+                        return False
+        return True
+
+    def lock_piece(self, piece: Tetromino) -> None:
+        """블록을 보드판에 고정"""
+        for r_idx, row in enumerate(piece.shape):
+            for c_idx, val in enumerate(row):
+                if val:
+                    self.grid[piece.y + r_idx][piece.x + c_idx] = 1
+
+    def clear_lines(self) -> int:
+        """꽉 찬 줄을 지우고 획득한 줄 수를 반환"""
+        lines_cleared = 0
+        new_grid = []
+        for row in self.grid:
+            if all(cell == 1 for cell in row):
+                lines_cleared += 1
+            else:
+                new_grid.append(row)
+        
+        # 지워진 줄만큼 위에 빈 줄 추가
+        for _ in range(lines_cleared):
+            new_grid.insert(0, [0] * self.width)
+            
+        self.grid = new_grid
+        return lines_cleared
 ```
 
 --------------------------------------------------

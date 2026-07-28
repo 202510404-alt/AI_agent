@@ -2,6 +2,18 @@ import ast
 import hashlib
 from pathlib import Path
 
+def _extract_py_args(node):
+    """ast.FunctionDef 노드에서 parameter 이름을 추출합니다."""
+    args = []
+    for arg in node.args.args:
+        if arg.arg != 'self' and arg.arg != 'cls':  # self, cls 제외
+            args.append(arg.arg)
+    if node.args.vararg:
+        args.append(f"*{node.args.vararg.arg}")
+    if node.args.kwarg:
+        args.append(f"**{node.args.kwarg.arg}")
+    return ", ".join(args)
+
 def extract_symbols(file_path: Path, project_root: Path):
     """
     🐍 [Python Core Parser v1.0]
@@ -85,9 +97,12 @@ def extract_symbols(file_path: Path, project_root: Path):
     # 탑레벨 함수/클래스 1차 등록
     for node in root.body:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-            s_name = node.name
+            s_name = node.name  # 💡 1. 변수 선언 먼저!
+            s_args = _extract_py_args(node)  # 💡 2. 상단 헬퍼 함수로 인자 추출
             s_id = f"{rel_path_str}::{s_name}"
-            symbols_info_strings.append(f"🎯 def {s_name}() [L{node.lineno}-{node.end_lineno}]")
+            
+            # 💡 3. 인자가 포함된 단 하나의 깔끔한 요약줄 추가
+            symbols_info_strings.append(f"🎯 def {s_name}({s_args}) [L{node.lineno}-{node.end_lineno}]")
             
             calls = []
             for child in ast.walk(node):
@@ -118,8 +133,10 @@ def extract_symbols(file_path: Path, project_root: Path):
             for sub in node.body:
                 if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
                     m_name = sub.name
+                    m_args = _extract_py_args(sub)  # 💡 4. 클래스 내부 메서드 인자도 추출!
                     m_id = f"{rel_path_str}::{c_name}.{m_name}"
-                    symbols_info_strings.append(f"    └─ def {m_name}() [L{sub.lineno}-{sub.end_lineno}]")
+                    
+                    symbols_info_strings.append(f"    └─ def {m_name}({m_args}) [L{sub.lineno}-{sub.end_lineno}]")
                     
                     sub_calls = []
                     for child in ast.walk(sub):
