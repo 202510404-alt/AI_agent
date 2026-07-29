@@ -1,5 +1,0 @@
-﻿package com.yourstudio.coredefense.combat.weapon;
-
-public interface AbstractFirearm {
-    // TODO: Implement 개정안 스켈레톤
-}
