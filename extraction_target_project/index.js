@@ -1,3 +1,5 @@
+const DEBUG = process.env.NODE_ENV !== "production";
+
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -28,6 +30,10 @@ function getAllConnectedClients(boardId) {
 }
 
 io.on("connection", (socket) => {
+  if (DEBUG) {
+    console.log(`[index.js] connection() -> Socket Connected: ${socket.id}`);
+  }
+
   socket.on("join", ({ boardId, userName }) => {
     if (boardUsersMap[boardId]?.includes(userName)) {
       return;
@@ -37,7 +43,9 @@ io.on("connection", (socket) => {
     boardUsersMap[boardId] = boardUsersMap[boardId] || [];
     boardUsersMap[boardId].push(userName);
 
-    console.log("User joined:", userName, "Socket ID:", socket.id);
+    if (DEBUG) {
+      console.log(`[index.js] join() -> User Joined Board: (userName: ${userName}, socketId: ${socket.id}, boardId: ${boardId})`);
+    }
     socket.join(boardId);
 
     const clients = getAllConnectedClients(boardId);
@@ -66,6 +74,10 @@ io.on("connection", (socket) => {
     }
     voiceUsersMap[boardId][socket.id] = { userName, isMuted: false };
 
+    if (DEBUG) {
+      console.log(`[index.js] join-voice() -> Voice Joined: (socketId: ${socket.id}, userName: ${userName}, boardId: ${boardId})`);
+    }
+
     // Send existing voice users list to the joining user
     const voiceUsersList = Object.keys(voiceUsersMap[boardId]).map((sid) => ({
       socketId: sid,
@@ -89,10 +101,16 @@ io.on("connection", (socket) => {
         delete voiceUsersMap[boardId];
       }
     }
+    if (DEBUG) {
+      console.log(`[index.js] leave-voice() -> Voice Left: (socketId: ${socket.id}, boardId: ${boardId})`);
+    }
     socket.in(boardId).emit("user-left-voice", { socketId: socket.id });
   });
 
   socket.on("offer", ({ targetSocketId, offer }) => {
+    if (DEBUG) {
+      console.log(`[index.js] offer() -> Relaying Offer: (from: ${socket.id} -> to: ${targetSocketId})`);
+    }
     io.to(targetSocketId).emit("offer", {
       callerSocketId: socket.id,
       offer,
@@ -100,6 +118,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("answer", ({ targetSocketId, answer }) => {
+    if (DEBUG) {
+      console.log(`[index.js] answer() -> Relaying Answer: (from: ${socket.id} -> to: ${targetSocketId})`);
+    }
     io.to(targetSocketId).emit("answer", {
       responderSocketId: socket.id,
       answer,
@@ -107,6 +128,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("ice-candidate", ({ targetSocketId, candidate }) => {
+    if (DEBUG) {
+      console.log(`[index.js] ice-candidate() -> Relaying ICE Candidate: (from: ${socket.id} -> to: ${targetSocketId})`);
+    }
     io.to(targetSocketId).emit("ice-candidate", {
       senderSocketId: socket.id,
       candidate,
@@ -115,7 +139,12 @@ io.on("connection", (socket) => {
 
   socket.on("mute-changed", ({ boardId, isMuted }) => {
     if (voiceUsersMap[boardId] && voiceUsersMap[boardId][socket.id]) {
+      const prevMuted = voiceUsersMap[boardId][socket.id].isMuted;
       voiceUsersMap[boardId][socket.id].isMuted = isMuted;
+
+      if (DEBUG) {
+        console.log(`[index.js] mute-changed() -> Mute State Changed: (socketId: ${socket.id}, isMuted: ${prevMuted} -> ${isMuted})`);
+      }
     }
     socket.in(boardId).emit("user-mute-changed", {
       socketId: socket.id,
@@ -124,6 +153,9 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnecting", () => {
+    if (DEBUG) {
+      console.log(`[index.js] disconnecting() -> Cleaning Up Disconnected Socket: ${socket.id}`);
+    }
     const rooms = [...socket.rooms];
     rooms.forEach((boardId) => {
       if (voiceUsersMap[boardId] && voiceUsersMap[boardId][socket.id]) {

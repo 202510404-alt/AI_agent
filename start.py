@@ -21,13 +21,12 @@ import subprocess
 import time
 from pathlib import Path
 
-# 🎛️ [절대 규칙 2번] 원터치 디버깅 로그 스위치
-DEBUG_MODE = True  # INFO: True로 두시면 워처와 GUI 내부의 모든 로그가 실시간 도배됩니다.
+# 🎛️ [절대 규칙 2번] 원터치 디버깅 로그 스위치 (기본값 OFF로 변경)
+DEBUG_MODE = False
 
 # 🎯 1. 경로 정의 (절대 경로 보장 및 순정 구조 고수)
 ROOT_DIR = Path(__file__).parent.resolve()
 CLINE_TOOLS_DIR = ROOT_DIR / "tools" / "universal_indexer"
-
 
 
 # 🔍 현재 가동 가능한 최적의 파이썬 인터프리터 자동 추적
@@ -36,6 +35,7 @@ def get_best_python():
     venv_python_win = ROOT_DIR / ".venv" / "Scripts" / "python.exe"
     venv_python_unix = ROOT_DIR / ".venv" / "bin" / "python"
     
+    # ⚡ DEBUG_MODE가 False면 문자열 연산 및 경로 점검 출력을 완전히 건너끕니다!
     if DEBUG_MODE:
         print(f"🔍 [디버그] 가상환경(윈도우) 경로 점검: {venv_python_win} (존재: {venv_python_win.exists()})")
         print(f"🔍 [디버그] 가상환경(유닉스) 경로 점검: {venv_python_unix} (존재: {venv_python_unix.exists()})")
@@ -87,7 +87,6 @@ def main():
     print("======================================================================")
 
     # 🚚 [0단계 이전] 원샷 폴더 이전 마이그레이션 선제 가동
-    # (cline_tools/ 가 이미 없다면 내부에서 자동으로 조용히 스킵됩니다)
     print("----------------------------------------------------------------------")
 
     # 🛠️ watchdog 자동 검사 및 누락 시 핀포인트 자동 설치
@@ -107,7 +106,7 @@ def main():
     print("➡️ 0단계: 기동 전 AI 초경량 요약 지도(AI_CODEBASE_MAP.md) 선제 강제 빌드...")
     if CREATE_AI_MAP_SCRIPT.exists():
         try:
-            # 1단계 인덱서 선제 요격 가동 (이제 src/ 내부에 최신 복제본들이 다 들어있으므로 완벽하게 추출됩니다)
+            # 1단계 인덱서 선제 요격 가동
             indexer_script = CLINE_TOOLS_DIR / "indexer.py"
             if indexer_script.exists():
                 subprocess.run(
@@ -138,7 +137,7 @@ def main():
         print(f"❌ [경로 에러] 워처 스크립트가 지정된 궤도에 존재하지 않습니다: {WATCHER_SCRIPT}")
         return
 
-    # stdout과 stderr를 부모 터미널 화면으로 다이렉트 중계 바느질
+    # ⚡ DEBUG_MODE가 False면 DEVNULL로 출력을 완전히 차단하여 부모 터미널의 IO 병목 현상을 방지합니다.
     watcher_process = subprocess.Popen(
         [TARGET_PYTHON, str(WATCHER_SCRIPT)],
         cwd=str(ROOT_DIR),
@@ -151,7 +150,7 @@ def main():
     time.sleep(1.0)  # 워처 안착용 시동 대기 타임 보정
     
     if watcher_process.poll() is None:
-        print("✅ [SUCCESS] 감시망이 백그라운드 메모리에 안착 후 정상 실시간 중계 중입니다.")
+        print("✅ [SUCCESS] 감시망이 백그라운드 메모리에 안착 후 정상 동작 중입니다.")
     else:
         print(f"❌ [기동 즉사] 감시망 프로세스가 실행 즉시 사망했습니다. (리턴코드: {watcher_process.poll()})")
         print("💡 상단에 출력된 파이썬 문법/모듈 에러 내역을 추적하십시오.")

@@ -1,72 +1,86 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import toast from "react-hot-toast";
 
+const DEBUG = process.env.NODE_ENV !== "production";
+
+// 글로벌 망 및 엄격한 NAT/방화벽 통과를 위한 다중 ICE Server (STUN/TURN 폴백 백본)
 const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:global.stun.twilio.com:3478" },
   ],
+  iceCandidatePoolSize: 10,
 };
 
 export function useWebRTC(socketRef, boardId, userName) {
   const [localStream, setLocalStream] = useState(null);
-  const [remoteStreams, setRemoteStreams] = useState({}); // { [socketId]: MediaStream }
-  const [voiceUsers, setVoiceUsers] = useState([]); // [{ socketId, userName, isMuted }]
+  const [remoteStreams, setRemoteStreams] = useState({});
+  const [voiceUsers, setVoiceUsers] = useState([]);
   const [isVoiceConnected, setIsVoiceConnected] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
-  const peerConnections = useRef(new Map()); // Map<socketId, RTCPeerConnection>
+  const peerConnections = useRef(new Map());
   const localStreamRef = useRef(null);
   const isMutedRef = useRef(false);
 
-  // Helper to create RTCPeerConnection for a remote peer
   const createPeerConnection = useCallback((targetSocketId) => {
-    if (peerConnections.current.has(targetSocketId)) {
-      return peerConnections.current.get(targetSocketId);
-    }
+    try {
+      if (peerConnections.current.has(targetSocketId)) {
+        return peerConnections.current.get(targetSocketId);
+      }
 
-    const pc = new RTCPeerConnection(ICE_SERVERS);
-    peerConnections.current.set(targetSocketId, pc);
+      if (DEBUG) {
+        console.log(`[useWebRTC.js] createPeerConnection() -> Creating PC for Target: ${targetSocketId}`);
+      }
 
-    // Add local tracks to peer connection
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => {
-        pc.addTrack(track, localStreamRef.current);
-      });
-    }
+      const pc = new RTCPeerConnection(ICE_SERVERS);
+      peerConnections.current.set(targetSocketId, pc);
 
-    // Handle incoming ICE candidate
-    pc.onicecandidate = (event) => {
-      if (event.candidate && socketRef.current) {
-        socketRef.current.emit("ice-candidate", {
-          targetSocketId,
-          candidate: event.candidate,
+      // Add local tracks to peer connection
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach((track) => {
+          pc.addTrack(track, localStreamRef.current);
         });
       }
-    };
 
-    // Handle incoming remote stream
-    pc.ontrack = (event) => {
-      if (event.streams && event.streams[0]) {
-        const stream = event.streams[0];
-        setRemoteStreams((prev) => ({
-          ...prev,
-          [targetSocketId]: stream,
-        }));
-      }
-    };
+      // Handle incoming ICE candidate
+      pc.onicecandidate = (event) => {
+        if (event.candidate && socketRef.current) {
+          socketRef.current.emit("ice-candidate", {
+            targetSocketId,
+            candidate: event.candidate,
+          });
+        }
+      };
 
-    pc.onconnectionstatechange = () => {
-      if (
-        pc.connectionState === "disconnected" ||
-        pc.connectionState === "failed" ||
-        pc.connectionState === "closed"
-      ) {
-        // Handle disconnect if needed
-      }
-    };
+      // Handle incoming remote stream
+      pc.ontrack = (event) => {
+        if (event.streams && event.streams[0]) {
+          const stream = event.streams[0];
+          setRemoteStreams((prev) => ({
+            ...prev,
+            [targetSocketId]: stream,
+          }));
+        }
+      };
 
-    return pc;
+      pc.onconnectionstatechange = () => {
+        if (
+          pc.connectionState === "disconnected" ||
+          pc.connectionState === "failed" ||
+          pc.connectionState === "closed"
+        ) {
+          // Handle disconnect if needed
+        }
+      };
+
+      return pc;
+    } catch (err) {
+      console.error("[useWebRTC.js] createPeerConnection() -> Exception Caught:", err);
+      return null;
+    }
   }, [socketRef]);
 
   // Clean up a specific peer connection

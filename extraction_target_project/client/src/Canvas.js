@@ -163,70 +163,96 @@ function Canvas(props) {
   }, []);
 
   const handleDraw = (e) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    setDrawing(true);
-    setCurrentLine([{ x: e.clientX - rect.left, y: e.clientY - rect.top, color: shapeColor, size: width }]);
-    context.beginPath();
-    context.moveTo(e.clientX - rect.left, e.clientY - rect.top);
-    canvas.dispatchEvent(new CustomEvent('canvasChange'));
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      const rect = canvas.getBoundingClientRect();
+      setDrawing(true);
+      const startPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top, color: shapeColor, size: width };
+      setCurrentLine([startPoint]);
+      context.beginPath();
+      context.moveTo(startPoint.x, startPoint.y);
+      canvas.dispatchEvent(new CustomEvent('canvasChange'));
+    } catch (err) {
+      console.error("[Canvas.js] handleDraw() -> Exception Caught:", err);
+    }
   };
 
   const handleMoveDraw = (e) => {
     if (!drawing) return;
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const context = canvas.getContext('2d');
-    const rect = canvas.getBoundingClientRect();
-    const newPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top, color: shapeColor, size: width };
-    setCurrentLine([...currentLine, newPoint]);
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+      const rect = canvas.getBoundingClientRect();
+      const newPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top, color: shapeColor, size: width };
+      setCurrentLine((prev) => [...prev, newPoint]);
 
-    context.lineTo(newPoint.x, newPoint.y);
-    context.strokeStyle = shapeColor;
-    context.lineWidth = width;
-    context.stroke();
-    canvas.dispatchEvent(new CustomEvent('canvasChange'));
-  };
-
-  const handleNotDraw = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    setDrawing(false);
-    setLinesHistory([...linesHistory, currentLine]);
-    setCurrentLine([]);
-    canvas.dispatchEvent(new CustomEvent('canvasChange'));
-  };
-
-  const undo = () => {
-    if (linesHistory.length > 0) {
-      const newHistory = linesHistory.slice(0, -1);
-      setLinesHistory(newHistory);
-
-      const context = canvasRef.current.getContext('2d');
-      redrawCanvas(context);
+      context.lineTo(newPoint.x, newPoint.y);
+      context.strokeStyle = shapeColor;
+      context.lineWidth = width;
+      context.stroke();
+      canvas.dispatchEvent(new CustomEvent('canvasChange'));
+    } catch (err) {
+      console.error("[Canvas.js] handleMoveDraw() -> Exception Caught:", err);
     }
   };
 
-  const redrawCanvas = (context) => {
-    if (!canvasRef.current) return;
-    context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    const canvas = canvasRef.current;
-    linesHistory.forEach(line => {
-      context.beginPath();
-      line.forEach((point, index) => {
-        if (index === 0) {
-          context.moveTo(point.x, point.y);
-        } else {
-          context.lineTo(point.x, point.y);
-        }
-      });
-      context.strokeStyle = line[0].color;
-      context.lineWidth = line[0].size;
-      context.stroke();
+  const handleNotDraw = () => {
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      setDrawing(false);
+      if (currentLine.length > 0) {
+        setLinesHistory((prev) => [...prev, currentLine]);
+        setCurrentLine([]);
+      }
       canvas.dispatchEvent(new CustomEvent('canvasChange'));
-    });
+    } catch (err) {
+      console.error("[Canvas.js] handleNotDraw() -> Exception Caught:", err);
+    }
+  };
+
+  const undo = () => {
+    try {
+      if (linesHistory.length > 0) {
+        const newHistory = linesHistory.slice(0, -1);
+        setLinesHistory(newHistory);
+        if (canvasRef.current) {
+          const context = canvasRef.current.getContext('2d');
+          if (context) redrawCanvas(context, newHistory);
+        }
+      }
+    } catch (err) {
+      console.error("[Canvas.js] undo() -> Exception Caught:", err);
+    }
+  };
+
+  const redrawCanvas = (context, history = linesHistory) => {
+    if (!canvasRef.current || !context) return;
+    try {
+      context.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      history.forEach((line) => {
+        if (!line || line.length === 0) return;
+        context.beginPath();
+        line.forEach((point, index) => {
+          if (!point) return;
+          if (index === 0) {
+            context.moveTo(point.x, point.y);
+          } else {
+            context.lineTo(point.x, point.y);
+          }
+        });
+        context.strokeStyle = line[0]?.color || "#000000";
+        context.lineWidth = line[0]?.size || 1;
+        context.stroke();
+      });
+    } catch (err) {
+      console.error("[Canvas.js] redrawCanvas() -> Exception Caught:", err);
+    }
   };
 
   useEffect(() => {

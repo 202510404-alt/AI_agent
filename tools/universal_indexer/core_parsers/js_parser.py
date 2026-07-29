@@ -6,7 +6,7 @@ from pathlib import Path
 # ==========================================
 # 🚨 [DEBUG CONFIG] 디버깅 로그 ON / OFF 스위치
 # ==========================================
-DEBUG = True                                              
+DEBUG = False                                      
 
 
 def debug_log(message: str):
@@ -61,7 +61,7 @@ def extract_symbols(file_path: Path, project_root: Path):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
     except Exception as e:
-        debug_log(f"❌ 파일 읽기 실패: {file_path} - 에러: {e}")
+        # debug_log(f"❌ 파일 읽기 실패: {file_path} - 에러: {e}")
         return symbols, {}, {}, {}, []
 
     try:
@@ -69,7 +69,7 @@ def extract_symbols(file_path: Path, project_root: Path):
     except ValueError:
         rel_path_str = file_path.resolve().relative_to(project_root.resolve()).as_posix()
 
-    debug_log(f"📂 [File Start] {rel_path_str}")
+    # debug_log(f"📂 [File Start] {rel_path_str}")
 
     file_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()
     lines = content.splitlines()
@@ -162,5 +162,5 @@ def extract_symbols(file_path: Path, project_root: Path):
         "skeleton": content[:500]
     }
 
-    debug_log(f"✅ [File Scan Complete] {rel_path_str} (추출 심볼: {len(symbols)}개)")
+    # debug_log(f"✅ [File Scan Complete] {rel_path_str} (추출 심볼: {len(symbols)}개)")
     return symbols, file_context, definition_map, data_protocols, registry_constants

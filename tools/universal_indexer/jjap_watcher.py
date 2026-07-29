@@ -10,8 +10,8 @@ import time
 from pathlib import Path
 import importlib.util
 
-# 🎛️ [절대 규칙 2번] 원터치 디버깅 로그 스위치
-DEBUG_MODE = True
+# 🎛️ [절대 규칙 2번] 원터치 디버깅 로그 스위치 (기본값 OFF로 설정)
+DEBUG_MODE = False
 
 # 🔄 물리적 경로 계산 (신규 universal_indexer 2단계 깊이 뼈대에 맞춤 수정)
 CURRENT_DIR = Path(__file__).parent.resolve()
@@ -50,7 +50,7 @@ def run_pipeline():
         indexer_obj = indexer_module.AdvancedIndexerV2(PROJECT_ROOT)
         indexer_obj.scan_project()
         
-        # 디버그 모드일 때만 심볼 정밀 스캔 내역 도배
+        # ⚡ DEBUG_MODE가 False면 아래 추출/연산 코드 전체를 아예 실행하지 않고 0.00초만에 건너뜁니다!
         if DEBUG_MODE:
             classes = [s["name"] for s in indexer_obj.symbols if s.get("type") == "class"]
             methods = [s["name"] for s in indexer_obj.symbols if s.get("type") in ["function", "method"]]
@@ -73,8 +73,8 @@ def run_pipeline():
         
     except Exception as e:
         print(f"❌ [에러 발생] 파이프라인 구동 중 사고 발생: {e}")
-        import traceback
         if DEBUG_MODE:
+            import traceback
             traceback.print_exc()
 
 # 💡 Watchdog 핸들러 및 Observer 설정부 (기존 로직 유지)

@@ -3,8 +3,8 @@ import os
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
-# 🎛️ [절대 규칙 2번] 원터치 디버깅 로그 스위치
-DEBUG_MODE = True # INFO: True로 두시면 어떤 심볼을 낚아채고 수술하는지 터미널에 100% 자백합니다.
+# 🎛️ [절대 규칙 2번] 원터치 디버깅 로그 스위치 (기본값 OFF)
+DEBUG_MODE = False
 
 class JjapRetriever:
     """
@@ -26,6 +26,7 @@ class JjapRetriever:
                 with open(self.symbols_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
                     symbols = data.get("symbols", [])
+                    # ⚡ DEBUG_MODE가 False면 포맷팅 및 출력 연산 0초 커트!
                     if DEBUG_MODE:
                         print(f"📦 [Retriever 디버그] 인덱싱 장부 로드 완료! (총 {len(symbols)}개 심볼 탑재됨)")
                     return symbols
@@ -49,11 +50,11 @@ class JjapRetriever:
                 print(f"❌ [Retriever 디버그] 매칭 실패 -> 장부에서 '{query}'를 찾지 못함")
             return f"❌ '{query}'와 일치하는 심볼을 찾을 수 없습니다. (ID 또는 Name을 확인하세요)"
 
-        file_rel_path = target.get('file')
+        file_rel_path = target.get('path') or target.get('file', '')
         file_path = self.project_root / file_rel_path
         
         if DEBUG_MODE:
-            print(f"🎯 [Retriever 디버그] 타깃 징집 성공! 심볼ID: {target['symbol_id']} ➡️ 타깃 파일: {file_rel_path}")
+            print(f"🎯 [Retriever 디버그] 타깃 징집 성공! 심볼ID: {target.get('symbol_id', '')} ➡️ 타깃 파일: {file_rel_path}")
 
         if not file_path.exists():
             return f"❌ 파일을 찾을 수 없습니다: {file_rel_path}"
@@ -63,7 +64,8 @@ class JjapRetriever:
 
         # [Surgery 시작]
         context = []
-        context.append(f"### [RETRIEVED CONTEXT: {target['symbol_id']}] ###")
+        symbol_id = target.get('symbol_id', query)
+        context.append(f"### [RETRIEVED CONTEXT: {symbol_id}] ###")
         
         # 1. Imports (상단 50줄)
         context.append("\n# --- Imports ---")
@@ -75,9 +77,10 @@ class JjapRetriever:
 
         # 2. Parent Context (Class Header)
         if target.get('parent'):
-            parent = next((s for s in self.symbols_db if s['name'] == target['parent'] and s['file'] == target['file']), None)
+            parent = next((s for s in self.symbols_db if s.get('name') == target['parent'] and (s.get('path') == file_rel_path or s.get('file') == file_rel_path)), None)
             if parent:
-                p_start = parent['range'][0]
+                p_range = parent.get('range') or [parent.get('start_line', 1), parent.get('end_line', 1)]
+                p_start = p_range[0]
                 context.append(f"\n# --- Class: {target['parent']} ---")
                 context.append(all_lines[p_start-1].rstrip())
                 context.append("    \"\"\" (Internal methods hidden) \"\"\"")
@@ -85,8 +88,9 @@ class JjapRetriever:
                     print(f"🧱 [Retriever 디버그] 부모 클래스 뼈대 '{target['parent']}' 바느질 바인딩")
 
         # 3. Target Snippet (Range 준수)
-        start, end = target['range']
-        context.append(f"\n# --- Target: {target['name']} (Lines {start}-{end}) ---")
+        t_range = target.get('range') or [target.get('start_line', 1), target.get('end_line', len(all_lines))]
+        start, end = t_range[0], t_range[1]
+        context.append(f"\n# --- Target: {target.get('name', query)} (Lines {start}-{end}) ---")
         
         # 인덱스 범위 안전하게 가져오기
         snippet = all_lines[max(0, start-1) : min(len(all_lines), end)]
@@ -102,17 +106,20 @@ class JjapRetriever:
         # 1. symbol_id 완전 일치 (가장 정확)
         for s in self.symbols_db:
             if s.get('symbol_id') == query: 
-                if DEBUG_MODE: print(f"🔍 [Retriever 디버그] 1순위 완전 매칭성공 (Symbol ID): {query}")
+                if DEBUG_MODE:
+                    print(f"🔍 [Retriever 디버그] 1순위 완전 매칭성공 (Symbol ID): {query}")
                 return s
         # 2. name 완전 일치
         for s in self.symbols_db:
             if s.get('name') == query: 
-                if DEBUG_MODE: print(f"🔍 [Retriever 디버그] 2순위 명칭 매칭성공 (Name): {query}")
+                if DEBUG_MODE:
+                    print(f"🔍 [Retriever 디버그] 2순위 명칭 매칭성공 (Name): {query}")
                 return s
         # 3. 부분 일치 (Fallback)
         for s in self.symbols_db:
             if query.lower() in s.get('name', '').lower(): 
-                if DEBUG_MODE: print(f"🔍 [Retriever 디버그] 3순위 느슨한 부분 매칭성공: {s.get('name')}")
+                if DEBUG_MODE:
+                    print(f"🔍 [Retriever 디버그] 3순위 느슨한 부분 매칭성공: {s.get('name')}")
                 return s
         return None
 
