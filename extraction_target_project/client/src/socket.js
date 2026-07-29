@@ -4,19 +4,16 @@ const DEBUG = process.env.NODE_ENV !== "production";
 
 export const initSocket = async () => {
   const options = {
-    "force new connection": true,
+    forceNew: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
     timeout: 20000,
-    transports: ["websocket", "polling"], // 연결 안전성을 위한 폴백 허용
+    transports: ["websocket", "polling"],
   };
 
-  // 접속한 클라이언트 브라우저의 현재 Host IP/도메인을 우선 추적하여 자동 연결
-  const serverUrl =
-    process.env.REACT_APP_SOCKET_URL ||
-    (typeof window !== "undefined" && window.location.origin
-      ? window.location.origin
-      : "http://localhost:7605");
+  // [수정점] 현재 브라우저의 Host IP를 가져오되, 소켓 서버 포트(7605)로 정확히 타겟팅
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "localhost";
+  const serverUrl = process.env.REACT_APP_SOCKET_URL || `http://${hostname}:7605`;
 
   if (DEBUG) {
     console.log(`[socket.js] initSocket() -> Connecting Socket Server: ${serverUrl}`);

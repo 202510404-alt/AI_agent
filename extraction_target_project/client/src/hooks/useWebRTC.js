@@ -240,7 +240,24 @@ export function useWebRTC(socketRef, boardId, userName) {
 
     } catch (err) {
       console.error("Mic permission error:", err);
-      toast.error("마이크 접근 권한이 없거나 마이크를 찾을 수 없습니다.");
+
+      // 브라우저가 보안(HTTP) 문제로 마이크 요청을 아예 막았는지 검사
+      const isSecureOrigin =
+        window.location.protocol === "https:" ||
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1";
+
+      if (!isSecureOrigin) {
+        toast.error(
+          "보안(HTTP) 접속 환경에서는 브라우저가 마이크 권한 요청을 차단합니다. HTTPS 주소나 localhost로 접속해 주세요.",
+          { duration: 6000 }
+        );
+      } else if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        toast.error("마이크 권한이 차단되어 있습니다. 주소창 좌측 자물쇠 아이콘에서 권한을 허용해 주세요.");
+      } else {
+        toast.error("마이크 장치를 찾을 수 없거나 연결할 수 없습니다.");
+      }
+
       leaveVoice();
     }
   }, [socketRef, boardId, userName, createPeerConnection, closePeerConnection, leaveVoice]);

@@ -4,8 +4,8 @@ import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import path from "path";
-import { extractDate } from "dateuuidv2";
 import { fileURLToPath } from "url";
+import os from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,18 +14,29 @@ const PORT = process.env.PORT || 7605;
 
 const app = express();
 const httpServer = createServer(app);
-const io = new Server(httpServer);
-const userSocketMap = {};
+
+// CORS 설정 및 소켓 서버 생성
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// socketId -> { userName, boardId } 매핑으로 관리 체계 일원화
+const socketUserMap = {};
 const boardUsersMap = {};
 const voiceUsersMap = {};
 
 app.use(express.static(clientBuildPath));
 
 function getAllConnectedClients(boardId) {
-  const usernames = boardUsersMap[boardId] || [];
-  return usernames.map(userName => ({
-    socketId: userSocketMap[userName],
-    userName,
+  const socketIds = Array.from(io.sockets.adapter.rooms.get(boardId) || []);
+  return socketIds.map((sid) => ({
+    socketId: sid,
+    userName: socketUserMap[sid]?.userName || "Unknown",
   }));
 }
 
@@ -35,13 +46,13 @@ io.on("connection", (socket) => {
   }
 
   socket.on("join", ({ boardId, userName }) => {
-    if (boardUsersMap[boardId]?.includes(userName)) {
-      return;
-    }
+    // 소켓 ID 기준으로 사용자 및 보드 정보 저장
+    socketUserMap[socket.id] = { userName, boardId };
 
-    userSocketMap[userName] = socket.id;
-    boardUsersMap[boardId] = boardUsersMap[boardId] || [];
-    boardUsersMap[boardId].push(userName);
+    if (!boardUsersMap[boardId]) {
+      boardUsersMap[boardId] = new Set();
+    }
+    boardUsersMap[boardId].add(userName);
 
     if (DEBUG) {
       console.log(`[index.js] join() -> User Joined Board: (userName: ${userName}, socketId: ${socket.id}, boardId: ${boardId})`);
@@ -50,12 +61,11 @@ io.on("connection", (socket) => {
 
     const clients = getAllConnectedClients(boardId);
 
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit("joined", {
-        clients,
-        userName,
-        socketId: socket.id,
-      });
+    // 해당 방 전체에 업데이트 브로드캐스트
+    io.in(boardId).emit("joined", {
+      clients,
+      userName,
+      socketId: socket.id,
     });
   });
 
@@ -78,7 +88,6 @@ io.on("connection", (socket) => {
       console.log(`[index.js] join-voice() -> Voice Joined: (socketId: ${socket.id}, userName: ${userName}, boardId: ${boardId})`);
     }
 
-    // Send existing voice users list to the joining user
     const voiceUsersList = Object.keys(voiceUsersMap[boardId]).map((sid) => ({
       socketId: sid,
       userName: voiceUsersMap[boardId][sid].userName,
@@ -86,7 +95,6 @@ io.on("connection", (socket) => {
     }));
     socket.emit("voice-users", voiceUsersList);
 
-    // Notify other users in the board about the new voice user
     socket.in(boardId).emit("user-joined-voice", {
       socketId: socket.id,
       userName,
@@ -156,8 +164,12 @@ io.on("connection", (socket) => {
     if (DEBUG) {
       console.log(`[index.js] disconnecting() -> Cleaning Up Disconnected Socket: ${socket.id}`);
     }
+
+    const userInfo = socketUserMap[socket.id];
     const rooms = [...socket.rooms];
+
     rooms.forEach((boardId) => {
+      // 음성 채널 정리
       if (voiceUsersMap[boardId] && voiceUsersMap[boardId][socket.id]) {
         delete voiceUsersMap[boardId][socket.id];
         if (Object.keys(voiceUsersMap[boardId]).length === 0) {
@@ -166,30 +178,53 @@ io.on("connection", (socket) => {
         socket.in(boardId).emit("user-left-voice", { socketId: socket.id });
       }
 
-      const userName = boardUsersMap[boardId]?.find(
-        (name) => userSocketMap[name] === socket.id
-      );
-
-      if (userName) {
+      // 화이트보드 접속자 알림 및 정리
+      if (userInfo) {
         socket.in(boardId).emit("disconnected", {
           socketId: socket.id,
-          userName,
+          userName: userInfo.userName,
         });
-        boardUsersMap[boardId] = boardUsersMap[boardId]?.filter(
-          (name) => name !== userName
-        );
-        delete userSocketMap[userName];
       }
     });
+
+    // 메모리 정리
+    if (userInfo && boardUsersMap[userInfo.boardId]) {
+      boardUsersMap[userInfo.boardId].delete(userInfo.userName);
+      if (boardUsersMap[userInfo.boardId].size === 0) {
+        delete boardUsersMap[userInfo.boardId];
+      }
+    }
+    delete socketUserMap[socket.id];
 
     socket.leave();
   });
 });
 
+// React Client Fallback Route
 app.get("*", (req, res) => {
   res.sendFile(path.join(clientBuildPath, "index.html"));
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+// 로컬 IPv4 주소 자동 탐색
+function getLocalExternalIP() {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const net of interfaces[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return 'localhost';
+}
+
+httpServer.listen(PORT, '0.0.0.0', () => {
+  const localIP = getLocalExternalIP();
+  
+  console.log('\n========================================================');
+  console.log('🚀 화이트보드 서버가 정상적으로 시작되었습니다!');
+  console.log('========================================================');
+  console.log(`🏠 내 PC 접속 주소   : http://localhost:${PORT}`);
+  console.log(`🌐 다른 사람 접속 주소: http://${localIP}:${PORT}`);
+  console.log('========================================================\n');
 });

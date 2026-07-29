@@ -1,30 +1,25 @@
 @echo off
 chcp 65001 > nul
-title 실시간 협업 화이트보드 & 음성 통화 서버 실행기
+title Realtime Whiteboard Server
 color 0A
 
 echo ========================================================
-echo   실시간 협업 화이트보드 시스템을 시작합니다.
-echo   잠시만 기다려 주십시오...
+echo   실시간 협업 화이트보드 시스템 자동 빌드 및 실행
 echo ========================================================
 echo.
 
-if not exist "node_modules\" (
-    echo [안내] 최초 실행 환경을 구성 중입니다. (1~2분 소요)
-    call npm run install:all
-)
-
-echo [안내] 백엔드 및 프론트엔드 서비스를 구동 중입니다...
-start /b npm run dev:all > nul 2>&1
-
-timeout /t 5 /nobreak > nul
-
-echo [완료] 브라우저를 실행합니다.
-start http://localhost:3000
+echo [1/3] 루트 백엔드 패키지 설치 확인 중...
+call npm install
 
 echo.
+echo [2/3] 리액트 클라이언트 빌드 중... (잠시만 기다려주세요)
+call npm run build
+
+echo.
+echo [3/3] 통합 서버를 시작합니다...
+echo 아래 콘솔에 표시되는 '다른 사람 접속 주소'를 공유하세요!
 echo ========================================================
-echo   서버가 성공적으로 구동되었습니다! (포트: 3000 / 7605)
-echo   이 창을 닫으면 서버가 종료됩니다.
-echo ========================================================
+echo.
+
+npm start
 pause

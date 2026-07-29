@@ -8,6 +8,6 @@
 # 🎛️ 마스터 토글 스위치 
 # "ROOT" -> 프로젝트 전체 원본 경로 직접 징집 (경로 불일치 에러 완벽 해결! 실제 경로 유지)
 # "EXTRACTION_TARGET_PROJECT"  -> 기존 방식 (오직 extraction_target_project/ 폴더 내부만 검사)
-SCAN_MODE = "ROOT"
+SCAN_MODE = "EXTRACTION_TARGET_PROJECT"
 
 SYSTEM_EXCLUDES = ["system_memory", "system_maps"]
