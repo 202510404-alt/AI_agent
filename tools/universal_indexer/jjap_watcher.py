@@ -91,7 +91,19 @@ class CodeChangeHandler:
         
         # 검열 검문소: 백그라운드 찌꺼기나 결과물 파일은 가볍게 무시
         # 🛡️ [격리 방어선] 무한 루프 폭파 방지용 system_memory 및 system_maps 폴더 무시 키워드 추가 주입!
-        EXCLUDE_KEYWORDS = [".venv", ".git", "__pycache__", "cline_tools", ".json", ".md", "system_memory", "system_maps"]
+        EXCLUDE_KEYWORDS = [
+        "node_modules",  # 👈 추가!
+        ".venv", 
+        ".git", 
+        "__pycache__", 
+        "cline_tools", 
+        ".json", 
+        ".md", 
+        "system_memory", 
+        "system_maps"
+        ]
+        
+
         if any(kw in src_path.as_posix() for kw in EXCLUDE_KEYWORDS):
             return
             
