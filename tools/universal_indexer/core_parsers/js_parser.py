@@ -156,10 +156,15 @@ def extract_symbols(file_path: Path, project_root: Path):
     summary_parts.extend(symbols_info_strings)
     symbols_summary_str = " | ".join(summary_parts)
 
+    # 🧱 스켈레톤 문맥 정밀 구성
+    skeleton_lines = [imports_str] if imports_str else []
+    skeleton_lines.extend(symbols_info_strings)
+    skeleton_text = "\n".join(skeleton_lines)
+
     file_context[rel_path_str] = {
         "hash": file_hash,
         "symbols_summary": symbols_summary_str,
-        "skeleton": content[:500]
+        "skeleton": skeleton_text
     }
 
     # debug_log(f"✅ [File Scan Complete] {rel_path_str} (추출 심볼: {len(symbols)}개)")

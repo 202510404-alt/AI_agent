@@ -150,7 +150,7 @@ class CodeExtractor:
 
                 defined_names = re.findall(r"(?:def|class)\s+([a-zA-Z0-9_]+)", slice_code)
                 called_names = re.findall(r"(?:[a-zA-Z0-9_]+\.)?([a-zA-Z0-9_]+)\s*\(", slice_code)
-                file_ref_names = re.findall(r'[\'"]([a-zA-Z0-9_\-\./\\]+\.[a-zA-Z0-9]+)[\'"]', slice_code)
+                file_ref_names = [f for f in re.findall(r'[\'"]([a-zA-Z0-9_\-\./\\]+\.[a-zA-Z0-9]+)[\'"]', slice_code) if f != file_rel_path]
 
                 builtin_filters = {"print", "len", "range", "open", "dict", "list", "set", "any", "all", "max", "min", "append", "get", "strip", "split", "exists", "readlines", "join"}
                 filtered_called_names = [name for name in called_names if name not in builtin_filters]
@@ -168,7 +168,7 @@ class CodeExtractor:
                     for s in symbols_list:
                         if s.get("name") == target_name:
                             match_found = True
-                            t_file = s.get("file", "")
+                            t_file = s.get("path") or s.get("file", "")
                             s_start = s.get("start_line", 1)
                             s_end = s.get("end_line", 1)
 
@@ -194,7 +194,7 @@ class CodeExtractor:
                                         })
 
                             # 역방향 연관 심볼 추적 (used_by)
-                            if (target_name in defined_names) or (s.get("file") == file_rel_path):
+                            if (target_name in defined_names) or (t_file == file_rel_path):
                                 ub_list = s.get("used_by", [])
                                 if ub_list:
                                     print(f"         ⬅️ [역방향] 나를 부르는 전역 호출처 목록(used_by): {ub_list}")
@@ -206,7 +206,7 @@ class CodeExtractor:
                                             
                                             sub_match_found = False
                                             for target_s in symbols_list:
-                                                sub_t_file = target_s.get("file", "")
+                                                sub_t_file = target_s.get("path") or target_s.get("file", "")
                                                 s_id = target_s.get("symbol_id", "")
                                                 sub_s_name = target_s.get("name", "")
                                                 

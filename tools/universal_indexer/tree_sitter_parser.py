@@ -85,6 +85,8 @@ def extract_symbols(file_path: Path, project_root: Path):
                     "file": rel_path_str, "path": rel_path_str, "start_line": start_line, "end_line": end_line,
                     "calls": [], "used_by": []
                 }
+                definition_map[c_id] = f"{rel_path_str}:{start_line}"
+                
                 symbols.append(sym_obj)
                 definition_map[c_name] = f"{rel_path_str}:{start_line}"
                 active_symbol = sym_obj

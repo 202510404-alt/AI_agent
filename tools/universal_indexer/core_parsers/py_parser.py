@@ -120,15 +120,8 @@ def extract_symbols(file_path: Path, project_root: Path):
         elif isinstance(node, ast.ClassDef):
             c_name = node.name
             c_id = f"{rel_path_str}::{c_name}"
-            # 수정 후: AST에서 파라미터 노드를 정밀 해석하는 헬퍼 함수 활용
-            def _extract_py_args(node):
-                args = [arg.arg for arg in node.args.args if arg.arg not in ('self', 'cls')]
-                if node.args.vararg: args.append(f"*{node.args.vararg.arg}")
-                if node.args.kwarg: args.append(f"**{node.args.kwarg.arg}")
-                return ", ".join(args)
-
-            s_args = _extract_py_args(node)
-            symbols_info_strings.append(f"🎯 def {s_name}({s_args}) [L{node.lineno}-{node.end_lineno}]")
+            
+            symbols_info_strings.append(f"🧬 class {c_name} [L{node.lineno}-{node.end_lineno}]")
             
             symbols.append({
                 "symbol_id": c_id, "name": c_name, "full_name": c_name, "type": "class",

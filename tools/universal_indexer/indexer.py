@@ -131,7 +131,15 @@ class AdvancedIndexerV2:
                 else:
                     total_ignored_count += 1
 
-        # log(f"🏁 스캔 타임라인 종료 -> 분석 통계 [처리 완료: {total_scanned_count}개 | 미지원/패스: {total_ignored_count}개]")
+        # 🔗 [글로벌 used_by 역방향 바인딩 후처리 엔진]
+        sym_map = {s["name"]: s for s in self.symbols if "name" in s}
+        for s in self.symbols:
+            for called_name in s.get("calls", []):
+                if called_name in sym_map:
+                    target_sym = sym_map[called_name]
+                    caller_id = s.get("symbol_id")
+                    if caller_id and caller_id not in target_sym.get("used_by", []):
+                        target_sym.setdefault("used_by", []).append(caller_id)
 
         # 🗂️ 수집 완료 후 디스크 정밀 장부 보관소로 직행 쓰기
         self.save_index_data()
