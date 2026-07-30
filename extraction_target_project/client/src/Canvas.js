@@ -23,12 +23,34 @@ import { useWebRTC } from "./hooks/useWebRTC";
 
 function RemoteAudio({ stream }) {
   const audioRef = useRef(null);
+
   useEffect(() => {
-    if (audioRef.current && stream) {
-      audioRef.current.srcObject = stream;
+    const audioEl = audioRef.current;
+    if (audioEl && stream) {
+      audioEl.srcObject = stream;
+      
+      const playAudio = async () => {
+        try {
+          await audioEl.play();
+        } catch (err) {
+          console.warn("[RemoteAudio] 자동 재생 차단됨. 유저 클릭 시 재생을 대기합니다.", err);
+          // 브라우저 차단 시, 사용자가 화면을 클릭할 때 소리가 즉시 재생되도록 리스너 등록
+          const handleUserInteraction = () => {
+            audioEl.play().then(() => {
+              window.removeEventListener("click", handleUserInteraction);
+              window.removeEventListener("keydown", handleUserInteraction);
+            }).catch(e => console.error(e));
+          };
+          window.addEventListener("click", handleUserInteraction);
+          window.addEventListener("keydown", handleUserInteraction);
+        }
+      };
+
+      playAudio();
     }
   }, [stream]);
-  return <audio ref={audioRef} autoPlay playsInline />;
+
+  return <audio ref={audioRef} autoPlay playsInline controls={false} />;
 }
 
 function Canvas(props) {

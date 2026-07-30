@@ -3,13 +3,28 @@ import toast from "react-hot-toast";
 
 const DEBUG = process.env.NODE_ENV !== "production";
 
-// 글로벌 망 및 엄격한 NAT/방화벽 통과를 위한 다중 ICE Server (STUN/TURN 폴백 백본)
+// 1. Metered 무료 계정 발급 전 임시로 사용해볼 수 있는 오픈 TURN (무료)
 const ICE_SERVERS = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
-    { urls: "stun:global.stun.twilio.com:3478" },
+    // OpenRelay 공용 TURN 서버 (작동 테스트용)
+    {
+      urls: "turn:openrelay.metered.ca:80",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
+    {
+      urls: "turn:openrelay.metered.ca:443?transport=tcp",
+      username: "openrelayproject",
+      credential: "openrelayproject",
+    },
   ],
   iceCandidatePoolSize: 10,
 };
@@ -24,6 +39,8 @@ export function useWebRTC(socketRef, boardId, userName) {
   const peerConnections = useRef(new Map());
   const localStreamRef = useRef(null);
   const isMutedRef = useRef(false);
+  // RemoteDescription 등록 완료 전 도착한 ICE Candidate를 임시 보관하는 Queue
+  const pendingCandidates = useRef(new Map());
 
   const createPeerConnection = useCallback((targetSocketId) => {
     try {
@@ -99,9 +116,10 @@ export function useWebRTC(socketRef, boardId, userName) {
     });
   }, []);
 
-  // Leave Voice Call & Cleanup
+// Leave Voice Call & Cleanup
   const leaveVoice = useCallback(() => {
-    if (socketRef.current && isVoiceConnected) {
+    // isVoiceConnected 상태 체크 없이, localStream이나 socket이 있을 때 항상 안전하게 정리
+    if (socketRef.current) {
       socketRef.current.emit("leave-voice", { boardId });
     }
 
@@ -113,12 +131,15 @@ export function useWebRTC(socketRef, boardId, userName) {
     setLocalStream(null);
 
     // Close all PeerConnections
-    peerConnections.current.forEach((pc, sid) => {
+    peerConnections.current.forEach((pc) => {
       pc.onicecandidate = null;
       pc.ontrack = null;
       pc.close();
     });
     peerConnections.current.clear();
+    
+    // Candidate 대기열 초기화
+    pendingCandidates.current.clear();
 
     setRemoteStreams({});
     setVoiceUsers([]);
@@ -136,7 +157,7 @@ export function useWebRTC(socketRef, boardId, userName) {
       socketRef.current.off("user-left-voice");
       socketRef.current.off("user-mute-changed");
     }
-  }, [socketRef, boardId, isVoiceConnected]);
+  }, [socketRef, boardId]); // <- isVoiceConnected 의존성 제거 완료!
 
   // Join Voice Call
   const joinVoice = useCallback(async () => {
@@ -180,7 +201,7 @@ export function useWebRTC(socketRef, boardId, userName) {
       });
 
       socket.on("user-joined-voice", ({ socketId, userName: remoteName, isMuted: remoteMuted }) => {
-        toast.info(`${remoteName}님이 음성 채널에 입장하셨습니다.`);
+        toast(`${remoteName}님이 음성 채널에 입장하셨습니다.`, { icon: "ℹ️" });
         setVoiceUsers((prev) => [
           ...prev.filter((u) => u.socketId !== socketId),
           { socketId, userName: remoteName, isMuted: remoteMuted },
@@ -191,6 +212,16 @@ export function useWebRTC(socketRef, boardId, userName) {
         const pc = createPeerConnection(callerSocketId);
         try {
           await pc.setRemoteDescription(new RTCSessionDescription(offer));
+
+          // RemoteDescription 설정 완료 후 쌓여 있던 ICE Candidate 처리
+          if (pendingCandidates.current.has(callerSocketId)) {
+            const candidates = pendingCandidates.current.get(callerSocketId);
+            for (const cand of candidates) {
+              await pc.addIceCandidate(new RTCIceCandidate(cand));
+            }
+            pendingCandidates.current.delete(callerSocketId);
+          }
+
           const answer = await pc.createAnswer();
           await pc.setLocalDescription(answer);
           socket.emit("answer", {
@@ -207,6 +238,15 @@ export function useWebRTC(socketRef, boardId, userName) {
         if (pc) {
           try {
             await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+            // RemoteDescription 설정 완료 후 쌓여 있던 ICE Candidate 처리
+            if (pendingCandidates.current.has(responderSocketId)) {
+              const candidates = pendingCandidates.current.get(responderSocketId);
+              for (const cand of candidates) {
+                await pc.addIceCandidate(new RTCIceCandidate(cand));
+              }
+              pendingCandidates.current.delete(responderSocketId);
+            }
           } catch (err) {
             console.error("Error setting remote description from answer:", err);
           }
@@ -215,12 +255,19 @@ export function useWebRTC(socketRef, boardId, userName) {
 
       socket.on("ice-candidate", async ({ senderSocketId, candidate }) => {
         const pc = peerConnections.current.get(senderSocketId);
-        if (pc) {
+        
+        // RemoteDescription이 세팅된 경우 바로 추가, 그렇지 않다면 Queue에 임시 보관
+        if (pc && pc.remoteDescription && pc.remoteDescription.type) {
           try {
             await pc.addIceCandidate(new RTCIceCandidate(candidate));
           } catch (err) {
             console.error("Error adding ice candidate:", err);
           }
+        } else {
+          if (!pendingCandidates.current.has(senderSocketId)) {
+            pendingCandidates.current.set(senderSocketId, []);
+          }
+          pendingCandidates.current.get(senderSocketId).push(candidate);
         }
       });
 
@@ -266,7 +313,9 @@ export function useWebRTC(socketRef, boardId, userName) {
   const toggleMute = useCallback(() => {
     if (!localStreamRef.current) return;
     const audioTracks = localStreamRef.current.getAudioTracks();
-    const newMutedState = !isMuted;
+    
+    // isMutedRef를 활용하여 최신 Mute 상태 값을 항상 안전하게 가져옴
+    const newMutedState = !isMutedRef.current;
 
     audioTracks.forEach((track) => {
       track.enabled = !newMutedState;
@@ -287,7 +336,7 @@ export function useWebRTC(socketRef, boardId, userName) {
     } else {
       toast.success("음소거가 해제되었습니다.");
     }
-  }, [socketRef, boardId, isMuted]);
+  }, [socketRef, boardId]);
 
   // Cleanup on component unmount
   useEffect(() => {
