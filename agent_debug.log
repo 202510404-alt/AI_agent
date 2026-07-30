@@ -1,0 +1,8 @@
+=== [Jjap-Cursor Agent Debug Log Initialized] ===
+[SCHEMAS DEBUG] to_symbol_ref 변환 시작 - Raw Input: {'name': 'login_user', 'start_line': 15, 'end_line': 42}, Default File: auth/service.py
+[SCHEMAS DEBUG] to_symbol_ref 변환 완료 - Result SymbolRef: SymbolRef(file_path='auth/service.py', symbol_name='login_user', start_line=15, end_line=42)
+[PROMPT_BUILDER DEBUG] PromptBuilder 초기화 완료 - Root: C:\Users\COMLAB\Desktop\AI_agent, Map File Path: C:\Users\COMLAB\Desktop\AI_agent\AI_CODEBASE_MAP.md
+[PROMPT_BUILDER DEBUG] build_plan_prompt 호출 - Goal: '로그인 실패 시 3회 제한 후 계정을 잠그는 로직을 추가해 줘.', Extra Context 여부: False
+[PROMPT_BUILDER DEBUG] 코드베이스 지도 파일 읽기 시도: C:\Users\COMLAB\Desktop\AI_agent\AI_CODEBASE_MAP.md
+[PROMPT_BUILDER DEBUG] AI_CODEBASE_MAP.md 파일이 없어 기본 안내 문구를 반환합니다.
+[PROMPT_BUILDER DEBUG] 최종 프롬프트 생성 완료 (총 386 글자 결과물)

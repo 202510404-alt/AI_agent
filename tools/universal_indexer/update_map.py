@@ -28,7 +28,16 @@ def update_map():
 
     # 🚨 [검열 시스템 동기화] 인덱서와 싱크로율 100% 맞추기
     # 혹시라도 장부에 흔적이 남아있거나, 루트의 실행 파일들이 맵에 찍히는 걸 원천 차단합니다.
-    EXCLUDE_KEYWORDS = [".venv", ".git", "__pycache__", "cline_tools"]
+    # 🚨 [검열 시스템 동기화] 인덱서 및 기타 도구들과 검열 필터 규격 100% 동기화
+    EXCLUDE_KEYWORDS = [
+        "node_modules",
+        ".venv", 
+        ".git", 
+        "__pycache__", 
+        "cline_tools", 
+        "system_memory", 
+        "system_maps"
+    ]
 
     # 2. 에이전트 분석을 돕기 위해 파일별 심볼 및 관계 매핑 구조 생성
     symbols_by_file = {}

@@ -1,790 +1,554 @@
-Mode                 LastWriteTime         Length Name                                                                                       
-----                 -------------         ------ ----                                                                                       
-d-----      2026-07-13   오후 3:49                resources                                                                                  
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense
-
-
-Mode                 LastWriteTime         Length Name                                                                                       
-----                 -------------         ------ ----                                                                                       
--a----      2026-07-20   오후 1:41              0 CoreDefensePlugin.java                                                                     
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\bootstrap
-
-
-Mode                 LastWriteTime         Length Name                                                                                       
-----                 -------------         ------ ----                                                                                       
--a----      2026-07-20   오후 1:41              0 ModuleInitializer.java                                                                     
--a----      2026-07-20   오후 1:41              0 ListenerRegistrar.java                                                                     
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\data\storage
-
-
-Mode                 LastWriteTime         Length Name                                                                                       
-----                 -------------         ------ ----                                                                                       
--a----      2026-07-20   오후 1:41              0 VariableStorage.java                                                                       
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\data\pipeline
-
-
-Mode                 LastWriteTime         Length Name                                                                                       
-----                 -------------         ------ ----                                                                                       
--a----      2026-07-20   오후 1:41              0 JsonSerializationPipeline.java                                                             
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\java\com\yourstudio\coredefense\entity\base
-
-
-Mode                 LastWriteTime         Length Name                                                                                       
-----                 -------------         ------ ----                                                                                       
--a----      2026-07-20   오후 1:41              0 BaseEntity.java                                                                            
--a----      2026-07-20   오후 1:41              0 EntityRegistry.java                                                                        
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\extraction_target_project\src\main\resources
-
-
-Mode                 LastWriteTime         Length Name                                                                                       
-----                 -------------         ------ ----                                                                                       
--a----      2026-07-20   오후 1:41              0 editor_objects.json                                                                        
--a----      2026-07-20   오후 1:41              0 plugin.yml                                                                                 
-
-
-PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> 
- *  History restored 
-
-PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> 
-PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> # 1. 기존 레거시 bin 폴더 및 일부 불일치 리소스 정리
->> Remove-Item -Recurse -Force -ErrorAction SilentlyContinue bin, src/main/resources/config/player_classes
->> 
->> # 2. 개정안 리소스(Resources) 디렉터리 및 파일 생성
->> Ensure-Path src/main/resources/config/waves, src/main/resources/config/weapons, src/main/resources/config/player_classes, src/main/resources/config/npc, src/main/resources/config/mining, src/main/resources/config/structures, src/main/resources/config/progression, src/main/resources/lang, src/main/resources/schematics, docs/design
->> $ResourceFiles = @(
->>     "src/main/resources/config/core_visual_stages.yml",
->>     "src/main/resources/config/waves/wave_definitions.yml",
->>     "src/main/resources/config/waves/boss_waves.yml",
->>     "src/main/resources/config/weapons/guns.yml",
->>     "src/main/resources/config/weapons/melee.yml",
->>     "src/main/resources/config/player_classes/classes.yml",
->>     "src/main/resources/config/player_classes/specializations.yml",
->>     "src/main/resources/config/npc/npc_traits.yml",
->>     "src/main/resources/config/npc/npc_recruit_pool.yml",
->>     "src/main/resources/config/npc/npc_job_promotions.yml",
->>     "src/main/resources/config/npc/resonance_thresholds.yml",
->>     "src/main/resources/config/mining/ores.yml",
->>     "src/main/resources/config/structures/walls.yml",
->>     "src/main/resources/config/structures/turrets.yml",
->>     "src/main/resources/config/progression/meta_upgrades.yml",
->>     "src/main/resources/config/progression/score_weights.yml",
->>     "src/main/resources/lang/en_US.yml",
->>     "src/main/resources/lang/ko_KR.yml"
->> )
->> foreach ($file in $ResourceFiles) { if (-not (Test-Path $file)) { New-Item -ItemType File -Path $file -Force } }
->> 
->> # 3. 개정안 Java 패키지 구조 및 스켈레톤 클래스 일괄 생성
->> $BaseDir = "src/main/java/com/yourstudio/coredefense"
->> 
->> $Classes = @{
->>     "" = @("CoreDefensePlugin.java")
->>     "bootstrap" = @("ModuleInitializer.java", "ListenerRegistrar.java", "CommandRegistrar.java")
->>     "api/event" = @()
->>     "api/service" = @()
->>     "common/event" = @("AbstractGameEvent.java", "GameListener.java")
->>     "common/registry" = @("Registry.java", "AbstractRegistry.java", "RegistryKey.java")
->>     "common/config" = @("ConfigService.java", "ConfigLoader.java", "ConfigParser.java", "ReloadableConfig.java")
->>     "common/contract" = @("EnergyConsumer.java", "EnergyPriority.java", "Healable.java")
->>     "common/util" = @("MathUtils.java", "ParticleUtils.java", "CooldownTracker.java", "RayTraceUtil.java")
->>     "common/scheduling" = @("GameScheduler.java")
->>     "common/perf" = @("PerformanceMonitor.java")
->>     "common/result" = @("ActionResult.java")
->>     "session" = @("GameSession.java", "GameSessionManager.java", "GameTeam.java", "GameSessionState.java")
->>     "session/event" = @("GameSessionEndedEvent.java")
->>     "core" = @("CoreEntity.java", "CoreLevel.java", "CoreLevelRegistry.java", "CoreLevelUpService.java", "CoreEnergyManager.java", "CoreUnlockManager.java", "CoreUnlockConfig.java", "CoreState.java", "CoreStateMachine.java", "CoreVisualFeedbackService.java", "SchematicPasteService.java", "CoreLevelListener.java")
->>     "core/event" = @("CoreDamagedEvent.java", "CoreLeveledUpEvent.java", "CoreDestroyedEvent.java", "CoreSystemUnlockedEvent.java")
->>     "wave" = @("WaveManager.java", "WaveState.java", "WaveDefinition.java", "BossWaveDefinition.java", "MonsterSpawnEntry.java", "WaveSpawnScheduler.java", "WaveScalingPolicy.java", "ReadyVoteService.java")
->>     "wave/spawn" = @("SpawnPointGroup.java")
->>     "wave/condition" = @("WaveClearCondition.java", "AllMonstersClearedCondition.java", "BossDefeatedCondition.java")
->>     "wave/state" = @("WaveStateHandler.java", "WaitingStateHandler.java", "SpawningStateHandler.java", "InProgressStateHandler.java", "ClearedStateHandler.java", "RewardStateHandler.java")
->>     "wave/boss" = @("BossWaveHandler.java")
->>     "wave/event" = @("WaveStartedEvent.java", "WaveSpawnEvent.java", "WaveClearedEvent.java")
->>     "combat/weapon" = @("Weapon.java", "AbstractFirearm.java", "SingleShotFirearm.java", "BurstFireFirearm.java", "SniperRifle.java", "WeaponDefinition.java", "WeaponInputHandler.java", "WeaponRegistry.java", "WeaponFactory.java", "WeaponAttachment.java", "WeaponAcquisitionPolicy.java")
->>     "combat/weapon/strategy" = @("FireModeStrategy.java", "SingleShotStrategy.java", "BurstFireStrategy.java", "SniperShotStrategy.java", "SpreadPolicy.java")
->>     "combat/weapon/projectile" = @("ProjectileType.java", "BulletProjectile.java", "ArcProjectile.java", "ProjectileFactory.java")
->>     "combat/weapon/ammo" = @("AmmoType.java", "AmmoInventory.java")
->>     "combat/melee" = @("MeleeWeapon.java", "MeleeAttackHandler.java")
->>     "combat/damage" = @("DamageCalculator.java", "DamageSource.java", "DamageModifier.java", "CombatDamageService.java")
->>     "combat/vfx" = @("WeaponVfxService.java")
->>     "combat/event" = @("WeaponFiredEvent.java", "EntityDamagedByGameEvent.java")
->>     "mob" = @("MonsterDefinition.java", "MonsterFactory.java", "MonsterAI.java", "MonsterRegistry.java")
->>     "mob/ai" = @("TargetSelector.java", "PathingStrategy.java")
->>     "mob/event" = @("MonsterKilledEvent.java")
->>     "npc" = @("GameNpc.java", "NpcRole.java", "NpcState.java", "NpcStateMachine.java", "NpcStatSheet.java", "NpcCapacityPolicy.java", "NpcOwnershipPolicy.java")
->>     "npc/safezone" = @("SafeZoneService.java")
->>     "npc/safezone/event" = @("SafeZoneBreachedEvent.java")
->>     "npc/trait" = @("NpcTrait.java", "TraitRegistry.java", "ResonanceCalculator.java", "NpcCollaborationUnlockService.java")
->>     "npc/vocation" = @("NpcVocation.java", "NpcVocationSkillTree.java", "NpcVocationPromotion.java")
->>     "npc/recruit" = @("RecruitPool.java", "RecruitOffer.java", "RecruitPoolWeightTable.java", "RecruitmentService.java")
->>     "npc/death" = @("NpcDeathHandler.java", "ReviveService.java", "LegacyTransferService.java")
->>     "npc/event" = @("NpcRecruitedEvent.java", "NpcLeveledUpEvent.java", "NpcDiedEvent.java")
->>     "mining" = @("MiningSession.java", "OreType.java", "OreRegistry.java", "ClickMiningHandler.java", "AutoMiningTicker.java", "MiningEfficiencyPolicy.java")
->>     "mining/event" = @("OreMinedEvent.java", "OreUnlockedEvent.java")
->>     "structure" = @("StructureRegistry.java", "StructurePlacementService.java", "BuildableZoneService.java", "BuildPermissionPolicy.java")
->>     "structure/wall" = @("WallDefinition.java", "WallMaterialTier.java", "WallInstance.java", "WallModule.java")
->>     "structure/turret" = @("Turret.java", "TurretDefinition.java", "TurretFactory.java", "TurretAmmoSupply.java")
->>     "structure/turret/targeting" = @("TurretTargeting.java", "NearestTargetStrategy.java", "LowestHpTargetStrategy.java", "HighestThreatTargetStrategy.java")
->>     "structure/turret/types" = @("ArrowSentryTurret.java", "SlingshotTurret.java", "FlamethrowerTurret.java", "MinigunTurret.java", "BuffTowerTurret.java", "LightGunTurret.java", "AutoCannonTurret.java", "MissileTurret.java", "NukeMissileTurret.java")
->>     "structure/event" = @("StructurePlacedEvent.java", "StructureDestroyedEvent.java")
->>     "drone" = @("CombatDrone.java", "DroneCapacityPolicy.java")
->>     "playerclass" = @("PlayerClass.java", "ClassDefinition.java", "ClassRegistry.java")
->>     "playerclass/specialization" = @("Specialization.java")
->>     "playerclass/skill" = @("Skill.java", "ActiveSkill.java", "PassiveSkill.java", "UltimateSkill.java", "UltimateCooldownPool.java", "SkillTree.java", "SkillNode.java", "SkillInputHandler.java")
->>     "playerclass/heal" = @("HealStrategy.java")
->>     "playerclass/builder" = @("OverclockSkill.java", "OverclockPenaltyHandler.java")
->>     "playerclass/builder/event" = @("OverclockActivatedEvent.java", "OverheatTriggeredEvent.java")
->>     "playerclass/event" = @("ClassSelectedEvent.java", "SkillUsedEvent.java")
->>     "progression" = @("MetaCurrency.java", "PlayerProgressionData.java", "MetaUpgrade.java", "MetaUpgradeTree.java", "MetaUpgradeNode.java", "UpgradeEffectType.java", "ScoreCalculator.java", "ProgressionService.java", "ProgressionStatsCollector.java")
->>     "persistence" = @("Repository.java", "DataStoreType.java", "PersistenceService.java", "PlayerDataLock.java", "FailedSaveRetryQueue.java")
->>     "persistence/file" = @("YamlPlayerRepository.java", "JsonSessionSnapshotRepository.java")
->>     "persistence/sql" = @("SqlPlayerRepository.java", "SqlSchemaMigrator.java")
->>     "gui" = @("GameMenu.java", "MenuFactory.java")
->>     "gui/menus" = @("RecruitMenu.java", "SkillTreeMenu.java", "MetaUpgradeMenu.java", "NpcReplaceMenu.java")
->>     "command" = @("CoreDefenseCommand.java")
->>     "command/sub" = @("StartGameSubcommand.java", "AdminReloadSubcommand.java")
->> }
->> 
->> foreach ($pkg in $Classes.Keys) {
->>     $TargetFolder = if ($pkg -eq "") { $BaseDir } else { "$BaseDir/$pkg" }
->>     if (-not (Test-Path $TargetFolder)) { New-Item -ItemType Directory -Path $TargetFolder -Force | Out-Null }
->>     
->>     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { "." + $pkg.Replace('/', '.') } else { "" })
->>     
->>     foreach ($file in $Classes[$pkg]) {
->>         $FilePath = "$TargetFolder/$file"
->>         if (-not (Test-Path $FilePath)) {
->>             $ClassName = $file.Replace(".java", "")
->>             $Type = if ($file -match "Registry|Service|Manager|Handler|Policy|Tracker|Calculator|Factory|Data|State|Listener|Registrar|Plugin|Command|Menu|DataStoreType") { "class" } else { "interface" }
->>             if ($file -match "Event") { $Type = "class" }
->>             
->>             $Content = "package $PackageName;`n`npublic $Type $ClassName {`n    // TODO: Implement 개정안 스켈레톤`n}"
->>             Set-Content -Path $FilePath -Value $Content -Encoding utf8
->>         }
->>     }
->> }
->> Write-Host "✅ 모든 파일 구조 개정안 동기화 완료!" -ForegroundColor Green
-Ensure-Path : 'Ensure-Path' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름
-이 정확한지 확인하고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:5 문자:1
-+ Ensure-Path src/main/resources/config/waves, src/main/resources/confi ...
-+ ~~~~~~~~~~~
-    + CategoryInfo          : ObjectNotFound: (Ensure-Path:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 core_visual_stages.yml                                                     
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\waves
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 wave_definitions.yml                                                       
--a----      2026-07-20   오후 2:01              0 boss_waves.yml                                                             
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\weapons
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 guns.yml                                                                   
--a----      2026-07-20   오후 2:01              0 melee.yml                                                                  
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\player_classes
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 classes.yml                                                                
--a----      2026-07-20   오후 2:01              0 specializations.yml                                                        
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\npc
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 npc_traits.yml                                                             
--a----      2026-07-20   오후 2:01              0 npc_recruit_pool.yml                                                       
--a----      2026-07-20   오후 2:01              0 npc_job_promotions.yml                                                     
--a----      2026-07-20   오후 2:01              0 resonance_thresholds.yml                                                   
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\mining
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 ores.yml                                                                   
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\structures
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 walls.yml                                                                  
--a----      2026-07-20   오후 2:01              0 turrets.yml                                                                
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\config\progression
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 meta_upgrades.yml                                                          
--a----      2026-07-20   오후 2:01              0 score_weights.yml                                                          
-
-
-    디렉터리: C:\Users\COMLAB\Desktop\mincraft_javacode_map\src\main\resources\lang
-
-
-Mode                 LastWriteTime         Length Name                                                                       
-----                 -------------         ------ ----                                                                       
--a----      2026-07-20   오후 2:01              0 en_US.yml                                                                  
--a----      2026-07-20   오후 2:01              0 ko_KR.yml                                                                  
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-if : 'if' 용어가 cmdlet, 함수, 스크립트 파일 또는 실행할 수 있는 프로그램 이름으로 인식되지 않습니다. 이름이 정확한지 확인하
-고 경로가 포함된 경우 경로가 올바른지 검증한 다음 다시 시도하십시오.
-위치 줄:103 문자:52
-+     $PackageName = "com.yourstudio.coredefense" + (if ($pkg -ne "") { ...
-+                                                    ~~
-    + CategoryInfo          : ObjectNotFound: (if:String) [], CommandNotFoundException
-    + FullyQualifiedErrorId : CommandNotFoundException
- 
-✅ 모든 파일 구조 개정안 동기화 완료!
-
-
-PS C:\Users\COMLAB\Desktop\mincraft_javacode_map> 
+PS C:\Users\COMLAB\Desktop\AI_agent> git reset HEAD~1
+>> git rm -r --cached .
+>> git add .
+>> git commit -m "fix: apply recursive gitignore for large files"
+>> git push
+Unstaged changes after reset:
+M       .gitignore
+rm '.gitignore'
+rm '.idea/.gitignore'
+rm '.idea/AI_agent.iml'
+rm '.idea/gradle.xml'
+rm '.idea/misc.xml'
+rm '.idea/modules.xml'
+rm '.idea/vcs.xml'
+rm '.vscode/settings.json'
+rm 'README.md'
+rm 'System Prompt.md'
+rm 'a'
+rm 'agent_core/__init__.py'
+rm 'agent_core/execution/__init__.py'
+rm 'agent_core/memory/__init__.py'
+rm 'agent_core/plan/__init__.py'
+rm 'agent_core/plan/gemini_client.py'
+rm 'agent_core/plan/planner.py'
+rm 'agent_core/plan/prompt_builder.py'
+rm 'agent_core/plan/schemas.py'
+rm 'agent_core/validation/__init__.py'
+rm 'agent_plan.md'
+rm 'extraction_target_project/.gitignore'
+rm 'extraction_target_project/README.md'
+rm 'extraction_target_project/client/.gitignore'
+rm 'extraction_target_project/client/package-lock.json'
+rm 'extraction_target_project/client/package.json'
+rm 'extraction_target_project/client/public/favicon.ico'
+rm 'extraction_target_project/client/public/favicon.svg'
+rm 'extraction_target_project/client/public/index.html'
+rm 'extraction_target_project/client/public/logo.svg'
+rm 'extraction_target_project/client/public/logo192.png'
+rm 'extraction_target_project/client/public/logo512.png'
+rm 'extraction_target_project/client/public/manifest.json'
+rm 'extraction_target_project/client/src/App.css'
+rm 'extraction_target_project/client/src/App.js'
+rm 'extraction_target_project/client/src/App.test.js'
+rm 'extraction_target_project/client/src/Button.js'
+rm 'extraction_target_project/client/src/Canvas.js'
+rm 'extraction_target_project/client/src/Home.js'
+rm 'extraction_target_project/client/src/Input.js'
+rm 'extraction_target_project/client/src/UploadFile.js'
+rm 'extraction_target_project/client/src/hooks/useWebRTC.js'
+rm 'extraction_target_project/client/src/index.css'
+rm 'extraction_target_project/client/src/index.js'
+rm 'extraction_target_project/client/src/reportWebVitals.js'
+rm 'extraction_target_project/client/src/setupTests.js'
+rm 'extraction_target_project/client/src/socket.js'
+rm 'extraction_target_project/client/src/style.css'
+rm 'extraction_target_project/client/src/styleCanvas.css'
+rm 'extraction_target_project/extraction_target_project.code-workspace'
+rm 'extraction_target_project/index.js'
+rm 'extraction_target_project/package-lock.json'
+rm 'extraction_target_project/package.json'
+rm 'extraction_target_project/prompt.md'
+rm 'extraction_target_project/run.bat'
+rm 'extraction_target_project/start.bat'
+rm 'oldplan/agent_plan1.md'
+rm 'oldplan/agent_plan2.md'
+rm 'oldplan/agent_plan3.md'
+rm 'prompt.md'
+rm 'scan_debug.txt'
+rm 'setup_architecture.bat'
+rm 'src/main/java/com/yourstudio/coredefense/CoreDefensePlugin.java'
+rm 'src/main/java/com/yourstudio/coredefense/bootstrap/CommandRegistrar.java'
+rm 'src/main/java/com/yourstudio/coredefense/bootstrap/ListenerRegistrar.java'
+rm 'src/main/java/com/yourstudio/coredefense/bootstrap/ModuleInitializer.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/damage/CombatDamageService.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/damage/DamageCalculator.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/damage/DamageModifier.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/damage/DamageSource.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/event/EntityDamagedByGameEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/event/WeaponFiredEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/melee/MeleeAttackHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/melee/MeleeWeapon.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/vfx/WeaponVfxService.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/AbstractFirearm.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/BurstFireFirearm.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/SingleShotFirearm.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/SniperRifle.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/Weapon.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponAcquisitionPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponAttachment.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponDefinition.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponFactory.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponInputHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/ammo/AmmoInventory.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/ammo/AmmoType.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/ArcProjectile.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/BulletProjectile.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/ProjectileFactory.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/ProjectileType.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/BurstFireStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/FireModeStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/SingleShotStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/SniperShotStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/SpreadPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/command/CoreDefenseCommand.java'
+rm 'src/main/java/com/yourstudio/coredefense/command/sub/AdminReloadSubcommand.java'
+rm 'src/main/java/com/yourstudio/coredefense/command/sub/StartGameSubcommand.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/config/ConfigLoader.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/config/ConfigParser.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/config/ConfigService.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/config/ReloadableConfig.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/contract/EnergyConsumer.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/contract/EnergyPriority.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/contract/Healable.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/event/AbstractGameEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/event/GameListener.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/perf/PerformanceMonitor.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/registry/AbstractRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/registry/Registry.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/registry/RegistryKey.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/result/ActionResult.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/scheduling/GameScheduler.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/util/CooldownTracker.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/util/MathUtils.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/util/ParticleUtils.java'
+rm 'src/main/java/com/yourstudio/coredefense/common/util/RayTraceUtil.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreEnergyManager.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreEntity.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreLevel.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreLevelListener.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreLevelRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreLevelUpService.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreState.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreStateMachine.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreUnlockConfig.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreUnlockManager.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/CoreVisualFeedbackService.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/SchematicPasteService.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/event/CoreDamagedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/event/CoreDestroyedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/event/CoreLeveledUpEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/core/event/CoreSystemUnlockedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/drone/CombatDrone.java'
+rm 'src/main/java/com/yourstudio/coredefense/drone/DroneCapacityPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/gui/GameMenu.java'
+rm 'src/main/java/com/yourstudio/coredefense/gui/MenuFactory.java'
+rm 'src/main/java/com/yourstudio/coredefense/gui/menus/MetaUpgradeMenu.java'
+rm 'src/main/java/com/yourstudio/coredefense/gui/menus/NpcReplaceMenu.java'
+rm 'src/main/java/com/yourstudio/coredefense/gui/menus/RecruitMenu.java'
+rm 'src/main/java/com/yourstudio/coredefense/gui/menus/SkillTreeMenu.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/AutoMiningTicker.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/ClickMiningHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/MiningEfficiencyPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/MiningSession.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/OreRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/OreType.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/event/OreMinedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/mining/event/OreUnlockedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/mob/MonsterAI.java'
+rm 'src/main/java/com/yourstudio/coredefense/mob/MonsterDefinition.java'
+rm 'src/main/java/com/yourstudio/coredefense/mob/MonsterFactory.java'
+rm 'src/main/java/com/yourstudio/coredefense/mob/MonsterRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/mob/ai/PathingStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/mob/ai/TargetSelector.java'
+rm 'src/main/java/com/yourstudio/coredefense/mob/event/MonsterKilledEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/GameNpc.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/NpcCapacityPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/NpcOwnershipPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/NpcRole.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/NpcStatSheet.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/NpcState.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/NpcStateMachine.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/death/LegacyTransferService.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/death/NpcDeathHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/death/ReviveService.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/event/NpcDiedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/event/NpcLeveledUpEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/event/NpcRecruitedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitOffer.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitPool.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitPoolWeightTable.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitmentService.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/safezone/SafeZoneService.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/safezone/event/SafeZoneBreachedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/trait/NpcCollaborationUnlockService.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/trait/NpcTrait.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/trait/ResonanceCalculator.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/trait/TraitRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/vocation/NpcVocation.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/vocation/NpcVocationPromotion.java'
+rm 'src/main/java/com/yourstudio/coredefense/npc/vocation/NpcVocationSkillTree.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/DataStoreType.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/FailedSaveRetryQueue.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/PersistenceService.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/PlayerDataLock.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/Repository.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/file/JsonSessionSnapshotRepository.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/file/YamlPlayerRepository.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/sql/SqlPlayerRepository.java'
+rm 'src/main/java/com/yourstudio/coredefense/persistence/sql/SqlSchemaMigrator.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/ClassDefinition.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/ClassRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/PlayerClass.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/builder/OverclockPenaltyHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/builder/OverclockSkill.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/builder/event/OverclockActivatedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/builder/event/OverheatTriggeredEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/event/ClassSelectedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/event/SkillUsedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/heal/HealStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/ActiveSkill.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/PassiveSkill.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/Skill.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/SkillInputHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/SkillNode.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/SkillTree.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/UltimateCooldownPool.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/skill/UltimateSkill.java'
+rm 'src/main/java/com/yourstudio/coredefense/playerclass/specialization/Specialization.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/MetaCurrency.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/MetaUpgrade.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/MetaUpgradeNode.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/MetaUpgradeTree.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/PlayerProgressionData.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/ProgressionService.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/ProgressionStatsCollector.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/ScoreCalculator.java'
+rm 'src/main/java/com/yourstudio/coredefense/progression/UpgradeEffectType.java'
+rm 'src/main/java/com/yourstudio/coredefense/session/GameSession.java'
+rm 'src/main/java/com/yourstudio/coredefense/session/GameSessionManager.java'
+rm 'src/main/java/com/yourstudio/coredefense/session/GameSessionState.java'
+rm 'src/main/java/com/yourstudio/coredefense/session/GameTeam.java'
+rm 'src/main/java/com/yourstudio/coredefense/session/event/GameSessionEndedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/BuildPermissionPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/BuildableZoneService.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/StructurePlacementService.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/StructureRegistry.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/event/StructureDestroyedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/event/StructurePlacedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/Turret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/TurretAmmoSupply.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/TurretDefinition.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/TurretFactory.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/HighestThreatTargetStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/LowestHpTargetStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/NearestTargetStrategy.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/TurretTargeting.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/ArrowSentryTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/AutoCannonTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/BuffTowerTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/FlamethrowerTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/LightGunTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/MinigunTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/MissileTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/NukeMissileTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/turret/types/SlingshotTurret.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/wall/WallDefinition.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/wall/WallInstance.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/wall/WallMaterialTier.java'
+rm 'src/main/java/com/yourstudio/coredefense/structure/wall/WallModule.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/BossWaveDefinition.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/MonsterSpawnEntry.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/ReadyVoteService.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/WaveDefinition.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/WaveManager.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/WaveScalingPolicy.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/WaveSpawnScheduler.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/WaveState.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/boss/BossWaveHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/condition/AllMonstersClearedCondition.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/condition/BossDefeatedCondition.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/condition/WaveClearCondition.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/event/WaveClearedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/event/WaveSpawnEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/event/WaveStartedEvent.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/spawn/SpawnPointGroup.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/state/ClearedStateHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/state/InProgressStateHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/state/RewardStateHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/state/SpawningStateHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/state/WaitingStateHandler.java'
+rm 'src/main/java/com/yourstudio/coredefense/wave/state/WaveStateHandler.java'
+rm 'start.py'
+rm 'system_maps/AI_CODEBASE_MAP.md'
+rm 'system_maps/CODEBASE_MAP.md'
+rm 'system_maps/extracted_context.md'
+rm 'system_memory/.jjap_context.json'
+rm 'system_memory/.jjap_symbols.json'
+rm 'system_memory/data_protocols.json'
+rm 'system_memory/definition_map.json'
+rm 'system_memory/registry_constants.json'
+rm 'tools/universal_indexer/README.md'
+rm 'tools/universal_indexer/agent_navigator.py'
+rm 'tools/universal_indexer/context_builder.py'
+rm 'tools/universal_indexer/core_parsers/__init__.py'
+rm 'tools/universal_indexer/core_parsers/cs_parser.py'
+rm 'tools/universal_indexer/core_parsers/java_parser.py'
+rm 'tools/universal_indexer/core_parsers/js_parser.py'
+rm 'tools/universal_indexer/core_parsers/json_parser.py'
+rm 'tools/universal_indexer/core_parsers/py_parser.py'
+rm 'tools/universal_indexer/create_ai_map.py'
+rm 'tools/universal_indexer/indexer.py'
+rm 'tools/universal_indexer/jjap_lookup.py'
+rm 'tools/universal_indexer/jjap_retriever.py'
+rm 'tools/universal_indexer/jjap_watcher.py'
+rm 'tools/universal_indexer/rule.txt'
+rm 'tools/universal_indexer/switch.py'
+rm 'tools/universal_indexer/tree_sitter_parser.py'
+rm 'tools/universal_indexer/update_map.py'
+warning: in the working copy of 'extraction_target_project/extraction_target_project.code-workspace', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/CoreDefensePlugin.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/bootstrap/CommandRegistrar.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/bootstrap/ListenerRegistrar.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/bootstrap/ModuleInitializer.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/damage/CombatDamageService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/damage/DamageCalculator.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/damage/DamageModifier.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/damage/DamageSource.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/event/EntityDamagedByGameEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/event/WeaponFiredEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/melee/MeleeAttackHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/melee/MeleeWeapon.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/vfx/WeaponVfxService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/AbstractFirearm.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/BurstFireFirearm.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/SingleShotFirearm.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/SniperRifle.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/Weapon.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponAcquisitionPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponAttachment.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponDefinition.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponFactory.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponInputHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/WeaponRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/ammo/AmmoInventory.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/ammo/AmmoType.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/ArcProjectile.java', LF will be replaced by CRLF the next time Gittouches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/BulletProjectile.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/ProjectileFactory.java', LF will be replaced by CRLF the next timeGit touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/projectile/ProjectileType.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/BurstFireStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/FireModeStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/SingleShotStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/SniperShotStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/combat/weapon/strategy/SpreadPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/command/CoreDefenseCommand.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/command/sub/AdminReloadSubcommand.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/command/sub/StartGameSubcommand.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/config/ConfigLoader.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/config/ConfigParser.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/config/ConfigService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/config/ReloadableConfig.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/contract/EnergyConsumer.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/contract/EnergyPriority.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/contract/Healable.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/event/AbstractGameEvent.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/event/GameListener.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/perf/PerformanceMonitor.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/registry/AbstractRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/registry/Registry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/registry/RegistryKey.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/result/ActionResult.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/scheduling/GameScheduler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/util/CooldownTracker.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/util/MathUtils.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/util/ParticleUtils.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/common/util/RayTraceUtil.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreEnergyManager.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreEntity.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreLevel.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreLevelListener.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreLevelRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreLevelUpService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreState.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreStateMachine.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreUnlockConfig.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreUnlockManager.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/CoreVisualFeedbackService.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/SchematicPasteService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/event/CoreDamagedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/event/CoreDestroyedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/event/CoreLeveledUpEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/core/event/CoreSystemUnlockedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/drone/CombatDrone.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/drone/DroneCapacityPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/gui/GameMenu.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/gui/MenuFactory.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/gui/menus/MetaUpgradeMenu.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/gui/menus/NpcReplaceMenu.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/gui/menus/RecruitMenu.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/gui/menus/SkillTreeMenu.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/AutoMiningTicker.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/ClickMiningHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/MiningEfficiencyPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/MiningSession.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/OreRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/OreType.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/event/OreMinedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mining/event/OreUnlockedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mob/MonsterAI.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mob/MonsterDefinition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mob/MonsterFactory.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mob/MonsterRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mob/ai/PathingStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mob/ai/TargetSelector.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/mob/event/MonsterKilledEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/GameNpc.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/NpcCapacityPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/NpcOwnershipPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/NpcRole.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/NpcStatSheet.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/NpcState.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/NpcStateMachine.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/death/LegacyTransferService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/death/NpcDeathHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/death/ReviveService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/event/NpcDiedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/event/NpcLeveledUpEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/event/NpcRecruitedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitOffer.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitPool.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitPoolWeightTable.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/recruit/RecruitmentService.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/safezone/SafeZoneService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/safezone/event/SafeZoneBreachedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/trait/NpcCollaborationUnlockService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/trait/NpcTrait.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/trait/ResonanceCalculator.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/trait/TraitRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/vocation/NpcVocation.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/vocation/NpcVocationPromotion.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/npc/vocation/NpcVocationSkillTree.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/DataStoreType.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/FailedSaveRetryQueue.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/PersistenceService.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/PlayerDataLock.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/Repository.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/file/JsonSessionSnapshotRepository.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/file/YamlPlayerRepository.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/sql/SqlPlayerRepository.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/persistence/sql/SqlSchemaMigrator.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/ClassDefinition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/ClassRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/PlayerClass.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/builder/OverclockPenaltyHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/builder/OverclockSkill.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/builder/event/OverclockActivatedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/builder/event/OverheatTriggeredEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/event/ClassSelectedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/event/SkillUsedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/heal/HealStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/ActiveSkill.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/PassiveSkill.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/Skill.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/SkillInputHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/SkillNode.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/SkillTree.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/UltimateCooldownPool.java', LF will be replaced by CRLF the next time Gittouches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/skill/UltimateSkill.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/playerclass/specialization/Specialization.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/MetaCurrency.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/MetaUpgrade.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/MetaUpgradeNode.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/MetaUpgradeTree.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/PlayerProgressionData.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/ProgressionService.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/ProgressionStatsCollector.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/ScoreCalculator.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/progression/UpgradeEffectType.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/session/GameSession.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/session/GameSessionManager.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/session/GameSessionState.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/session/GameTeam.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/session/event/GameSessionEndedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/BuildPermissionPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/BuildableZoneService.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/StructurePlacementService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/StructureRegistry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/event/StructureDestroyedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/event/StructurePlacedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/Turret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/TurretAmmoSupply.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/TurretDefinition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/TurretFactory.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/HighestThreatTargetStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/LowestHpTargetStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/NearestTargetStrategy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/targeting/TurretTargeting.java', LF will be replaced by CRLF the next timeGit touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/ArrowSentryTurret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/AutoCannonTurret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/BuffTowerTurret.java', LF will be replaced by CRLF the next time Gittouches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/FlamethrowerTurret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/LightGunTurret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/MinigunTurret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/MissileTurret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/NukeMissileTurret.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/turret/types/SlingshotTurret.java', LF will be replaced by CRLF the next time Gittouches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/wall/WallDefinition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/wall/WallInstance.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/wall/WallMaterialTier.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/structure/wall/WallModule.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/BossWaveDefinition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/MonsterSpawnEntry.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/ReadyVoteService.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/WaveDefinition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/WaveManager.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/WaveScalingPolicy.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/WaveSpawnScheduler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/WaveState.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/boss/BossWaveHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/condition/AllMonstersClearedCondition.java', LF will be replaced by CRLF the next timeGit touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/condition/BossDefeatedCondition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/condition/WaveClearCondition.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/event/WaveClearedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/event/WaveSpawnEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/event/WaveStartedEvent.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/spawn/SpawnPointGroup.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/state/ClearedStateHandler.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/state/InProgressStateHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/state/RewardStateHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/state/SpawningStateHandler.java', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/state/WaitingStateHandler.java', LF will be replaced by CRLF the next time Git touchesit
+warning: in the working copy of 'src/main/java/com/yourstudio/coredefense/wave/state/WaveStateHandler.java', LF will be replaced by CRLF the next time Git touches it
+[main 0cd6bd7] fix: apply recursive gitignore for large files
+ 15 files changed, 28601 deletions(-)
+ delete mode 100644 .vscode/settings.json
+ delete mode 100644 extraction_target_project/client/package-lock.json
+ delete mode 100644 extraction_target_project/client/package.json
+ delete mode 100644 extraction_target_project/client/public/manifest.json
+ delete mode 100644 extraction_target_project/package-lock.json
+ delete mode 100644 extraction_target_project/package.json
+ delete mode 100644 system_maps/AI_CODEBASE_MAP.md
+ delete mode 100644 system_maps/CODEBASE_MAP.md
+ delete mode 100644 system_maps/extracted_context.md
+ delete mode 100644 system_memory/.jjap_context.json
+ delete mode 100644 system_memory/.jjap_symbols.json
+ delete mode 100644 system_memory/data_protocols.json
+ delete mode 100644 system_memory/definition_map.json
+ delete mode 100644 system_memory/registry_constants.json
+Enumerating objects: 95, done.
+Counting objects: 100% (95/95), done.
+Delta compression using up to 12 threads
+Compressing objects: 100% (58/58), done.
+Writing objects: 100% (61/61), 22.49 MiB | 2.77 MiB/s, done.
+Total 61 (delta 31), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (31/31), completed with 20 local objects.
+remote: error: Trace: 0b8667d07ef4d5755d98e302672eda7b20e502c02c11b88a1d9b904d8dcd9cbe
+remote: error: See https://gh.io/lfs for more information.
+remote: error: File system_memory/.jjap_symbols.json is 131.10 MB; this exceeds GitHub's file size limit of 100.00 MB
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.
+To https://github.com/202510404-alt/AI_agent.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+error: failed to push some refs to 'https://github.com/202510404-alt/AI_agent.git'
+PS C:\Users\COMLAB\Desktop\AI_agent> 

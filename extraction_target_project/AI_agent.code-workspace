@@ -1,0 +1,26 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../../Real_Time_Collaborative1-main"
+		}
+	],
+	"settings": {
+		"terminal.integrated.sendKeybindingsToShell": true,
+		"explorer.confirmDelete": false,
+		"terminal.integrated.enableMultiLinePasteWarning": "never",
+		"workbench.editor.empty.hint": "hidden",
+		"maven.terminal.useJavaHome": true,
+		"git.confirmSync": false,
+		"explorer.confirmDragAndDrop": false,
+		"roo-cline.debug": true,
+		"roo-cline.allowedCommands": [],
+		"roo-cline.deniedCommands": [],
+		"java.configuration.updateBuildConfiguration": "interactive"
+	}
+}

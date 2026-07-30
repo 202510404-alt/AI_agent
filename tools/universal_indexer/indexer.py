@@ -91,14 +91,16 @@ class AdvancedIndexerV2:
         
 
         EXCLUDE_KEYWORDS = [
-            "node_modules",  # 👈 추가! (가장 큰 렉의 원인 제거)
+            "node_modules",
             ".venv", 
             ".git", 
             "__pycache__", 
             "system_memory", 
             "system_maps",
-            "dist",          # (권장) 빌드 결과물 폴더도 필요 시 함께 추가
-            "build"          # (권장)
+            "dist",
+            "build",
+            ".jjap_context.json",
+            ".jjap_symbols.json"
         ]
         # log(f"🛡️ 고유 스캔 제외 키워드 목록: {EXCLUDE_KEYWORDS}")
         
