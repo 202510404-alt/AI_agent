@@ -77,7 +77,7 @@ def run_pipeline():
             import traceback
             traceback.print_exc()
 
-# 💡 Watchdog 핸들러 및 Observer 설정부 (기존 로직 유지)
+# 💡 Watchdog 핸들러 및 Observer 설정부
 class CodeChangeHandler:
     def __init__(self):
         self.last_trigger_time = 0
@@ -88,26 +88,36 @@ class CodeChangeHandler:
             return
             
         src_path = Path(event.src_path)
-        
-        # 검열 검문소: 백그라운드 찌꺼기나 결과물 파일은 가볍게 무시
-        # 🛡️ [격리 방어선] 무한 루프 폭파 방지용 system_memory 및 system_maps 폴더 무시 키워드 추가 주입!
-        EXCLUDE_KEYWORDS = [
-        "node_modules",  # 👈 추가!
-        ".venv", 
-        ".git", 
-        "__pycache__", 
-        "cline_tools", 
-        ".json", 
-        ".md", 
-        "system_memory", 
-        "system_maps"
-        ]
-        
+        posix_path = src_path.as_posix().lower()
+        suffix = src_path.suffix.lower()
 
-        if any(kw in src_path.as_posix() for kw in EXCLUDE_KEYWORDS):
+        # 🛡️ [무한 루프 차단 방어선] 파이프라인 생성 파일 및 격리 폴더 무조건 예외 처리
+        EXCLUDE_KEYWORDS = [
+            "node_modules",
+            ".venv", 
+            ".git", 
+            "__pycache__", 
+            "cline_tools", 
+            "system_memory", 
+            "system_maps",
+            ".idea",
+            ".vscode",
+            ".gemini",
+            "dist",
+            "build"
+        ]
+
+        # 1. 생성/장부/지도 파일 확장자 무조건 차단
+        EXCLUDE_EXTENSIONS = [".md", ".json", ".log", ".tmp", ".txt", ".bak"]
+        if suffix in EXCLUDE_EXTENSIONS:
             return
-            
-        if src_path.suffix == ".py":
+
+        # 2. 격리 폴더 및 키워드 경로 차단
+        if any(kw in posix_path for kw in EXCLUDE_KEYWORDS):
+            return
+
+        # 3. 오직 소스코드(.py) 변경 시에만 디바운스 타임 확인 후 파이프라인 재실행
+        if suffix == ".py":
             current_time = time.time()
             if current_time - self.last_trigger_time > self.debounce_duration:
                 self.last_trigger_time = current_time

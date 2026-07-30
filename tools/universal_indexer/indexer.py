@@ -132,14 +132,34 @@ class AdvancedIndexerV2:
                     total_ignored_count += 1
 
         # 🔗 [글로벌 used_by 역방향 바인딩 후처리 엔진]
-        sym_map = {s["name"]: s for s in self.symbols if "name" in s}
+        # 🛡️ [동명 메서드 오매칭 방지] 단순 이름(run, save 등) 모호성에 따른 오기입 방지 안전 알고리즘
+        from collections import defaultdict
+        sym_by_name = defaultdict(list)
         for s in self.symbols:
+            if "name" in s:
+                sym_by_name[s["name"]].append(s)
+
+        for s in self.symbols:
+            caller_id = s.get("symbol_id")
+            if not caller_id:
+                continue
+
             for called_name in s.get("calls", []):
-                if called_name in sym_map:
-                    target_sym = sym_map[called_name]
-                    caller_id = s.get("symbol_id")
-                    if caller_id and caller_id not in target_sym.get("used_by", []):
-                        target_sym.setdefault("used_by", []).append(caller_id)
+                short_name = called_name.split(".")[-1] if "." in called_name else called_name
+                candidates = sym_by_name.get(short_name, [])
+
+                if len(candidates) == 1:
+                    # 1. 전역에서 유일한 심볼명인 경우 바인딩
+                    target_sym = candidates[0]
+                    if caller_id not in target_sym.setdefault("used_by", []):
+                        target_sym["used_by"].append(caller_id)
+                elif len(candidates) > 1:
+                    # 2. 동명 심볼이 여럿 존재하는 경우: 같은 파일 내 심볼 1개 우선 탐색
+                    same_file_candidates = [c for c in candidates if c.get("file") == s.get("file") or c.get("path") == s.get("path")]
+                    if len(same_file_candidates) == 1:
+                        target_sym = same_file_candidates[0]
+                        if caller_id not in target_sym.setdefault("used_by", []):
+                            target_sym["used_by"].append(caller_id)
 
         # 🗂️ 수집 완료 후 디스크 정밀 장부 보관소로 직행 쓰기
         self.save_index_data()

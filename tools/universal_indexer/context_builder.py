@@ -37,20 +37,26 @@ class ContextBuilder:
         for idx, line in enumerate(lines, start=1):
             stripped = line.strip()
 
-            # 1. 다중행 주석(""") 처리 블록
-            if stripped.startswith('"""') or stripped.endswith('"""'):
-                if '"""' in stripped and len(stripped) > 3:
-                    pass 
-                else:
-                    in_multiline_comment = not in_multiline_comment
-                    # 토큰 최소화: 라벨과 원본 줄바꿈만 남김
-                    cleaned_lines.append(f"[{idx:03d}]\n")
-                    continue
-
+            # 1. 다중행 주석(""") 상태 머신 처리 블록
             if in_multiline_comment:
-                # 다중행 주석 내부도 토큰 절약을 위해 내용을 비우고 줄만 유지
                 cleaned_lines.append(f"[{idx:03d}]\n")
+                if '"""' in stripped or "'''" in stripped:
+                    in_multiline_comment = False
                 continue
+            else:
+                if '"""' in stripped or "'''" in stripped:
+                    quote_symbol = '"""' if '"""' in stripped else "'''"
+                    quote_count = stripped.count(quote_symbol)
+                    
+                    if quote_count % 2 == 0:
+                        # 한 줄짜리 Docstring (""" text """) -> 주석 처리 후 multiline 플래그는 False 유지
+                        cleaned_lines.append(f"[{idx:03d}]\n")
+                        continue
+                    else:
+                        # 홀수 개 -> 멀티라인 주석 시작
+                        in_multiline_comment = True
+                        cleaned_lines.append(f"[{idx:03d}]\n")
+                        continue
 
             # ⭐ 형님의 핵심 지시사항: 주석 부분은 내용을 비운 채 억지로 줄 표시를 유지!
             # 2. # INFO: 로 시작하는 주석행 처리

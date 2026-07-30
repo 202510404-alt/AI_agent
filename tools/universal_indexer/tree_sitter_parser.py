@@ -138,14 +138,34 @@ def extract_symbols(file_path: Path, project_root: Path):
     traverse(tree.root_node)
 
     # 4. [핵심 추가] 파일 내부 후처리: calls 관계를 바탕으로 used_by 역방향 주소 바인딩
-    sym_lookup = {s["name"]: s for s in symbols}
+    # 🛡️ [동명 메서드 오매칭 방지] 단순 이름(run, save 등) 모호성에 따른 오기입 방지 안전 알고리즘
+    from collections import defaultdict
+    sym_by_name = defaultdict(list)
     for s in symbols:
-        for called_fn in s["calls"]:
-            if called_fn in sym_lookup:
-                target_sym = sym_lookup[called_fn]
-                caller_id = s["symbol_id"]
-                if caller_id not in target_sym["used_by"]:
+        if "name" in s:
+            sym_by_name[s["name"]].append(s)
+
+    for s in symbols:
+        caller_id = s.get("symbol_id")
+        if not caller_id:
+            continue
+
+        for called_fn in s.get("calls", []):
+            short_name = called_fn.split(".")[-1] if "." in called_fn else called_fn
+            candidates = sym_by_name.get(short_name, [])
+
+            if len(candidates) == 1:
+                # 1. 파일 내 유일 심볼인 경우 안전 바인딩
+                target_sym = candidates[0]
+                if caller_id not in target_sym.setdefault("used_by", []):
                     target_sym["used_by"].append(caller_id)
+            elif len(candidates) > 1:
+                # 2. 동명 메서드가 2개 이상인 경우 동일 파일 후보 1개 우선 탐색
+                same_file_candidates = [c for c in candidates if c.get("file") == s.get("file")]
+                if len(same_file_candidates) == 1:
+                    target_sym = same_file_candidates[0]
+                    if caller_id not in target_sym.setdefault("used_by", []):
+                        target_sym["used_by"].append(caller_id)
 
     # Context 조립
     summary_str = " | ".join(symbols_summary_list) if symbols_summary_list else f"📄 File ({ext})"
