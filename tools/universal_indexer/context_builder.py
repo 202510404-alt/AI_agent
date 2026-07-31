@@ -8,6 +8,7 @@
 
 import os
 from pathlib import Path
+from tools.universal_indexer.core_parsers.gitignore_parser import GitIgnoreMatcher
 
 
 class ContextBuilder:
@@ -16,6 +17,7 @@ class ContextBuilder:
     def __init__(self, project_root: str) -> None:
         """비서관을 초기화하며 기준이 되는 프로젝트 루트 경로를 지정합니다."""
         self.project_root = Path(project_root)
+        self.ignore_matcher = GitIgnoreMatcher(self.project_root)
 
     def read_and_clean_file(self, relative_path: str) -> str:
         """파일을 읽어서 사람용 주석(# INFO:) 내용은 완전히 비우되,
@@ -87,7 +89,7 @@ class ContextBuilder:
         """검열된 파일 소스코드들과 형님의 최종 질문을 엮어서 저(Gemini)에게 배송할 최종 프롬프트 보따리를 조립합니다.
         
         🛠️ 내가 내부에서 부려먹는 함수:
-          - `self.read_and_clean_file()`: 각 파일들을 돌면서 `# INFO:` 주석을 청소하라고 지시함.
+        - `self.read_and_clean_file()`: 각 파일들을 돌면서 `# INFO:` 주석을 청소하라고 지시함.
         """
         prompt_parts = []
         prompt_parts.append(f"=== USER REQUEST ===\n{user_query}\n\n")
@@ -96,18 +98,22 @@ class ContextBuilder:
         prompt_parts.append("과거 오류 수정 내역(# HISTORY:)만 온전히 보존된 청정 코드입니다.\n\n")
 
         for rel_path in affected_files:
-            # 🛡️ [격리 방어선] 장부 보관소(system_memory) 및 마스터 지도(system_maps) 내부 파일은 컨텍스트 수집 대상에서 완전 무시
-            if "system_memory" in str(rel_path) or "system_maps" in str(rel_path):
+            # 🛡️ 1차 방어선: 장부 보관소(system_memory) 파일만 절대 차단!
+            # (system_maps는 AI 지도 용도이므로 프롬프트 탑재 허용)
+            str_path = str(rel_path)
+            if "system_memory" in str_path:
+                continue
+
+            # 🛡️ 2차 방어선: .gitignore 지능형 파서 적용
+            if self.ignore_matcher.is_ignored(rel_path):
                 continue
 
             prompt_parts.append(f"--- FILE: {rel_path} ---")
             try:
-                # 위에 만들어 둔 청소 함수를 실행시켜 알짜배기 코드만 받아옵니다.
                 purified_code = self.read_and_clean_file(rel_path)
                 prompt_parts.append(purified_code)
             except Exception as e:
                 prompt_parts.append(f"파일을 읽는 중 오류 발생: {str(e)}")
             prompt_parts.append("\n")
 
-        # 최종적으로 저(Gemini)의 뇌세포로 들어올 텍스트 보따리가 완성되는 순간입니다.
         return "\n".join(prompt_parts)

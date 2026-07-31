@@ -256,12 +256,18 @@ def main():
             for sym in file_symbols:
                 sym_type = sym.get("type", "function")
                 sym_name = sym.get("name", "")
+                full_name = sym.get("full_name", sym_name)
                 if not sym_name:
                     continue
 
-                # 1. 인자(Arguments) 복원
-                args = sym.get("args", [])
-                args_str = f"({', '.join(args)})" if args else "()"
+                # 1. 인자(Arguments) 복원 (args 리스트 또는 raw 파라미터 대응)
+                raw_args = sym.get("args")
+                if isinstance(raw_args, list):
+                    args_str = f"({', '.join(raw_args)})" if raw_args else ""
+                elif isinstance(raw_args, str) and raw_args:
+                    args_str = f"({raw_args})"
+                else:
+                    args_str = ""
 
                 # 2. 줄범위(Start Line - End Line) 계산
                 start_line = sym.get("start_line")
@@ -273,9 +279,17 @@ def main():
                 else:
                     line_str = ""
 
-                # 3. 타입별 아이콘 및 이름 형성
-                icon = "🧬" if sym_type == "class" else ("🎯 method" if sym.get("is_method") else "🎯 function")
-                f.write(f"{indent}│   ├── {icon} {sym_name}{args_str} {line_str}\n")
+                # 3. 타입별 아이콘 및 표현 구분
+                if sym_type == "class":
+                    icon_str = f"🧬 class {sym_name}"
+                elif sym_type == "json_key":
+                    icon_str = f"🔑 key \"{sym_name}\""
+                elif sym_type == "method" or "." in full_name:
+                    icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
+                else:
+                    icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
+
+                f.write(f"{indent}│   ├── {icon_str} {line_str}\n".rstrip() + "\n")
 
                 # 4. 호출 관계 (CALLS)
                 calls = sym.get("calls", [])
