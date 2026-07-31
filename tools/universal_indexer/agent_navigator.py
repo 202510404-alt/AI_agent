@@ -3,11 +3,13 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from pathlib import Path
 
-# 🧠 SINGLE SOURCE OF TRUTH: import CodeExtractor from agent_code_extractor
+# 🧠 SINGLE SOURCE OF TRUTH: agent_code_extractor 경로 동적 주입 및 Import
 try:
-    from agent_code_extractor import CodeExtractor
+    # 1차 시도: multi_agent_system 폴더 패스 지정 import
+    from tools.multi_agent_system.agent_code_extractor import CodeExtractor
 except ImportError:
-    idx_path = Path(__file__).parent.resolve()
+    # 2차 시도: sys.path에 multi_agent_system 폴더 추가 후 재시도
+    idx_path = Path(__file__).parent.parent / "multi_agent_system"
     if str(idx_path) not in sys.path:
         sys.path.insert(0, str(idx_path))
     from agent_code_extractor import CodeExtractor
@@ -127,4 +129,4 @@ if __name__ == "__main__":
 
     root_window = tk.Tk()
     app = JjapCursorNavigatorGUI(root_window, project_root)
-    root_window.mainloop()
+    root_window.mainloop()

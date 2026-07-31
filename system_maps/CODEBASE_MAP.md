@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **51개**
+현재 인덱싱된 총 파일 수: **53개**
 
 ## 🗂️ [Module Index]
 - `.vscode/settings.json`
@@ -35,6 +35,8 @@
 - `run_test.py`
 - `tools/multi_agent_system/__init__.py`
 - `tools/multi_agent_system/agent_code_extractor.py`
+- `tools/multi_agent_system/agent_session.py`
+- `tools/multi_agent_system/code_patcher.py`
 - `tools/multi_agent_system/terminal_runner.py`
 - `tools/universal_indexer/agent_navigator.py`
 - `tools/universal_indexer/config.py`
@@ -516,7 +518,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/string.prototype.trimstart, ipaddr.js, bin/esgenerate.js, node_modules/array.prototype.findlast, bin/escodegen.js, node_modules/function.prototype.name, node_modules/lodash.sortby, node_modules/reflect.getprototypeof, node_modules/array.prototype.tosorted, node_modules/fraction.js, bin/esparse.js, node_modules/lodash.memoize, node_modules/object.fromentries, hpack.js, bin/semver.js, node_modules/object.groupby, fraction.js, node_modules/string.prototype.trimend, node_modules/css.escape, node_modules/object.assign, big.js, node_modules/big.js, node_modules/string.prototype.matchall, node_modules/decimal.js, node_modules/array.prototype.flat, node_modules/fs.realpath, bin/cmd.js, bin.js, bin/esvalidate.js, bin/webpack.js, node_modules/array.prototype.toreversed, node_modules/util.promisify, bin/jest.js, node_modules/array.prototype.reduce, bin/nopt.js, bin/babel-parser.js, bin/jiti.js, bin/js-yaml.js, node_modules/array.prototype.findlastindex, node_modules/lodash.uniq, bin/eslint.js, node_modules/socket.io, node_modules/hpack.js, bin/cli.js, node_modules/object.values, node_modules/proxy-addr/node_modules/ipaddr.js, bin/react-scripts.js, bin/nanoid.cjs, node_modules/resolve.exports, fixtures/cli.js, decimal.js, node_modules/arraybuffer.prototype.slice, cli.js, node_modules/lodash.debounce, node_modules/regexp.prototype.flags, node_modules/iterator.prototype, dist/esm/bin.mjs, node_modules/object.getownpropertydescriptors, node_modules/ipaddr.js, bin/webpack-dev-server.js, node_modules/object.hasown, node_modules/lodash.merge, node_modules/object.entries, lib/cli.js, bin/bin.js, node_modules/string.prototype.trim, dist/cli.cjs, node_modules/array.prototype.flatmap, node_modules/engine.io, node_modules/sanitize.css`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/util.promisify, bin/babel-parser.js, node_modules/string.prototype.trim, dist/esm/bin.mjs, bin/esgenerate.js, bin/cli.js, node_modules/lodash.merge, node_modules/lodash.memoize, node_modules/string.prototype.trimstart, bin/webpack.js, node_modules/object.values, node_modules/regexp.prototype.flags, node_modules/array.prototype.flat, bin/jest.js, bin/jiti.js, big.js, node_modules/lodash.debounce, bin/cmd.js, node_modules/css.escape, node_modules/socket.io, bin/webpack-dev-server.js, bin/escodegen.js, bin/esparse.js, node_modules/lodash.sortby, bin/nopt.js, node_modules/object.hasown, node_modules/lodash.uniq, node_modules/decimal.js, node_modules/iterator.prototype, node_modules/object.entries, node_modules/array.prototype.findlast, node_modules/array.prototype.findlastindex, node_modules/sanitize.css, bin/semver.js, bin/bin.js, node_modules/array.prototype.flatmap, bin/eslint.js, node_modules/proxy-addr/node_modules/ipaddr.js, bin/nanoid.cjs, node_modules/big.js, ipaddr.js, node_modules/function.prototype.name, bin/js-yaml.js, node_modules/fs.realpath, node_modules/resolve.exports, fraction.js, bin/react-scripts.js, node_modules/array.prototype.tosorted, node_modules/arraybuffer.prototype.slice, node_modules/ipaddr.js, cli.js, node_modules/object.groupby, node_modules/reflect.getprototypeof, node_modules/string.prototype.trimend, node_modules/engine.io, bin/esvalidate.js, node_modules/array.prototype.reduce, fixtures/cli.js, node_modules/object.assign, decimal.js, node_modules/object.getownpropertydescriptors, hpack.js, node_modules/array.prototype.toreversed, node_modules/fraction.js, lib/cli.js, node_modules/hpack.js, node_modules/object.fromentries, node_modules/string.prototype.matchall, dist/cli.cjs, bin.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -715,7 +717,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, node_modules/ipaddr.js, ipaddr.js, bin/nodemon.js, bin/semver.js, node_modules/pstree.remy, cli.js, bin/nodetouch.js, node_modules/engine.io`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/pstree.remy, bin/nodemon.js, ipaddr.js, bin/semver.js, node_modules/ipaddr.js, cli.js, bin/nodetouch.js, node_modules/socket.io, node_modules/engine.io`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -760,76 +762,17 @@ def run_interactive_chat():
 ### 📄 run_test.py
 #### 🧱 Code Skeleton:
 ```python
-def init_log_file():
-    """실행 시 기존 디버그 로그 파일을 싹 비우고 새 파일로 초기화합니다."""
-    with open(LOG_FILE_PATH, "w", encoding="utf-8") as f:
-        f.write("=== [Jjap-Cursor Agent Debug Log Initialized] ===\n")
-
-def extract_code_slice(file_and_line: str) -> str:
-    """
-    특정 파일 및 라인 범위의 코드 슬라이스를 추출하고 관련 심볼 정보까지 정밀 검색합니다.
-    
-    Args:
-        file_and_line: "파일경로:시작줄-끝줄" 형태의 문자열 (예: "agent_core/plan/schemas.py:15-40" 또는 "system_maps/create_ai_map.py:1-100")
-    """
-    print(f"\n⚙️ [SYSTEM TOOL EXECUTION] 'extract_code_slice' 실행 중... Target: {file_and_line}")
-    res = extractor.process(file_and_line, auto_save=False)
-    if res["markdown"]:
-        return res["markdown"]
-    return "❌ 해당 파일 또는 라인 범위를 찾을 수 없거나 코드 추출에 실패했습니다."
-
 def run_interactive_chat():
-    api_key = os.environ.get("GEMINI_API_KEY")
-    
-    if not HAS_GENAI:
-        print("❌ 'google-genai' 패키지가 설치되어 있지 않습니다. (pip install google-genai)")
+    try:
+        # AI 세션을 '구워주는' 팩토리 호출
+        factory = AgentSessionFactory(ROOT_DIR)
+        chat = factory.create_chat_session()
+    except Exception as e:
+        print(f"❌ 세션 생성 실패: {e}")
         return
-        
-    if not api_key:
-        print("⚠️ GEMINI_API_KEY가 존재하지 않습니다. .env 파일에 키를 설정해주세요.")
-        return
-
-    client = genai.Client(api_key=api_key)
-    
-    # AI_CODEBASE_MAP.md 실제 경로 보정 탐색
-    map_path = ROOT_DIR / "system_maps" / "AI_CODEBASE_MAP.md"
-    if not map_path.exists():
-        map_path = ROOT_DIR / "AI_CODEBASE_MAP.md"
-
-    codebase_map_content = ""
-    if map_path.exists():
-        codebase_map_content = map_path.read_text(encoding="utf-8")
-    else:
-        codebase_map_content = "[안내] 코드베이스 지도를 찾을 수 없습니다."
-
-    # 지형도와 시스템 프로토콜 준비
-    system_instruction = f"""
-당신은 현재 프로젝트의 코드베이스 구조를 파악하고, 터미널 명령어를 직접 실행하여 오류를 분석 및 디버깅하는 AI 에이전트입니다.
-
-[프로젝트 코드베이스 지도 (AI_CODEBASE_MAP)]
-{codebase_map_content}
-
-[사용 가능한 도구]
-1. `extract_code_slice("파일경로:시작줄-끝줄")`: 코드의 실제 내용을 확인합니다.
-2. `run_terminal_command("명령어")`: 터미널 명령어(예: 테스트 실행, 스크립트 실행 등)를 직접 구동하고 출력/에러 로그를 확인합니다.
-
-[작동 지침]
-1. 코드 테스트나 오류 확인이 필요한 경우 `run_terminal_command`를 사용해 명령어를 구동하십시오.
-2. 실행 결과로 출력된 `STDERR` (에러 로그)나 스택 트레이스(Stack Trace)를 읽고 원인을 분석하십시오.
-3. 문제 지점을 파악한 뒤 필요시 `extract_code_slice`로 관련 코드를 열람하여 정확한 해결책을 제시하십시오.
-"""
-
-    chat = client.chats.create(
-        model="gemini-2.5-flash",
-        config=types.GenerateContentConfig(
-            system_instruction=system_instruction,
-            tools=[extract_code_slice, run_terminal_command], # <- 터미널 도구 추가 등록!
-            temperature=0.2,
-        )
-    )
 
     print("\n==================================================================")
-    print("🤖 ASE-OS v1.3 Interactive AI Chat (Auto 2-Step Execution Loop)")
+    print("🤖 ASE-OS v1.3 Interactive AI Chat (Auto Execution Loop)")
     print("==================================================================")
     print("💡 사용자가 질의를 입력하면 AI가 필요 시 자동으로 도구를 실행합니다.")
     print("💡 종료하시려면 'exit' 또는 'quit'를 입력하세요.\n")
@@ -843,12 +786,8 @@ def run_interactive_chat():
                 print("👋 대화를 종료합니다.")
                 break
 
-            print("\n🤖 [Step 1] AI가 코드베이스 지도를 분석하고 도구 호출 여부를 판단 중...")
-            
-            # 1차 실행: 사용자의 질의 전달 및 도구 호출 자동 수행
+            print("\n🤖 [Step 1] AI 판단 및 도구 실행 중...")
             response = chat.send_message(user_input)
-            
-            # 최종 AI 응답 출력
             print(f"\n🤖 AI > {response.text}\n")
 
         except KeyboardInterrupt:
@@ -861,30 +800,15 @@ def main():
     print("🚀 테스트 스크립트를 가동합니다...")
     
     # 1. 실행 시 디버그 로그 파일 초기화
-    init_log_file()
-    print(f"📝 디버그 로그가 단일 파일에 모입니다: {LOG_FILE_PATH.resolve()}")
+    if LOG_FILE_PATH.exists():
+        with open(LOG_FILE_PATH, "w", encoding="utf-8") as f:
+            f.write("=== [Jjap-Cursor Agent Debug Log Initialized] ===\n")
+            
+    print(f"📝 디버그 로그 위치: {LOG_FILE_PATH.resolve()}")
     print(f"🎛️ 현재 DEBUG_MODE 상태: {DEBUG_MODE}\n")
 
-    # 2. schemas.py 기능 테스트
-    print("1️⃣ [테스트] to_symbol_ref() 변환 테스트 진행 중...")
-    raw_symbol_data = {
-        "name": "login_user",
-        "start_line": 15,
-        "end_line": 42
-    }
-    symbol_ref = to_symbol_ref(raw_symbol_data, default_file="auth/service.py")
-    print(f"   -> 변환 결과: {symbol_ref.symbol_name} ({symbol_ref.file_path}:{symbol_ref.start_line}~{symbol_ref.end_line})")
-
-    # 3. prompt_builder.py 기능 테스트
-    print("\n2️⃣ [테스트] PromptBuilder 프롬프트 조립 테스트 진행 중...")
-    builder = PromptBuilder(root_dir=ROOT_DIR)
-    test_goal = "로그인 실패 시 3회 제한 후 계정을 잠그는 로직을 추가해 줘."
-    prompt_result = builder.build_plan_prompt(user_goal=test_goal)
-    print(f"   -> 프롬프트 생성 완 (길이: {len(prompt_result)}자)")
-    print("\n✅ 기존 모듈 기초 검증 완료!")
-
-    # 4. 대화형 AI 인터랙션 진입
-    print("\n3️⃣ [테스트] 대화형 AI 및 자동 도구 실행 테스트 모드로 진입합니다...")
+    # 2. 대화형 AI 인터랙션 진입
+    print("🤖 대화형 AI 테스트 모드로 진입합니다...")
     run_interactive_chat()
 ```
 
@@ -1196,6 +1120,151 @@ class CodeExtractor:
             "markdown": markdown_text,
             "saved_path": save_target_path
         }
+```
+
+--------------------------------------------------
+
+### 📄 tools/multi_agent_system/agent_session.py
+#### 🧱 Code Skeleton:
+```python
+class AgentSessionFactory:
+    """AI 에이전트 생성 및 도구 바인딩 팩토리"""
+    def __init__(self, root_dir: Path):
+        self.root_dir = root_dir.resolve()
+        load_env_file(self.root_dir / ".env")
+        
+        # 1. 사용 도구 인스턴스화
+        self.extractor = CodeExtractor(self.root_dir)
+        self.patcher = CodePatcher(self.root_dir)
+        self.client = None
+
+    def _load_codebase_map(self) -> str:
+        """코드베이스 지도 탐색 및 로드"""
+        map_path = self.root_dir / "system_maps" / "AI_CODEBASE_MAP.md"
+        if not map_path.exists():
+            map_path = self.root_dir / "AI_CODEBASE_MAP.md"
+
+        if map_path.exists():
+            return map_path.read_text(encoding="utf-8")
+        return "[안내] 코드베이스 지도를 찾을 수 없습니다."
+
+    def _build_tools(self):
+        """AI에게 전달할 Tool 함수 패키징"""
+        def extract_code_slice(file_and_line: str) -> str:
+            """특정 파일 및 라인 범위의 코드 슬라이스를 추출합니다."""
+            print(f"\n⚙️ [TOOL] 'extract_code_slice' Target: {file_and_line}")
+            res = self.extractor.process(file_and_line, auto_save=False)
+            return res["markdown"] if res["markdown"] else "❌ 해당 코드를 찾을 수 없습니다."
+
+        def patch_code_slice(file_path: str, existing_code: str, replacement_code: str) -> str:
+            """파일 내 특정 '기존 코드'를 '수정된 코드'로 1:1 치환합니다."""
+            print(f"\n🛠️ [TOOL] 'patch_code_slice' Target: {file_path}")
+            res = self.patcher.apply_patch(file_path, existing_code, replacement_code)
+            print(res["message"])
+            return res["message"]
+
+        return [extract_code_slice, run_terminal_command, patch_code_slice]
+
+    def create_chat_session(self, model_name: str = "gemini-2.5-flash"):
+        """모든 지형도와 도구가 준비된 Gemini Chat 세션을 '구워서' 반환합니다."""
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not HAS_GENAI or not api_key:
+            raise RuntimeError("Google GenAI 패키지 미설치 또는 API Key가 설정되지 않았습니다.")
+
+        self.client = genai.Client(api_key=api_key)
+        codebase_map = self._load_codebase_map()
+        tools = self._build_tools()
+
+        system_instruction = f"""
+당신은 현재 프로젝트의 코드베이스 구조를 파악하고, 터미널 명령어로 디버깅하며 코드를 정밀 수정하는 AI 에이전트입니다.
+
+[프로젝트 코드베이스 지도 (AI_CODEBASE_MAP)]
+{codebase_map}
+
+[사용 가능한 도구]
+1. `extract_code_slice("파일경로:시작줄-끝줄")`: 코드의 실제 내용을 확인합니다.
+2. `run_terminal_command("명령어")`: 터미널 명령어(테스트 등)를 구동하고 로그를 확인합니다.
+3. `patch_code_slice(file_path, existing_code, replacement_code)`: 특정 코드 구간을 1:1 치환합니다.
+
+[🚨 절대 규칙 - 코드 수정 수칙]
+1. 절대로 파일 전체 코드를 작성하거나 덮어쓰지 마십시오.
+2. 코드를 수정할 때는 반드시 `extract_code_slice`로 확인 후 `patch_code_slice`를 사용하십시오.
+3. `existing_code`는 기존 코드와 **공백/줄바꿈 포함 100% 토씨 하나 안 틀리고 일치**해야 합니다.
+"""
+
+        chat = self.client.chats.create(
+            model=model_name,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                tools=tools,
+                temperature=0.2,
+            )
+        )
+        return chat
+```
+
+--------------------------------------------------
+
+### 📄 tools/multi_agent_system/code_patcher.py
+#### 🧱 Code Skeleton:
+```python
+class CodePatcher:
+    def __init__(self, root_dir: Path):
+        self.root_dir = Path(root_dir).resolve()
+
+    def apply_patch(self, rel_path: str, existing_code: str, replacement_code: str) -> dict:
+        """
+        파일 내에서 existing_code를 검증하여 replacement_code로 1:1 교체합니다.
+        """
+        target_path = (self.root_dir / rel_path.strip().replace("\\", "/")).resolve()
+        
+        if not target_path.exists() or not target_path.is_file():
+            return {
+                "success": False,
+                "message": f"❌ [PATCH FAIL] 대상 파일을 찾을 수 없습니다: {rel_path}"
+            }
+
+        try:
+            with open(target_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            # 줄바꿈 단일화 (CRLF / LF 오차로 인한 매칭 실패 방지)
+            clean_content = content.replace("\r\n", "\n")
+            clean_existing = existing_code.replace("\r\n", "\n").strip()
+            clean_replacement = replacement_code.replace("\r\n", "\n").strip()
+
+            # 1. 100% 완전 일치 여부 검증
+            if clean_existing not in clean_content:
+                return {
+                    "success": False,
+                    "message": f"❌ [PATCH FAIL] 입력한 '기존 코드'가 {rel_path} 파일 내에 100% 일치하는 구간이 없습니다. 정확한 슬라이스를 지정하세요."
+                }
+
+            # 2. 파일 내 동일한 기존 코드가 2개 이상 존재하는지 출현 횟수 검증 (중복 치환 방지)
+            match_count = clean_content.count(clean_existing)
+            if match_count > 1:
+                return {
+                    "success": False,
+                    "message": f"⚠️ [PATCH FAIL] 지정한 '기존 코드'가 {rel_path} 내에 {match_count}개 존재합니다. 문맥(전후 라인)을 더 포함하여 유일하게 지정하세요."
+                }
+
+            # 3. 핀포인트 1:1 정밀 치환 실행
+            patched_content = clean_content.replace(clean_existing, clean_replacement, 1)
+
+            # 4. 파일 저장
+            with open(target_path, "w", encoding="utf-8") as f:
+                f.write(patched_content)
+
+            return {
+                "success": True,
+                "message": f"✅ [PATCH SUCCESS] {rel_path} 파일의 특정 구간이 성공적으로 수정되었습니다!"
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "message": f"💥 [PATCH ERROR] 파일 수정 중 예외 발생: {e}"
+            }
 ```
 
 --------------------------------------------------
