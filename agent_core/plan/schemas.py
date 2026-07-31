@@ -13,7 +13,8 @@ from pathlib import Path
 # 🎛️ [디버그 설정] True: 파일로 상세 출력 / False: 연산 소모 0% 완전 차단
 # ===========================================================================
 DEBUG_MODE = True
-LOG_FILE_PATH = Path("agent_debug.log")
+# 절대 경로 의존성 및 상대 위치 유연성 보장
+LOG_FILE_PATH = Path(__file__).parent.parent.parent / "agent_debug.log" if Path(__file__).parent.name == "plan" else Path("agent_debug.log")
 
 
 def log_debug(message_func):

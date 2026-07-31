@@ -24,7 +24,11 @@ def log_debug(message_func):
 class PromptBuilder:
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir
-        self.map_file = root_dir / "AI_CODEBASE_MAP.md"
+        # system_maps/ 경로 우선 탐색 후 루트 fallback
+        self.map_file = root_dir / "system_maps" / "AI_CODEBASE_MAP.md"
+        if not self.map_file.exists():
+            self.map_file = root_dir / "AI_CODEBASE_MAP.md"
+            
         if DEBUG_MODE:
             log_debug(lambda: f"PromptBuilder 초기화 완료 - Root: {self.root_dir}, Map File Path: {self.map_file}")
 

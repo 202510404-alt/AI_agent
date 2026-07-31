@@ -23,9 +23,9 @@ class CodeExtractor:
         self.raw_root_dir = Path(root_dir).resolve()
         self.scan_mode = "ROOT"
         
-        # 🎛️ [SCAN_MODE 스위치 반영] switch.py의 모드를 동적으로 확인합니다.
+        # 🎛️ [SCAN_MODE 스위치 반영 - universal_indexer/switch.py 절대 위치 고정]
         try:
-            idx_path = str(self.raw_root_dir / "tools" / "universal_indexer")
+            idx_path = str((self.raw_root_dir / "tools" / "universal_indexer").resolve())
             if idx_path not in sys.path:
                 sys.path.insert(0, idx_path)
             
@@ -319,8 +319,8 @@ class CodeExtractor:
 if __name__ == "__main__":
     current_dir = Path(__file__).parent.resolve()
     
-    # 두 단계 깊이인 tools/universal_indexer/ 구조일 때 마스터 루트 경로 역추적
-    if current_dir.name == "universal_indexer" and current_dir.parent.name == "tools":
+    # tools/multi_agent_system/ 또는 tools/universal_indexer/ 위치 모두 고려하여 마스터 루트 역추적
+    if current_dir.name in ("multi_agent_system", "universal_indexer") and current_dir.parent.name == "tools":
         project_root = current_dir.parent.parent
     else:
         project_root = current_dir
