@@ -50,7 +50,6 @@ EXCLUDE_KEYWORDS = [
 ]
 
 EXCLUDE_EXTENSIONS = [
-    ".json",
     ".md",
     ".txt",
     ".pyc"

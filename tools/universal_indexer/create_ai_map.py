@@ -3,49 +3,23 @@ import ast
 import json
 from pathlib import Path
 
-try:
-    from tools.universal_indexer.switch import SCAN_MODE
-except ImportError:
-    SCAN_MODE = "ROOT"
-
-# ======================================================================
-# 🎯 [경로 방어선 절대 고정]
-# ======================================================================
-SCRIPT_DIR = Path(__file__).parent.resolve()
-
-if SCRIPT_DIR.name == "universal_indexer" and SCRIPT_DIR.parent.name == "tools":
-    PROJECT_ROOT = SCRIPT_DIR.parent.parent
-else:
-    PROJECT_ROOT = SCRIPT_DIR
-
-OUTPUT_DIR = PROJECT_ROOT / "system_maps"
-OUTPUT_FILE_PATH = OUTPUT_DIR / "AI_CODEBASE_MAP.md"
-REGISTRY_JSON_PATH = PROJECT_ROOT / "system_memory" / "registry_constants.json"
-PROTOCOL_JSON_PATH = PROJECT_ROOT / "system_memory" / "data_protocols.json"
-
-# 🛡️ 제외 키워드 목록
-EXCLUDE_KEYWORDS = [
-    "node_modules",
-    ".venv", 
-    ".git", 
-    "__pycache__", 
-    "cline_tools", 
-    ".json", 
-    ".md", 
-    "system_memory", 
-    "system_maps"
-]
+from config import (
+    PROJECT_ROOT,
+    get_scan_mode,
+    EXCLUDE_KEYWORDS,
+    CONTEXT_JSON_PATH,
+    SYMBOLS_JSON_PATH,
+    REGISTRY_JSON_PATH,
+    PROTOCOL_JSON_PATH,
+    AI_MAP_MD_PATH
+)
 
 
 def load_jjap_context():
     """통합 .jjap_context.json 장부 로드"""
-    context_path = PROJECT_ROOT / "system_memory" / ".jjap_context.json"
-    if not context_path.exists():
-        context_path = PROJECT_ROOT / ".jjap_context.json"
-        
-    if context_path.exists():
+    if CONTEXT_JSON_PATH.exists():
         try:
-            with open(context_path, "r", encoding="utf-8") as f:
+            with open(CONTEXT_JSON_PATH, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 return data.get("files", {})
         except Exception as e:
@@ -56,8 +30,9 @@ def load_jjap_context():
 
 
 def collect_target_files():
-    """프로젝트 내 대상 파일 수집 (디버그 도배 제거 버전)"""
-    if SCAN_MODE == "ROOT":
+    """프로젝트 내 대상 파일 수집 (원래 수집 로직 100% 동일)"""
+    scan_mode = get_scan_mode()
+    if scan_mode == "ROOT":
         scan_target = PROJECT_ROOT
         print("🎯 [create_ai_map] Mode: ROOT (프로젝트 전체 스캔)")
     else:
@@ -78,7 +53,7 @@ def collect_target_files():
             continue
 
         for file in files:
-            if file == "start.py" and SCAN_MODE == "SRC":
+            if file == "start.py" and scan_mode == "SRC":
                 continue
             
             full_path = Path(root) / file
@@ -142,21 +117,17 @@ def load_protocols():
 
 
 def parse_protocols_and_registries():
-    """심볼 장부 기반 매칭 테이블 완성"""
+    """심볼 장부 기반 매칭 테이블 완성 (원래 로직 100% 복원)"""
     path_to_registry = {}
     path_to_protocol = {}
 
     registry_data = load_registry()
     protocol_data = load_protocols()
 
-    symbols_path = PROJECT_ROOT / "system_memory" / ".jjap_symbols.json"
-    if not symbols_path.exists():
-        symbols_path = PROJECT_ROOT / ".jjap_symbols.json"
-
     all_symbols = []
-    if symbols_path.exists():
+    if SYMBOLS_JSON_PATH.exists():
         try:
-            with open(symbols_path, "r", encoding="utf-8") as f:
+            with open(SYMBOLS_JSON_PATH, "r", encoding="utf-8") as f:
                 all_symbols = json.load(f).get("symbols", [])
         except Exception as e:
             print(f"⚠️ [.jjap_symbols.json] 읽기 실패: {e}")
@@ -187,21 +158,48 @@ def parse_protocols_and_registries():
     return path_to_registry, path_to_protocol
 
 
+# [추가된 로더 함수]
+def load_all_symbols():
+    """통합 .jjap_symbols.json 장부 로드 및 파일별/심볼ID별 인덱싱"""
+    symbols_by_file = {}
+    symbol_by_id = {}
+    
+    if SYMBOLS_JSON_PATH.exists():
+        try:
+            with open(SYMBOLS_JSON_PATH, "r", encoding="utf-8") as f:
+                symbols_list = json.load(f).get("symbols", [])
+                for sym in symbols_list:
+                    rel_path = sym.get("file") or sym.get("path")
+                    if rel_path:
+                        posix_path = Path(rel_path).as_posix()
+                        symbols_by_file.setdefault(posix_path, []).append(sym)
+                    
+                    sym_id = sym.get("symbol_id")
+                    if sym_id:
+                        symbol_by_id[sym_id] = sym
+        except Exception as e:
+            print(f"⚠️ [.jjap_symbols.json] 로드 오류: {e}")
+            
+    return symbols_by_file, symbol_by_id
+
+
 def main():
+    scan_mode = get_scan_mode()
     target_files = collect_target_files()
     jjap_context = load_jjap_context()
+    symbols_by_file, symbol_by_id = load_all_symbols()  # 💡 심볼 장부 로드 추가
     path_to_registry, path_to_protocol = parse_protocols_and_registries()
 
-    OUTPUT_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    AI_MAP_MD_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(OUTPUT_FILE_PATH, "w", encoding="utf-8") as f:
+    with open(AI_MAP_MD_PATH, "w", encoding="utf-8") as f:
         printed_dirs = set()
 
         f.write("# 🏗️ AI-OPTIMIZED ULTRA COMPACT CODEBASE MAP (INTELLIGENT SCAN)\n\n")
         f.write("> **[AI 프로토콜 매뉴얼]** 이 문서는 다른 AI 비서들의 경로 오해를 차단하기 위해 파일마다 **실제 하드디스크 상대 경로 `[📂 실제경로]`**를 강제 명시해 둔 특수 지도입니다.\n")
         f.write("> AI 비서는 절대 눈치로 경로를 추측하지 말고, 파일명 뒤에 박혀있는 `[📂 실제경로]` 규격을 그대로 복사하여 agent_navigator를 호출하십시오.\n\n")
         
-        if SCAN_MODE == "EXTRACTION_TARGET_PROJECT":
+        if scan_mode == "EXTRACTION_TARGET_PROJECT":
             f.write("```markdown\nextraction_target_project/\n")
         else:
             f.write("```markdown\nproject_root/\n")
@@ -211,7 +209,7 @@ def main():
             posix_rel_path = rel_path.as_posix()
             file_name = file_path.name
 
-            if SCAN_MODE == "EXTRACTION_TARGET_PROJECT" and posix_rel_path.startswith("extraction_target_project/"):
+            if scan_mode == "EXTRACTION_TARGET_PROJECT" and posix_rel_path.startswith("extraction_target_project/"):
                 display_path = posix_rel_path[26:]
             else:
                 display_path = posix_rel_path
@@ -253,7 +251,56 @@ def main():
                     for chunk in chunks:
                         f.write(f"{indent}│     │     ├── {', '.join(chunk)}\n")
 
-    print("🎯 [마스터 공장] 'system_maps/AI_CODEBASE_MAP.md'가 모든 파일 구조를 포함하여 안전하게 자동 갱신되었습니다!")
+# 🎯 [알맹이 보강] 정밀 심볼 트리 (클래스/함수/인자/줄범위/CALLS/USED_BY) 생성
+            file_symbols = symbols_by_file.get(posix_rel_path, [])
+            for sym in file_symbols:
+                sym_type = sym.get("type", "function")
+                sym_name = sym.get("name", "")
+                if not sym_name:
+                    continue
+
+                # 1. 인자(Arguments) 복원
+                args = sym.get("args", [])
+                args_str = f"({', '.join(args)})" if args else "()"
+
+                # 2. 줄범위(Start Line - End Line) 계산
+                start_line = sym.get("start_line")
+                end_line = sym.get("end_line")
+                if start_line and end_line and start_line != end_line:
+                    line_str = f"[L{start_line}-L{end_line}]"
+                elif start_line:
+                    line_str = f"[L{start_line}]"
+                else:
+                    line_str = ""
+
+                # 3. 타입별 아이콘 및 이름 형성
+                icon = "🧬" if sym_type == "class" else ("🎯 method" if sym.get("is_method") else "🎯 function")
+                f.write(f"{indent}│   ├── {icon} {sym_name}{args_str} {line_str}\n")
+
+                # 4. 호출 관계 (CALLS)
+                calls = sym.get("calls", [])
+                if calls:
+                    f.write(f"{indent}│   │   ├── 📞 [CALLS]: {', '.join(calls)}\n")
+
+                # 5. 역방향 참조 관계 (USED BY)
+                used_by_ids = sym.get("used_by", [])
+                if used_by_ids:
+                    used_by_info = []
+                    for u_id in used_by_ids:
+                        target = symbol_by_id.get(u_id)
+                        if target:
+                            u_file = target.get("file") or target.get("path", "")
+                            u_name = target.get("name", "")
+                            # 동일 파일 내 호출이면 함수명만, 타 파일이면 파일 경로 포함
+                            if u_file == posix_rel_path:
+                                used_by_info.append(f"::{u_name}")
+                            else:
+                                used_by_info.append(f"{u_file}::{u_name}")
+                        else:
+                            used_by_info.append(str(u_id))
+                    f.write(f"{indent}│   │   ├── 🔗 [USED BY]: {', '.join(used_by_info)}\n")
+
+    print("🎯 [마스터 공장] 'system_maps/AI_CODEBASE_MAP.md'가 (인자, calls, used_by 관계망 포함) 정밀 자동 갱신되었습니다!")
 
 
 def generate_ai_optimized_map():

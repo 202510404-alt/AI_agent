@@ -1,4 +1,3 @@
-import ast
 import json
 import hashlib
 import os
@@ -6,36 +5,30 @@ import importlib.util
 from pathlib import Path
 from typing import Dict, Any, List
 
-# 🎯 영문 switch.py 콘솔 원격 연동
-try:
-    from switch import SCAN_MODE
-except ImportError:
-    SCAN_MODE = "ROOT"
+from config import (
+    PROJECT_ROOT,
+    get_scan_mode,
+    EXCLUDE_KEYWORDS,
+    SYSTEM_MEMORY_DIR,
+    CONTEXT_JSON_PATH,
+    SYMBOLS_JSON_PATH,
+    DEFINITION_MAP_PATH,
+    REGISTRY_JSON_PATH,
+    PROTOCOL_JSON_PATH
+)
 
-
-# 🎛️ [인덱서 코어 전용] 디버깅 로그 On/Off 마스터 스위치
 DEBUG_LOG = False
 
 def log(message: str):
     if DEBUG_LOG:
         print(f"📡 [Indexer-Core Log] {message}")
 
-SCRIPT_DIR = Path(__file__).parent.resolve()
-if SCRIPT_DIR.name == "universal_indexer" and SCRIPT_DIR.parent.name == "tools":
-    PROJECT_ROOT = SCRIPT_DIR.parent.parent
-else:
-    PROJECT_ROOT = SCRIPT_DIR
-
-OUTPUT_FILE_PATH = PROJECT_ROOT / "system_maps" / "AI_CODEBASE_MAP.md"
-REGISTRY_JSON_PATH = PROJECT_ROOT / "system_memory" / "registry_constants.json"
-PROTOCOL_JSON_PATH = PROJECT_ROOT / "system_memory" / "data_protocols.json"
-
 class AdvancedIndexerV2:
     """
     [Jjap-Cursor Core Indexer V3.6 - Ultra Universal Engine]
     동적 플러그인 로딩 및 5대 장부 동기화의 모든 파이프라인에 디버깅 레이더를 도배했습니다.
     """
-    def __init__(self, project_root: Path):
+    def __init__(self, project_root: Path = PROJECT_ROOT):
         self.project_root = project_root
         self.parsers: Dict[str, Any] = {}
         self.symbols: List[Dict[str, Any]] = []
@@ -49,7 +42,7 @@ class AdvancedIndexerV2:
 
     def _auto_load_parsers(self):
         """core_parsers 폴더 내부의 파서들을 동적 로드하여 확장자별로 바인딩합니다."""
-        parsers_dir = SCRIPT_DIR / "core_parsers"
+        parsers_dir = Path(__file__).parent.resolve() / "core_parsers" # ✅ 수정완료
         # log(f"🔌 동적 파서 폴더 탐색 시작 -> 경로: {parsers_dir}")
         
         if not parsers_dir.exists():
@@ -83,25 +76,8 @@ class AdvancedIndexerV2:
         # log(f"📊 파서 동적 마운트 최종 정산: 총 {len(self.parsers)}개의 다국어 컴포넌트 활성화.")
 
     def scan_project(self):
-        """설정된 SCAN_MODE에 따라 프로젝트 내의 모든 등록된 언어 파일을 스캔합니다."""
-        # 🛠️ 레거시 "src" 하드코딩을 청산하고, switch.py의 새로운 물리 폴더명("extraction_target_project")과 완벽 매핑
-        scan_target = self.project_root if SCAN_MODE == "ROOT" else self.project_root / "extraction_target_project"
-        # log(f"🚀 [디버깅 레이더 가동] 모드: {SCAN_MODE} | 물리 스캔 범위: {scan_target}")
-
-        
-
-        EXCLUDE_KEYWORDS = [
-            "node_modules",
-            ".venv", 
-            ".git", 
-            "__pycache__", 
-            "system_memory", 
-            "system_maps",
-            "dist",
-            "build",
-            ".jjap_context.json",
-            ".jjap_symbols.json"
-        ]
+        scan_mode = get_scan_mode()
+        scan_target = self.project_root if scan_mode == "ROOT" else self.project_root / "extraction_target_project"
         # log(f"🛡️ 고유 스캔 제외 키워드 목록: {EXCLUDE_KEYWORDS}")
         
         if not scan_target.exists():
@@ -207,43 +183,28 @@ class AdvancedIndexerV2:
             pass
 
     def save_index_data(self):
-        """메모리에 적재된 5대 장부를 디스크에 격리 저장합니다."""
-        TARGET_MEMORY_DIR = self.project_root / "system_memory"
-        # log(f"💾 [디스크 동기화] system_memory 보관소 직인 쓰기 시작 -> 폴더 위치: {TARGET_MEMORY_DIR}")
-        
         try:
-            os.makedirs(TARGET_MEMORY_DIR, exist_ok=True)
+            SYSTEM_MEMORY_DIR.mkdir(parents=True, exist_ok=True)
 
-            ctx_path = TARGET_MEMORY_DIR / ".jjap_context.json"
-            with open(ctx_path, "w", encoding="utf-8") as f:
+            with open(CONTEXT_JSON_PATH, "w", encoding="utf-8") as f:
                 json.dump({"files": self.files_context}, f, indent=2, ensure_ascii=False)
-            # log(f"   ├── 📄 [.jjap_context.json] 저장 완료 (총 {len(self.files_context)}개 파일 컨텍스트)")
 
-            sym_path = TARGET_MEMORY_DIR / ".jjap_symbols.json"
-            with open(sym_path, "w", encoding="utf-8") as f:
+            with open(SYMBOLS_JSON_PATH, "w", encoding="utf-8") as f:
                 json.dump({"symbols": self.symbols}, f, indent=2, ensure_ascii=False)
-            # log(f"   ├── 📄 [.jjap_symbols.json] 저장 완료 (총 {len(self.symbols)}개 글로벌 심볼)")
 
-            def_path = TARGET_MEMORY_DIR / "definition_map.json"
-            with open(def_path, "w", encoding="utf-8") as f:
+            with open(DEFINITION_MAP_PATH, "w", encoding="utf-8") as f:
                 json.dump(self.definition_map, f, indent=2, ensure_ascii=False)
-            # log(f"   ├── 📄 [definition_map.json] 저장 완료 (총 {len(self.definition_map)}개 빠른 추적 정의 노드)")
 
-            proto_path = TARGET_MEMORY_DIR / "data_protocols.json"
-            with open(proto_path, "w", encoding="utf-8") as f:
+            with open(PROTOCOL_JSON_PATH, "w", encoding="utf-8") as f:
                 json.dump({"protocols": self.data_protocols}, f, indent=2, ensure_ascii=False)
-            # log(f"   ├── 📄 [data_protocols.json] 저장 완료 (총 {len(self.data_protocols)}개 명세 프로토콜)")
 
-            reg_path = TARGET_MEMORY_DIR / "registry_constants.json"
-            with open(reg_path, "w", encoding="utf-8") as f:
+            with open(REGISTRY_JSON_PATH, "w", encoding="utf-8") as f:
                 json.dump({"registered_entities": self.registry_constants}, f, indent=2, ensure_ascii=False)
-            # log(f"   └── 📄 [registry_constants.json] 저장 완료 (총 {len(self.registry_constants)}개 엔티티 레지스트리)")
 
             print(f"🧬 [Jjap-Indexer Universal] 5대 장부 전체 동기화 성공! 보관된 총 파일 수: {len(self.files_context)}개")
         except Exception as write_err:
-            # log(f"💥 [디스크 파일 쓰기 치명적 실패] 장부 동기화 중 에러 발생: {write_err}")
             pass
 
 if __name__ == "__main__":
-    indexer = AdvancedIndexerV2(PROJECT_ROOT)
+    indexer = AdvancedIndexerV2()
     indexer.scan_project()
