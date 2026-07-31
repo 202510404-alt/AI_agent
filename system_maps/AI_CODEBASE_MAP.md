@@ -94,7 +94,7 @@ project_root/
 │   │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   │   ├── 🔑 key "requires" [L5]
 │   │   │   ├── 🔑 key "packages" [L6]
-│   │   │   │   ├── 📞 [CALLS]: node_modules/util.promisify, bin/babel-parser.js, node_modules/string.prototype.trim, dist/esm/bin.mjs, bin/esgenerate.js, bin/cli.js, node_modules/lodash.merge, node_modules/lodash.memoize, node_modules/string.prototype.trimstart, bin/webpack.js, node_modules/object.values, node_modules/regexp.prototype.flags, node_modules/array.prototype.flat, bin/jest.js, bin/jiti.js, big.js, node_modules/lodash.debounce, bin/cmd.js, node_modules/css.escape, node_modules/socket.io, bin/webpack-dev-server.js, bin/escodegen.js, bin/esparse.js, node_modules/lodash.sortby, bin/nopt.js, node_modules/object.hasown, node_modules/lodash.uniq, node_modules/decimal.js, node_modules/iterator.prototype, node_modules/object.entries, node_modules/array.prototype.findlast, node_modules/array.prototype.findlastindex, node_modules/sanitize.css, bin/semver.js, bin/bin.js, node_modules/array.prototype.flatmap, bin/eslint.js, node_modules/proxy-addr/node_modules/ipaddr.js, bin/nanoid.cjs, node_modules/big.js, ipaddr.js, node_modules/function.prototype.name, bin/js-yaml.js, node_modules/fs.realpath, node_modules/resolve.exports, fraction.js, bin/react-scripts.js, node_modules/array.prototype.tosorted, node_modules/arraybuffer.prototype.slice, node_modules/ipaddr.js, cli.js, node_modules/object.groupby, node_modules/reflect.getprototypeof, node_modules/string.prototype.trimend, node_modules/engine.io, bin/esvalidate.js, node_modules/array.prototype.reduce, fixtures/cli.js, node_modules/object.assign, decimal.js, node_modules/object.getownpropertydescriptors, hpack.js, node_modules/array.prototype.toreversed, node_modules/fraction.js, lib/cli.js, node_modules/hpack.js, node_modules/object.fromentries, node_modules/string.prototype.matchall, dist/cli.cjs, bin.js
+│   │   │   │   ├── 📞 [CALLS]: node_modules/css.escape, node_modules/string.prototype.trim, node_modules/string.prototype.trimend, node_modules/hpack.js, big.js, bin/semver.js, bin/nanoid.cjs, node_modules/reflect.getprototypeof, bin/escodegen.js, bin/esparse.js, bin/cmd.js, bin/webpack.js, node_modules/array.prototype.findlast, node_modules/array.prototype.flat, node_modules/object.fromentries, node_modules/object.hasown, node_modules/array.prototype.findlastindex, node_modules/engine.io, dist/esm/bin.mjs, node_modules/array.prototype.tosorted, node_modules/lodash.merge, node_modules/lodash.uniq, node_modules/string.prototype.trimstart, node_modules/object.groupby, bin/babel-parser.js, node_modules/big.js, node_modules/sanitize.css, node_modules/decimal.js, node_modules/array.prototype.flatmap, fraction.js, cli.js, node_modules/iterator.prototype, node_modules/string.prototype.matchall, node_modules/util.promisify, node_modules/lodash.memoize, bin/nopt.js, node_modules/resolve.exports, hpack.js, bin/esgenerate.js, node_modules/fs.realpath, node_modules/function.prototype.name, node_modules/array.prototype.toreversed, fixtures/cli.js, node_modules/object.entries, bin/jiti.js, node_modules/object.getownpropertydescriptors, bin.js, bin/js-yaml.js, dist/cli.cjs, node_modules/array.prototype.reduce, node_modules/ipaddr.js, node_modules/socket.io, node_modules/fraction.js, decimal.js, node_modules/lodash.debounce, bin/cli.js, bin/esvalidate.js, node_modules/proxy-addr/node_modules/ipaddr.js, bin/webpack-dev-server.js, bin/bin.js, ipaddr.js, node_modules/regexp.prototype.flags, bin/eslint.js, lib/cli.js, bin/react-scripts.js, node_modules/object.values, node_modules/lodash.sortby, node_modules/arraybuffer.prototype.slice, bin/jest.js, node_modules/object.assign
 │   │   ├── package.json [📂 extraction_target_project/client/package.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "private" [bool] | 🔑 "dependencies" [dict] | 🔑 "scripts" [dict] | ...외 2개]
 │   │   │   ├── 🔑 key "name" [L2]
 │   │   │   ├── 🔑 key "version" [L3]
@@ -176,7 +176,7 @@ project_root/
 │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   ├── 🔑 key "requires" [L5]
 │   │   ├── 🔑 key "packages" [L6]
-│   │   │   ├── 📞 [CALLS]: node_modules/pstree.remy, bin/nodemon.js, ipaddr.js, bin/semver.js, node_modules/ipaddr.js, cli.js, bin/nodetouch.js, node_modules/socket.io, node_modules/engine.io
+│   │   │   ├── 📞 [CALLS]: node_modules/engine.io, bin/nodemon.js, ipaddr.js, bin/semver.js, bin/nodetouch.js, node_modules/ipaddr.js, cli.js, node_modules/socket.io, node_modules/pstree.remy
 │   ├── package.json [📂 extraction_target_project/package.json] -> [💡 📦 json_keys: 8개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "type" [str] | 🔑 "description" [str] | 🔑 "main" [str] | ...외 3개]
 │   │   ├── 🔑 key "name" [L2]
 │   │   ├── 🔑 key "version" [L3]
@@ -235,12 +235,20 @@ project_root/
 │   │   ├── terminal_runner.py [📂 tools/multi_agent_system/terminal_runner.py] -> [💡 📦 imp: pathlib, subprocess | 🎯 def run_terminal_command(command, cwd, timeout) [L12-57]]
 │   │   │   ├── 🎯 def run_terminal_command() [L12-L57]
 │   ├── universal_indexer/
-│   │   ├── agent_navigator.py [📂 tools/universal_indexer/agent_navigator.py] -> [💡 📦 imp: agent_code_extractor, pathlib, sys, tkinter, tools.multi_agent_system.agent_code_extractor | 🧬 class JjapCursorNavigatorGUI [L23-119] |     └─ def __init__(root, project_root) [L24-74] |     └─ def execute_slicing_pipeline() [L76-101] |     └─ def manual_export_file() [L103-119]]
+│   │   ├── agent_navigator.py [📂 tools/universal_indexer/agent_navigator.py] -> [💡 📦 imp: json, pathlib, re, switch, sys, tkinter, traceback | 🧬 class CodeExtractor [L18-281] |     └─ def __init__(root_dir) [L23-46] |     └─ def _load_database() [L48-55] |     └─ def resolve_file_path(raw_path_str) [L57-85] |     └─ def extract_multi_slices(raw_prompt) [L87-237] |     └─ def format_as_markdown(extracted_slices) [L239-256] |     └─ def process(raw_prompt, auto_save, output_path) [L258-281] | 🧬 class JjapCursorNavigatorGUI [L288-384] |     └─ def __init__(root, project_root) [L289-339] |     └─ def execute_slicing_pipeline() [L341-366] |     └─ def manual_export_file() [L368-384]]
 │   │   │     ├── 🔑 [REGISTRY]: "JjapCursorNavigatorGUI"
-│   │   │   ├── 🧬 class JjapCursorNavigatorGUI [L23-L119]
-│   │   │   ├── 🎯 def __init__() [L24-L74]
-│   │   │   ├── 🎯 def execute_slicing_pipeline() [L76-L101]
-│   │   │   ├── 🎯 def manual_export_file() [L103-L119]
+│   │   │   ├── 🧬 class CodeExtractor [L18-L281]
+│   │   │   ├── 🎯 def __init__() [L23-L46]
+│   │   │   ├── 🎯 def _load_database() [L48-L55]
+│   │   │   ├── 🎯 def resolve_file_path() [L57-L85]
+│   │   │   ├── 🎯 def extract_multi_slices() [L87-L237]
+│   │   │   ├── 🎯 def format_as_markdown() [L239-L256]
+│   │   │   ├── 🎯 def process() [L258-L281]
+│   │   │   ├── 🧬 class JjapCursorNavigatorGUI [L288-L384]
+│   │   │   ├── 🎯 def __init__() [L289-L339]
+│   │   │   │   ├── 📞 [CALLS]: CodeExtractor
+│   │   │   ├── 🎯 def execute_slicing_pipeline() [L341-L366]
+│   │   │   ├── 🎯 def manual_export_file() [L368-L384]
 │   │   ├── config.py [📂 tools/universal_indexer/config.py] -> [💡 📦 imp: pathlib, switch, sys, tools.universal_indexer.switch | 🎯 def get_project_root() [L8-16] | 🎯 def get_scan_mode() [L23-33]]
 │   │   │   ├── 🎯 def get_project_root() [L8-L16]
 │   │   │   ├── 🎯 def get_scan_mode() [L23-L33]
@@ -290,7 +298,7 @@ project_root/
 │   │   │   ├── 🎯 def load_all_symbols() [L162-L183]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def main() [L186-L317]
-│   │   │   │   ├── 📞 [CALLS]: load_all_symbols, parse_protocols_and_registries, load_jjap_context, collect_target_files
+│   │   │   │   ├── 📞 [CALLS]: parse_protocols_and_registries, load_jjap_context, load_all_symbols, collect_target_files
 │   │   │   ├── 🎯 def generate_ai_optimized_map() [L320-L321]
 │   │   │   │   ├── 📞 [CALLS]: main
 │   │   ├── indexer.py [📂 tools/universal_indexer/indexer.py] -> [💡 📦 imp: collections, config, hashlib, importlib.util, json, os, pathlib, typing | 🎯 def log(message) [L22-24] | 🧬 class AdvancedIndexerV2 [L26-206] |     └─ def __init__(project_root) [L31-41] |     └─ def _auto_load_parsers() [L43-74] |     └─ def scan_project() [L78-141] |     └─ def index_file(file_path, ext) [L143-183] |     └─ def save_index_data() [L185-206]]
@@ -334,7 +342,7 @@ project_root/
 │   │   │   ├── 🎯 def dispatch() [L86-L126]
 │   │   │   │   ├── 📞 [CALLS]: run_pipeline
 │   │   │   ├── 🎯 def main() [L128-L154]
-│   │   │   │   ├── 📞 [CALLS]: CodeChangeHandler, run_pipeline
+│   │   │   │   ├── 📞 [CALLS]: run_pipeline, CodeChangeHandler
 │   │   ├── README.md [📂 tools/universal_indexer/README.md]
 │   │   ├── rule.txt [📂 tools/universal_indexer/rule.txt]
 │   │   ├── switch.py [📂 tools/universal_indexer/switch.py]
