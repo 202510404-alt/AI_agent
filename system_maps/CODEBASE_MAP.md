@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **53개**
+현재 인덱싱된 총 파일 수: **54개**
 
 ## 🗂️ [Module Index]
 - `.vscode/settings.json`
@@ -35,6 +35,7 @@
 - `run_test.py`
 - `tools/multi_agent_system/__init__.py`
 - `tools/multi_agent_system/agent_code_extractor.py`
+- `tools/multi_agent_system/agent_map_extractor.py`
 - `tools/multi_agent_system/agent_session.py`
 - `tools/multi_agent_system/code_patcher.py`
 - `tools/multi_agent_system/terminal_runner.py`
@@ -518,7 +519,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/css.escape, node_modules/string.prototype.trim, node_modules/string.prototype.trimend, node_modules/hpack.js, big.js, bin/semver.js, bin/nanoid.cjs, node_modules/reflect.getprototypeof, bin/escodegen.js, bin/esparse.js, bin/cmd.js, bin/webpack.js, node_modules/array.prototype.findlast, node_modules/array.prototype.flat, node_modules/object.fromentries, node_modules/object.hasown, node_modules/array.prototype.findlastindex, node_modules/engine.io, dist/esm/bin.mjs, node_modules/array.prototype.tosorted, node_modules/lodash.merge, node_modules/lodash.uniq, node_modules/string.prototype.trimstart, node_modules/object.groupby, bin/babel-parser.js, node_modules/big.js, node_modules/sanitize.css, node_modules/decimal.js, node_modules/array.prototype.flatmap, fraction.js, cli.js, node_modules/iterator.prototype, node_modules/string.prototype.matchall, node_modules/util.promisify, node_modules/lodash.memoize, bin/nopt.js, node_modules/resolve.exports, hpack.js, bin/esgenerate.js, node_modules/fs.realpath, node_modules/function.prototype.name, node_modules/array.prototype.toreversed, fixtures/cli.js, node_modules/object.entries, bin/jiti.js, node_modules/object.getownpropertydescriptors, bin.js, bin/js-yaml.js, dist/cli.cjs, node_modules/array.prototype.reduce, node_modules/ipaddr.js, node_modules/socket.io, node_modules/fraction.js, decimal.js, node_modules/lodash.debounce, bin/cli.js, bin/esvalidate.js, node_modules/proxy-addr/node_modules/ipaddr.js, bin/webpack-dev-server.js, bin/bin.js, ipaddr.js, node_modules/regexp.prototype.flags, bin/eslint.js, lib/cli.js, bin/react-scripts.js, node_modules/object.values, node_modules/lodash.sortby, node_modules/arraybuffer.prototype.slice, bin/jest.js, node_modules/object.assign`
+  - 🔗 *Calls (호출하는 것)*: `bin.js, dist/cli.cjs, node_modules/big.js, bin/escodegen.js, node_modules/object.entries, node_modules/object.assign, node_modules/engine.io, node_modules/object.hasown, bin/webpack.js, node_modules/string.prototype.matchall, node_modules/css.escape, node_modules/array.prototype.toreversed, bin/jest.js, ipaddr.js, node_modules/array.prototype.reduce, bin/webpack-dev-server.js, node_modules/lodash.debounce, hpack.js, bin/esparse.js, node_modules/fs.realpath, bin/js-yaml.js, bin/cmd.js, bin/cli.js, node_modules/lodash.uniq, node_modules/array.prototype.tosorted, node_modules/iterator.prototype, node_modules/lodash.merge, bin/semver.js, fixtures/cli.js, bin/bin.js, node_modules/object.getownpropertydescriptors, node_modules/socket.io, node_modules/array.prototype.flat, dist/esm/bin.mjs, node_modules/reflect.getprototypeof, node_modules/proxy-addr/node_modules/ipaddr.js, decimal.js, bin/jiti.js, node_modules/regexp.prototype.flags, node_modules/util.promisify, node_modules/ipaddr.js, bin/nopt.js, bin/eslint.js, lib/cli.js, node_modules/function.prototype.name, bin/esvalidate.js, fraction.js, node_modules/hpack.js, big.js, node_modules/string.prototype.trimend, node_modules/arraybuffer.prototype.slice, node_modules/lodash.memoize, node_modules/resolve.exports, node_modules/decimal.js, node_modules/fraction.js, node_modules/object.groupby, node_modules/lodash.sortby, node_modules/array.prototype.flatmap, bin/react-scripts.js, node_modules/sanitize.css, node_modules/string.prototype.trim, bin/babel-parser.js, bin/esgenerate.js, node_modules/object.values, node_modules/array.prototype.findlast, cli.js, node_modules/object.fromentries, node_modules/string.prototype.trimstart, node_modules/array.prototype.findlastindex, bin/nanoid.cjs`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -717,7 +718,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/engine.io, bin/nodemon.js, ipaddr.js, bin/semver.js, bin/nodetouch.js, node_modules/ipaddr.js, cli.js, node_modules/socket.io, node_modules/pstree.remy`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, node_modules/pstree.remy, node_modules/engine.io, bin/nodemon.js, node_modules/ipaddr.js, cli.js, bin/semver.js, bin/nodetouch.js, ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1120,6 +1121,239 @@ class CodeExtractor:
             "markdown": markdown_text,
             "saved_path": save_target_path
         }
+```
+
+--------------------------------------------------
+
+### 📄 tools/multi_agent_system/agent_map_extractor.py
+#### 🧱 Code Skeleton:
+```python
+class AgentMapExtractor:
+    """에이전트의 유연한 부분 코드베이스 맵 추출 요청을 처리하는 클래스"""
+
+    def __init__(self, project_root: Path = PROJECT_ROOT):
+        self.project_root = project_root
+
+    def _load_jjap_context(self) -> Dict[str, Any]:
+        if CONTEXT_JSON_PATH.exists():
+            try:
+                with open(CONTEXT_JSON_PATH, "r", encoding="utf-8") as f:
+                    return json.load(f).get("files", {})
+            except Exception as e:
+                print(f"⚠️ [SWITCH WARNING] switch.py를 로드하지 못해 기본 'ROOT' 모드로 동작합니다. (이유: {str(e)})")
+        return {}
+
+    def _load_all_symbols(self) -> Tuple[Dict[str, List[Dict]], Dict[str, Dict]]:
+        symbols_by_file = {}
+        symbol_by_id = {}
+        if SYMBOLS_JSON_PATH.exists():
+            try:
+                with open(SYMBOLS_JSON_PATH, "r", encoding="utf-8") as f:
+                    symbols_list = json.load(f).get("symbols", [])
+                    for sym in symbols_list:
+                        rel_path = sym.get("file") or sym.get("path")
+                        if rel_path:
+                            posix_path = Path(rel_path).as_posix()
+                            symbols_by_file.setdefault(posix_path, []).append(sym)
+                        
+                        sym_id = sym.get("symbol_id")
+                        if sym_id:
+                            symbol_by_id[sym_id] = sym
+            except Exception as e:
+                print(f"⚠️ [.jjap_symbols.json] 로드 실패: {e}")
+        return symbols_by_file, symbol_by_id
+
+    def _load_registry_and_protocols(self) -> Tuple[Dict[str, set], Dict[str, Any]]:
+        path_to_registry = {}
+        path_to_protocol = {}
+        
+        registry_data = set()
+        if REGISTRY_JSON_PATH.exists():
+            try:
+                with open(REGISTRY_JSON_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    entities = data.get("registered_entities", [])
+                    registry_data = set(entities) if isinstance(entities, list) else set(entities.keys())
+            except Exception:
+                pass
+
+        protocol_data = {}
+        if PROTOCOL_JSON_PATH.exists():
+            try:
+                with open(PROTOCOL_JSON_PATH, "r", encoding="utf-8") as f:
+                    protocol_data = json.load(f).get("protocols", {})
+            except Exception:
+                pass
+
+        symbols_by_file, _ = self._load_all_symbols()
+        for file_path, sym_list in symbols_by_file.items():
+            for sym in sym_list:
+                if sym.get("type") != "class":
+                    continue
+                cls_name = sym.get("name")
+                if not cls_name:
+                    continue
+                
+                posix_rel_path = Path(file_path).as_posix()
+                if cls_name in registry_data:
+                    path_to_registry.setdefault(posix_rel_path, set()).add(cls_name)
+                if cls_name in protocol_data:
+                    path_to_protocol.setdefault(posix_rel_path, []).append((cls_name, protocol_data[cls_name]))
+
+        return path_to_registry, path_to_protocol
+
+    def collect_files_in_targets(
+        self, 
+        target_paths: List[Union[str, Path]], 
+        exclude_paths: Optional[List[Union[str, Path]]] = None
+    ) -> List[Path]:
+        """지정한 상대 경로/폴더 목록 내부의 파일들을 정밀 수집합니다."""
+        target_files = set()
+        excludes = [Path(e).as_posix() for e in (exclude_paths or [])]
+
+        for target in target_paths:
+            abs_target = self.project_root / target
+            if not abs_target.exists():
+                print(f"⚠️ [경고] 요청한 경로가 존재하지 않습니다: {target}")
+                continue
+
+            if abs_target.is_file():
+                rel_posix = abs_target.relative_to(self.project_root).as_posix()
+                if not any(ex in rel_posix for ex in excludes):
+                    target_files.add(abs_target)
+            elif abs_target.is_dir():
+                for root, dirs, files in os.walk(abs_target, followlinks=True):
+                    normalized_root = root.replace("\\", "/")
+                    if any(kw in normalized_root for kw in EXCLUDE_KEYWORDS):
+                        continue
+                    
+                    rel_root = Path(root).relative_to(self.project_root).as_posix()
+                    if any(ex in rel_root for ex in excludes):
+                        continue
+
+                    for file in files:
+                        full_path = Path(root) / file
+                        rel_file = full_path.relative_to(self.project_root).as_posix()
+                        if not any(ex in rel_file for ex in excludes):
+                            target_files.add(full_path)
+
+        return sorted(list(target_files))
+
+    def generate_custom_map(
+        self, 
+        target_paths: List[Union[str, Path]], 
+        exclude_paths: Optional[List[Union[str, Path]]] = None,
+        save_to_file: bool = True
+    ) -> str:
+        """
+        에이전트가 지시한 target_paths 영역만 정밀하게 쪼개어 AI 코드베이스 맵 문자열을 생성합니다.
+        """
+        target_files = self.collect_files_in_targets(target_paths, exclude_paths)
+        jjap_context = self._load_jjap_context()
+        symbols_by_file, symbol_by_id = self._load_all_symbols()
+        path_to_registry, path_to_protocol = self._load_registry_and_protocols()
+
+        output_lines = []
+        output_lines.append("# 🏗️ CUSTOM TARGETED AI-OPTIMIZED CODEBASE MAP\n")
+        output_lines.append(f"> **[추출 범위 지정]** Target Paths: `{target_paths}`\n")
+        output_lines.append("```markdown\nproject_root/\n")
+
+        printed_dirs = set()
+
+        for file_path in target_files:
+            rel_path = file_path.relative_to(self.project_root)
+            posix_rel_path = rel_path.as_posix()
+            file_name = file_path.name
+
+            parts = Path(posix_rel_path).parts
+            for i in range(len(parts) - 1):
+                current_dir_path = Path(*parts[:i + 1]).as_posix()
+                if current_dir_path not in printed_dirs:
+                    printed_dirs.add(current_dir_path)
+                    indent = "│   " * i
+                    output_lines.append(f"{indent}├── {parts[i]}/\n")
+
+            indent = "│   " * (len(parts) - 1)
+            file_meta = jjap_context.get(posix_rel_path, {})
+            symbols_info = file_meta.get("symbols_summary", "")
+
+            if symbols_info:
+                output_lines.append(f"{indent}├── {file_name} [📂 {posix_rel_path}] -> [{symbols_info}]\n")
+            else:
+                output_lines.append(f"{indent}├── {file_name} [📂 {posix_rel_path}]\n")
+
+            # 레지스트리 / 프로토콜 표시
+            if posix_rel_path in path_to_registry:
+                for reg_const in path_to_registry[posix_rel_path]:
+                    output_lines.append(f"{indent}│     ├── 🔑 [REGISTRY]: \"{reg_const}\"\n")
+
+            if posix_rel_path in path_to_protocol:
+                for proto_name, fields in path_to_protocol[posix_rel_path]:
+                    output_lines.append(f"{indent}│     ├── 📊 [PROTOCOL]: \"{proto_name}\"\n")
+
+            # 심볼 상세 트리 (L라인, CALLS, USED BY)
+            file_symbols = symbols_by_file.get(posix_rel_path, [])
+            for sym in file_symbols:
+                sym_type = sym.get("type", "function")
+                sym_name = sym.get("name", "")
+                full_name = sym.get("full_name", sym_name)
+                if not sym_name:
+                    continue
+
+                raw_args = sym.get("args")
+                if isinstance(raw_args, list):
+                    args_str = f"({', '.join(raw_args)})" if raw_args else ""
+                elif isinstance(raw_args, str) and raw_args:
+                    args_str = f"({raw_args})"
+                else:
+                    args_str = ""
+
+                start_line = sym.get("start_line")
+                end_line = sym.get("end_line")
+                line_str = f"[L{start_line}-L{end_line}]" if start_line and end_line and start_line != end_line else (f"[L{start_line}]" if start_line else "")
+
+                if sym_type == "class":
+                    icon_str = f"🧬 class {sym_name}"
+                elif sym_type == "json_key":
+                    icon_str = f"🔑 key \"{sym_name}\""
+                else:
+                    icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
+
+                output_lines.append(f"{indent}│   ├── {icon_str} {line_str}\n".rstrip() + "\n")
+
+                # CALLS & USED BY
+                calls = sym.get("calls", [])
+                if calls:
+                    output_lines.append(f"{indent}│   │   ├── 📞 [CALLS]: {', '.join(calls)}\n")
+
+                used_by_ids = sym.get("used_by", [])
+                if used_by_ids:
+                    used_by_info = []
+                    for u_id in used_by_ids:
+                        target = symbol_by_id.get(u_id)
+                        if target:
+                            u_file = target.get("file") or target.get("path", "")
+                            u_name = target.get("name", "")
+                            used_by_info.append(f"::{u_name}" if u_file == posix_rel_path else f"{u_file}::{u_name}")
+                        else:
+                            used_by_info.append(str(u_id))
+                    formatted_line = f"{indent}│   ├── {icon_str} {line_str}".rstrip() + "\n"
+                    output_lines.append(formatted_line)
+
+        output_lines.append("```\n")
+        final_map_str = "".join(output_lines)
+
+        if save_to_file:
+            CUSTOM_AI_MAP_PATH.parent.mkdir(parents=True, exist_ok=True)
+            with open(CUSTOM_AI_MAP_PATH, "w", encoding="utf-8") as f:
+                f.write(final_map_str)
+            print(f"🎯 [에이전트 맵 추출기] Custom AI Map 생성 완료: {CUSTOM_AI_MAP_PATH}")
+
+        return final_map_str
+
+def extract_targeted_ai_map(target_paths: List[str], exclude_paths: Optional[List[str]] = None) -> str:
+    extractor = AgentMapExtractor()
+    return extractor.generate_custom_map(target_paths, exclude_paths)
 ```
 
 --------------------------------------------------

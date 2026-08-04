@@ -1,0 +1,138 @@
+import random
+import os
+import time
+
+# 게임 설정
+WIDTH = 10
+HEIGHT = 20
+BLOCK_TYPES = [
+    # I
+    [[1, 1, 1, 1]],
+    # J
+    [[1, 0, 0],
+     [1, 1, 1]],
+    # L
+    [[0, 0, 1],
+     [1, 1, 1]],
+    # O
+    [[1, 1],
+     [1, 1]],
+    # S
+    [[0, 1, 1],
+     [1, 1, 0]],
+    # T
+    [[0, 1, 0],
+     [1, 1, 1]],
+    # Z
+    [[1, 1, 0],
+     [0, 1, 1]]
+]
+COLORS = {
+    0: ' ',  # 빈 공간
+    1: '█',  # 블록
+}
+
+class Tetris:
+    def __init__(self):
+        self.board = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
+        self.current_block = self.new_block()
+        self.block_x = WIDTH // 2 - len(self.current_block[0]) // 2
+        self.block_y = 0
+        self.game_over = False
+        self.score = 0
+
+    def new_block(self):
+        return random.choice(BLOCK_TYPES)
+
+    def rotate_block(self, block):
+        return [list(row) for row in zip(*block[::-1])]
+
+    def check_collision(self, block, x, y):
+        for row_idx, row in enumerate(block):
+            for col_idx, cell in enumerate(row):
+                if cell:
+                    board_x = x + col_idx
+                    board_y = y + row_idx
+                    if not (0 <= board_x < WIDTH and 0 <= board_y < HEIGHT):
+                        return True  # 벽 밖으로 나감
+                    if self.board[board_y][board_x]:
+                        return True  # 다른 블록과 충돌
+        return False
+
+    def merge_block(self):
+        for row_idx, row in enumerate(self.current_block):
+            for col_idx, cell in enumerate(row):
+                if cell:
+                    self.board[self.block_y + row_idx][self.block_x + col_idx] = 1
+        self.clear_lines()
+
+    def clear_lines(self):
+        new_board = []
+        lines_cleared = 0
+        for row in self.board:
+            if 0 in row:
+                new_board.append(row)
+            else:
+                lines_cleared += 1
+                self.score += 100  # 한 줄 지울 때마다 100점 추가
+        for _ in range(lines_cleared):
+            new_board.insert(0, [0 for _ in range(WIDTH)])
+        self.board = new_board
+
+    def move_block(self, dx, dy):
+        if not self.check_collision(self.current_block, self.block_x + dx, self.block_y + dy):
+            self.block_x += dx
+            self.block_y += dy
+            return True
+        return False
+
+    def drop_block(self):
+        while self.move_block(0, 1):
+            pass
+        self.merge_block()
+        self.current_block = self.new_block()
+        self.block_x = WIDTH // 2 - len(self.current_block[0]) // 2
+        self.block_y = 0
+        if self.check_collision(self.current_block, self.block_x, self.block_y):
+            self.game_over = True
+
+    def rotate_current_block(self):
+        rotated = self.rotate_block(self.current_block)
+        if not self.check_collision(rotated, self.block_x, self.block_y):
+            self.current_block = rotated
+
+    def draw(self):
+        os.system('cls' if os.name == 'nt' else 'clear')
+        display_board = [row[:] for row in self.board]
+        for row_idx, row in enumerate(self.current_block):
+            for col_idx, cell in enumerate(row):
+                if cell:
+                    display_board[self.block_y + row_idx][self.block_x + col_idx] = 1
+
+        print("Score:", self.score)
+        for row in display_board:
+            print('|' + ''.join(COLORS[cell] for cell in row) + '|')
+        print('+' + '-' * WIDTH + '+')
+
+    def run(self):
+        while not self.game_over:
+            self.draw()
+            time.sleep(0.5)  # 블록이 떨어지는 속도 조절
+
+            # 사용자 입력 처리 (간단하게 구현)
+            # 실제 게임에서는 비동기 입력 처리가 필요
+            # 여기서는 단순히 블록을 아래로 떨어뜨림
+            if not self.move_block(0, 1):
+                self.merge_block()
+                self.current_block = self.new_block()
+                self.block_x = WIDTH // 2 - len(self.current_block[0]) // 2
+                self.block_y = 0
+                if self.check_collision(self.current_block, self.block_x, self.block_y):
+                    self.game_over = True
+
+        self.draw()
+        print("Game Over! Final Score:", self.score)
+
+if __name__ == "__main__":
+    game = Tetris()
+    game.run()
