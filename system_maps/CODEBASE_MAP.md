@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **54개**
+현재 인덱싱된 총 파일 수: **55개**
 
 ## 🗂️ [Module Index]
 - `.vscode/settings.json`
@@ -38,6 +38,7 @@
 - `tools/multi_agent_system/agent_map_extractor.py`
 - `tools/multi_agent_system/agent_session.py`
 - `tools/multi_agent_system/code_patcher.py`
+- `tools/multi_agent_system/project_scale_detector.py`
 - `tools/multi_agent_system/terminal_runner.py`
 - `tools/universal_indexer/agent_navigator.py`
 - `tools/universal_indexer/config.py`
@@ -519,7 +520,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `bin.js, dist/cli.cjs, node_modules/big.js, bin/escodegen.js, node_modules/object.entries, node_modules/object.assign, node_modules/engine.io, node_modules/object.hasown, bin/webpack.js, node_modules/string.prototype.matchall, node_modules/css.escape, node_modules/array.prototype.toreversed, bin/jest.js, ipaddr.js, node_modules/array.prototype.reduce, bin/webpack-dev-server.js, node_modules/lodash.debounce, hpack.js, bin/esparse.js, node_modules/fs.realpath, bin/js-yaml.js, bin/cmd.js, bin/cli.js, node_modules/lodash.uniq, node_modules/array.prototype.tosorted, node_modules/iterator.prototype, node_modules/lodash.merge, bin/semver.js, fixtures/cli.js, bin/bin.js, node_modules/object.getownpropertydescriptors, node_modules/socket.io, node_modules/array.prototype.flat, dist/esm/bin.mjs, node_modules/reflect.getprototypeof, node_modules/proxy-addr/node_modules/ipaddr.js, decimal.js, bin/jiti.js, node_modules/regexp.prototype.flags, node_modules/util.promisify, node_modules/ipaddr.js, bin/nopt.js, bin/eslint.js, lib/cli.js, node_modules/function.prototype.name, bin/esvalidate.js, fraction.js, node_modules/hpack.js, big.js, node_modules/string.prototype.trimend, node_modules/arraybuffer.prototype.slice, node_modules/lodash.memoize, node_modules/resolve.exports, node_modules/decimal.js, node_modules/fraction.js, node_modules/object.groupby, node_modules/lodash.sortby, node_modules/array.prototype.flatmap, bin/react-scripts.js, node_modules/sanitize.css, node_modules/string.prototype.trim, bin/babel-parser.js, bin/esgenerate.js, node_modules/object.values, node_modules/array.prototype.findlast, cli.js, node_modules/object.fromentries, node_modules/string.prototype.trimstart, node_modules/array.prototype.findlastindex, bin/nanoid.cjs`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/array.prototype.reduce, big.js, bin/bin.js, node_modules/object.fromentries, bin.js, node_modules/object.hasown, node_modules/function.prototype.name, node_modules/array.prototype.findlastindex, bin/semver.js, decimal.js, node_modules/array.prototype.flat, node_modules/array.prototype.toreversed, node_modules/lodash.merge, node_modules/object.groupby, bin/escodegen.js, node_modules/ipaddr.js, bin/webpack-dev-server.js, bin/cli.js, node_modules/engine.io, node_modules/array.prototype.tosorted, bin/nopt.js, node_modules/proxy-addr/node_modules/ipaddr.js, dist/cli.cjs, node_modules/big.js, bin/esgenerate.js, node_modules/object.values, bin/esparse.js, bin/nanoid.cjs, node_modules/string.prototype.trimstart, bin/esvalidate.js, node_modules/util.promisify, bin/react-scripts.js, node_modules/object.getownpropertydescriptors, node_modules/resolve.exports, node_modules/reflect.getprototypeof, node_modules/fs.realpath, node_modules/iterator.prototype, node_modules/lodash.debounce, node_modules/decimal.js, node_modules/regexp.prototype.flags, bin/babel-parser.js, hpack.js, node_modules/string.prototype.trimend, node_modules/lodash.sortby, bin/webpack.js, node_modules/hpack.js, dist/esm/bin.mjs, bin/jest.js, fixtures/cli.js, bin/eslint.js, node_modules/object.entries, bin/js-yaml.js, ipaddr.js, node_modules/array.prototype.flatmap, node_modules/string.prototype.trim, node_modules/object.assign, node_modules/lodash.uniq, node_modules/string.prototype.matchall, node_modules/lodash.memoize, node_modules/css.escape, node_modules/array.prototype.findlast, lib/cli.js, bin/cmd.js, bin/jiti.js, node_modules/socket.io, node_modules/fraction.js, fraction.js, node_modules/arraybuffer.prototype.slice, cli.js, node_modules/sanitize.css`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -718,7 +719,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, node_modules/pstree.remy, node_modules/engine.io, bin/nodemon.js, node_modules/ipaddr.js, cli.js, bin/semver.js, bin/nodetouch.js, ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/pstree.remy, bin/semver.js, bin/nodemon.js, bin/nodetouch.js, node_modules/socket.io, node_modules/ipaddr.js, cli.js, ipaddr.js, node_modules/engine.io`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1337,8 +1338,7 @@ class AgentMapExtractor:
                             used_by_info.append(f"::{u_name}" if u_file == posix_rel_path else f"{u_file}::{u_name}")
                         else:
                             used_by_info.append(str(u_id))
-                    formatted_line = f"{indent}│   ├── {icon_str} {line_str}".rstrip() + "\n"
-                    output_lines.append(formatted_line)
+                    output_lines.append(f"{indent}│   │   ├── 🔗 [USED BY]: {', '.join(used_by_info)}\n")
 
         output_lines.append("```\n")
         final_map_str = "".join(output_lines)
@@ -1367,63 +1367,93 @@ class AgentSessionFactory:
         self.root_dir = root_dir.resolve()
         load_env_file(self.root_dir / ".env")
         
-        # 1. 사용 도구 인스턴스화
         self.extractor = CodeExtractor(self.root_dir)
         self.patcher = CodePatcher(self.root_dir)
+        self.scale_detector = ProjectScaleDetector(
+            target_dir=self.root_dir / "extraction_target_project" if (self.root_dir / "extraction_target_project").exists() else self.root_dir
+        )
         self.client = None
 
-    def _load_codebase_map(self) -> str:
-        """코드베이스 지도 탐색 및 로드"""
-        map_path = self.root_dir / "system_maps" / "AI_CODEBASE_MAP.md"
-        if not map_path.exists():
-            map_path = self.root_dir / "AI_CODEBASE_MAP.md"
+    def _prepare_codebase_map(self, max_shallow_depth: int = 3) -> tuple[str, bool]:
+        """
+        규모 진단 후 (맵 텍스트, oversized 여부) 튜플을 반환합니다.
+        """
+        scan_target = self.root_dir / "extraction_target_project"
+        target_dir = scan_target if scan_target.exists() else self.root_dir
 
-        if map_path.exists():
-            return map_path.read_text(encoding="utf-8")
-        return "[안내] 코드베이스 지도를 찾을 수 없습니다."
+        metrics = self.scale_detector.analyze_project_scale(target_dir=target_dir)
+
+        if metrics["is_oversized"]:
+            print(f"⚠️ [PROJECT SCALE] 감당 불가 프로젝트 감지! (파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
+            print(f"🔍 상위 {max_shallow_depth}단계 얕은 겉핥기 지도를 생성합니다...")
+            shallow_map = self.scale_detector.generate_shallow_structure_map(
+                max_depth=max_shallow_depth, 
+                target_dir=target_dir
+            )
+            return shallow_map, True
+        else:
+            print(f"✅ [PROJECT SCALE] 감당 가능한 적정 규모 프로젝트 (파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
+            # 적정 규모일 경우 대상 폴더 전체 추출
+            target_rel_path = "extraction_target_project" if scan_target.exists() else "."
+            full_map = extract_targeted_ai_map(target_paths=[target_rel_path], save_to_file=True)
+            return full_map, False
 
     def _build_tools(self):
-        """AI에게 전달할 Tool 함수 패키징"""
+        """AI에게 전달할 Tool 패키징"""
         def extract_code_slice(file_and_line: str) -> str:
             """특정 파일 및 라인 범위의 코드 슬라이스를 추출합니다."""
-            print(f"\n⚙️ [TOOL] 'extract_code_slice' Target: {file_and_line}")
             res = self.extractor.process(file_and_line, auto_save=False)
             return res["markdown"] if res["markdown"] else "❌ 해당 코드를 찾을 수 없습니다."
 
         def patch_code_slice(file_path: str, existing_code: str, replacement_code: str) -> str:
             """파일 내 특정 '기존 코드'를 '수정된 코드'로 1:1 치환합니다."""
-            print(f"\n🛠️ [TOOL] 'patch_code_slice' Target: {file_path}")
             res = self.patcher.apply_patch(file_path, existing_code, replacement_code)
-            print(res["message"])
             return res["message"]
 
-        return [extract_code_slice, run_terminal_command, patch_code_slice]
+        def get_targeted_codebase_map(target_paths: list[str]) -> str:
+            """
+            [규모 초과 시 사용] 특정 폴더/파일 경로 목록을 전달받아 해당 구역의 정밀 AI 코드베이스 맵을 생성하여 반환합니다.
+            예: target_paths = ["extraction_target_project/src/controller", "extraction_target_project/src/models"]
+            """
+            print(f"\n🗺️ [TOOL EXECUTION] AI가 특정 구간 타깃 맵을 요청함: {target_paths}")
+            return extract_targeted_ai_map(target_paths=target_paths, save_to_file=False)
 
-    def create_chat_session(self, model_name: str = "gemini-2.5-flash"):
-        """모든 지형도와 도구가 준비된 Gemini Chat 세션을 '구워서' 반환합니다."""
+        return [extract_code_slice, run_terminal_command, patch_code_slice, get_targeted_codebase_map]
+
+    def create_chat_session(self, model_name: str = "gemini-2.5-flash", shallow_depth: int = 3):
+        """모든 지형도와 도구가 준비된 Gemini Chat 세션을 생성합니다."""
         api_key = os.environ.get("GEMINI_API_KEY")
         if not HAS_GENAI or not api_key:
             raise RuntimeError("Google GenAI 패키지 미설치 또는 API Key가 설정되지 않았습니다.")
 
         self.client = genai.Client(api_key=api_key)
-        codebase_map = self._load_codebase_map()
+        codebase_map, is_oversized = self._prepare_codebase_map(max_shallow_depth=shallow_depth)
         tools = self._build_tools()
+
+        oversized_guideline = """
+[🚨 주의: 방대한 프로젝트 감지됨]
+현재 제공된 지도는 프로젝트의 상위 겉핥기 개요 지도입니다.
+작업을 진행하기 전, 분석이나 수정을 진행할 구체적인 폴더 경로를 파악하고 
+반드시 `get_targeted_codebase_map(target_paths=["상세경로"])` 도구를 호출하여 
+필요한 구역의 정밀 세부 맵을 확보한 후 작업을 수행하십시오.
+""" if is_oversized else ""
 
         system_instruction = f"""
 당신은 현재 프로젝트의 코드베이스 구조를 파악하고, 터미널 명령어로 디버깅하며 코드를 정밀 수정하는 AI 에이전트입니다.
 
-[프로젝트 코드베이스 지도 (AI_CODEBASE_MAP)]
+[프로젝트 코드베이스 지도]
 {codebase_map}
-
+{oversized_guideline}
 [사용 가능한 도구]
 1. `extract_code_slice("파일경로:시작줄-끝줄")`: 코드의 실제 내용을 확인합니다.
 2. `run_terminal_command("명령어")`: 터미널 명령어(테스트 등)를 구동하고 로그를 확인합니다.
 3. `patch_code_slice(file_path, existing_code, replacement_code)`: 특정 코드 구간을 1:1 치환합니다.
+4. `get_targeted_codebase_map(target_paths=["경로1", "경로2"])`: 지정한 폴더/파일 하위의 정밀 심볼 및 관계망 맵을 새로 가져옵니다.
 
 [🚨 절대 규칙 - 코드 수정 수칙]
 1. 절대로 파일 전체 코드를 작성하거나 덮어쓰지 마십시오.
 2. 코드를 수정할 때는 반드시 `extract_code_slice`로 확인 후 `patch_code_slice`를 사용하십시오.
-3. `existing_code`는 기존 코드와 **공백/줄바꿈 포함 100% 토씨 하나 안 틀리고 일치**해야 합니다.
+3. `existing_code`는 기존 코드와 공백/줄바꿈 포함 100% 토씨 하나 안 틀리고 일치해야 합니다.
 """
 
         chat = self.client.chats.create(
@@ -1499,6 +1529,100 @@ class CodePatcher:
                 "success": False,
                 "message": f"💥 [PATCH ERROR] 파일 수정 중 예외 발생: {e}"
             }
+```
+
+--------------------------------------------------
+
+### 📄 tools/multi_agent_system/project_scale_detector.py
+#### 🧱 Code Skeleton:
+```python
+class ProjectScaleDetector:
+    def __init__(
+        self, 
+        project_root: Path,
+        max_files: int = 150,           # 감당 가능 최대 파일 수
+        max_total_lines: int = 15000,    # 감당 가능 최대 코드 줄 수
+        max_estimated_tokens: int = 60000 # 감당 가능 최대 토큰 수
+    ):
+        self.project_root = Path(project_root).resolve()
+        self.max_files = max_files
+        self.max_total_lines = max_total_lines
+        self.max_estimated_tokens = max_estimated_tokens
+
+    def analyze_project_scale(self, target_dir: Optional[Path] = None) -> Dict[str, Any]:
+        """프로젝트 또는 특정 대상 폴더의 규모 수치를 측정합니다."""
+        scan_dir = target_dir or self.project_root
+        file_count = 0
+        total_lines = 0
+
+        for root, dirs, files in os.walk(scan_dir):
+            dirs[:] = [d for d in dirs if d not in EXCLUDE_KEYWORDS]
+            if any(kw in root for kw in EXCLUDE_KEYWORDS):
+                continue
+
+            for file in files:
+                file_count += 1
+                file_path = Path(root) / file
+                try:
+                    with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        total_lines += sum(1 for _ in f)
+                except Exception:
+                    pass
+
+        # 대략적인 토큰 수 산출 (1줄당 평균 8~10 토큰 환산)
+        estimated_tokens = total_lines * 9
+        is_oversized = (
+            file_count > self.max_files or 
+            total_lines > self.max_total_lines or 
+            estimated_tokens > self.max_estimated_tokens
+        )
+
+        return {
+            "file_count": file_count,
+            "total_lines": total_lines,
+            "estimated_tokens": estimated_tokens,
+            "is_oversized": is_oversized
+        }
+
+    def generate_shallow_structure_map(self, max_depth: int = 3, target_dir: Optional[Path] = None) -> str:
+        """
+        AI가 감당 불가능할 때 전체 맵 대신 제공하는 겉핥기 얕은 구조 지도를 생성합니다.
+        max_depth를 통해 2~7단계 등 깊이를 유연하게 제어합니다.
+        """
+        scan_dir = target_dir or self.project_root
+        lines = [
+            "# 🗺️ HIGH-LEVEL PROJECT STRUCTURE MAP (OVERSIZED PROJECT DETECTED)",
+            f"> **[안내]** 프로젝트 규모가 커 상위 {max_depth}단계 개요 구조만 표시되었습니다.",
+            "> **[AI 수칙]** 분석이 필요한 세부 폴더 경로를 확인한 후 `extract_targeted_ai_map` 도구를 사용해 타깃 지도를 요청하십시오.",
+            "```markdown",
+            "project_root/"
+        ]
+
+        def _build_tree(current_dir: Path, current_depth: int):
+            if current_depth > max_depth:
+                return
+
+            try:
+                entries = sorted(list(current_dir.iterdir()), key=lambda x: (not x.is_dir(), x.name))
+            except PermissionError:
+                return
+
+            indent = "│   " * (current_depth - 1)
+            for entry in entries:
+                if entry.name in EXCLUDE_KEYWORDS or entry.name.startswith("."):
+                    continue
+
+                rel_path = entry.relative_to(self.project_root).as_posix()
+                if entry.is_dir():
+                    lines.append(f"{indent}├── {entry.name}/ [📂 {rel_path}]")
+                    if current_depth < max_depth:
+                        _build_tree(entry, current_depth + 1)
+                else:
+                    lines.append(f"{indent}├── {entry.name} [📄 {rel_path}]")
+
+        _build_tree(scan_dir, 1)
+        lines.append("```\n")
+        return "\n".join(lines)
 ```
 
 --------------------------------------------------
