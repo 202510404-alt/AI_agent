@@ -55,6 +55,26 @@ EXCLUDE_EXTENSIONS = [
     ".pyc"
 ]
 
+# 💡 AST 분석 시 등록 대상 클래스 추적 키워드 (하드코딩 제거)
+REGISTRY_KEYWORDS = [
+    "entity", "platform", "camera", "sensor", "agent", 
+    "navigator", "indexer", "retriever", "handler", "service", "controller"
+]
+
+# 💡 파서 노드 매핑 및 확장자 별 언어 매핑
+LANG_MAP = {
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".ts": "typescript",
+    ".tsx": "tsx",
+    ".py": "python",
+    ".go": "go",
+    ".rs": "rust",
+    ".c": "c",
+    ".cpp": "cpp",
+    ".java": "java"
+}
+
 # 디렉토리 경로 정의
 SYSTEM_MEMORY_DIR = PROJECT_ROOT / "system_memory"
 SYSTEM_MAPS_DIR = PROJECT_ROOT / "system_maps"

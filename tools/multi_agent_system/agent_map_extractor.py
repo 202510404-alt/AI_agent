@@ -8,8 +8,17 @@
 
 import json
 import os
+import sys
 from pathlib import Path
+
+# 🔄 프로젝트 루트를 Python 모듈 검색 경로(sys.path) 최상단에 자동 등록
+SCRIPT_DIR = Path(__file__).parent.resolve()
+PROJECT_ROOT = SCRIPT_DIR.parent.parent if (SCRIPT_DIR.name == "multi_agent_system" and SCRIPT_DIR.parent.name == "tools") else SCRIPT_DIR
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from typing import List, Optional, Union, Dict, Any, Tuple
+from tools.universal_indexer.map_formatter import format_symbol_node # ✅ 이제 정상 로드됨
 
 # 🔄 마스터 루트 역추적 (tools/multi_agent_system/ 에 위치함을 보장)
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -108,17 +117,31 @@ class AgentMapExtractor:
 
         return path_to_registry, path_to_protocol
 
+    def _normalize_path(self, raw_path: Union[str, Path]) -> Path:
+        """💡 외부/에이전트 입력 경로를 PROJECT_ROOT 기준 안전 정규화 (하드코딩 방지)"""
+        path_obj = Path(raw_path)
+        if path_obj.is_absolute():
+            try:
+                return path_obj.relative_to(self.project_root)
+            except ValueError:
+                return path_obj
+        return path_obj
+
     def collect_files_in_targets(
         self, 
-        target_paths: List[Union[str, Path]], 
+        target_paths: Optional[List[Union[str, Path]]] = None, 
         exclude_paths: Optional[List[Union[str, Path]]] = None
     ) -> List[Path]:
-        """지정한 상대 경로/폴더 목록 내부의 파일들을 정밀 수집합니다."""
+        """지정한 상대 경로/폴더 목록 내부의 파일들을 정밀 수집합니다. (지정 안 할 시 ROOT 전체)"""
         target_files = set()
-        excludes = [Path(e).as_posix() for e in (exclude_paths or [])]
+        excludes = [self._normalize_path(e).as_posix() for e in (exclude_paths or [])]
 
-        for target in target_paths:
-            abs_target = self.project_root / target
+        # 💡 범위가 전달되지 않거나 빈 리스트일 경우 루트 디렉토리 전체 지정
+        effective_targets = target_paths if target_paths else [self.project_root]
+
+        for target in effective_targets:
+            norm_target = self._normalize_path(target)
+            abs_target = (self.project_root / norm_target).resolve()
             if not abs_target.exists():
                 print(f"⚠️ [경고] 요청한 경로가 존재하지 않습니다: {target}")
                 continue
@@ -147,12 +170,13 @@ class AgentMapExtractor:
 
     def generate_custom_map(
         self, 
-        target_paths: List[Union[str, Path]], 
+        target_paths: Optional[List[Union[str, Path]]] = None, 
         exclude_paths: Optional[List[Union[str, Path]]] = None,
         save_to_file: bool = True
     ) -> str:
         """
-        에이전트가 지시한 target_paths 영역만 정밀하게 쪼개어 AI 코드베이스 맵 문자열을 생성합니다.
+        에이전트가 지시한 target_paths 영역을 정밀하게 쪼개어 AI 코드베이스 맵 문자열을 생성합니다.
+        (target_paths 미입력 시 프로젝트 전체 추출)
         """
         target_files = self.collect_files_in_targets(target_paths, exclude_paths)
         jjap_context = self._load_jjap_context()
@@ -200,50 +224,8 @@ class AgentMapExtractor:
             # 심볼 상세 트리 (L라인, CALLS, USED BY)
             file_symbols = symbols_by_file.get(posix_rel_path, [])
             for sym in file_symbols:
-                sym_type = sym.get("type", "function")
-                sym_name = sym.get("name", "")
-                full_name = sym.get("full_name", sym_name)
-                if not sym_name:
-                    continue
-
-                raw_args = sym.get("args")
-                if isinstance(raw_args, list):
-                    args_str = f"({', '.join(raw_args)})" if raw_args else ""
-                elif isinstance(raw_args, str) and raw_args:
-                    args_str = f"({raw_args})"
-                else:
-                    args_str = ""
-
-                start_line = sym.get("start_line")
-                end_line = sym.get("end_line")
-                line_str = f"[L{start_line}-L{end_line}]" if start_line and end_line and start_line != end_line else (f"[L{start_line}]" if start_line else "")
-
-                if sym_type == "class":
-                    icon_str = f"🧬 class {sym_name}"
-                elif sym_type == "json_key":
-                    icon_str = f"🔑 key \"{sym_name}\""
-                else:
-                    icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
-
-                output_lines.append(f"{indent}│   ├── {icon_str} {line_str}\n".rstrip() + "\n")
-
-                # CALLS & USED BY
-                calls = sym.get("calls", [])
-                if calls:
-                    output_lines.append(f"{indent}│   │   ├── 📞 [CALLS]: {', '.join(calls)}\n")
-
-                used_by_ids = sym.get("used_by", [])
-                if used_by_ids:
-                    used_by_info = []
-                    for u_id in used_by_ids:
-                        target = symbol_by_id.get(u_id)
-                        if target:
-                            u_file = target.get("file") or target.get("path", "")
-                            u_name = target.get("name", "")
-                            used_by_info.append(f"::{u_name}" if u_file == posix_rel_path else f"{u_file}::{u_name}")
-                        else:
-                            used_by_info.append(str(u_id))
-                    output_lines.append(f"{indent}│   │   ├── 🔗 [USED BY]: {', '.join(used_by_info)}\n")
+                formatted_lines = format_symbol_node(sym, symbol_by_id, posix_rel_path, indent)
+                output_lines.extend(formatted_lines)
 
         output_lines.append("```\n")
         final_map_str = "".join(output_lines)
@@ -257,14 +239,13 @@ class AgentMapExtractor:
         return final_map_str
 
 
-# 💡 간단 가동 모듈 함수 인터페이스
-def extract_targeted_ai_map(target_paths: List[str], exclude_paths: Optional[List[str]] = None) -> str:
+# 💡 간단 가동 모듈 함수 인터페이스 (target_paths 기본값을 None으로 지정)
+def extract_targeted_ai_map(target_paths: Optional[List[str]] = None, exclude_paths: Optional[List[str]] = None) -> str:
     extractor = AgentMapExtractor()
     return extractor.generate_custom_map(target_paths, exclude_paths)
 
 
 if __name__ == "__main__":
-    # 테스트 구동: 원하는 특정 폴더만 타깃으로 맵 생성
-    sample_targets = ["agent_core/plan", "tools/multi_agent_system"]
-    result = extract_targeted_ai_map(sample_targets)
+    # 테스트 구동: 인자 없이 호출 시 ROOT 전체 맵 추출
+    result = extract_targeted_ai_map()
     print(result[:500] + "\n... [중략] ...")

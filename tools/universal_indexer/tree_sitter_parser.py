@@ -1,5 +1,6 @@
 import hashlib
 from pathlib import Path
+from config import LANG_MAP, REGISTRY_KEYWORDS
 
 try:
     from tree_sitter_languages import get_language, get_parser
@@ -58,7 +59,7 @@ def extract_symbols(file_path: Path, project_root: Path):
     tree = parser.parse(bytes(content, "utf8"))
 
     symbols_summary_list = []
-    KEYWORDS = ["entity", "platform", "camera", "sensor", "agent", "navigator", "indexer", "retriever", "handler", "service", "controller"]
+    KEYWORDS = REGISTRY_KEYWORDS
 
     def traverse(node, current_symbol=None):
         """

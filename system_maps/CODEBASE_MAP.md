@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **55개**
+현재 인덱싱된 총 파일 수: **56개**
 
 ## 🗂️ [Module Index]
 - `.vscode/settings.json`
@@ -55,6 +55,7 @@
 - `tools/universal_indexer/jjap_lookup.py`
 - `tools/universal_indexer/jjap_retriever.py`
 - `tools/universal_indexer/jjap_watcher.py`
+- `tools/universal_indexer/map_formatter.py`
 - `tools/universal_indexer/switch.py`
 - `tools/universal_indexer/tree_sitter_parser.py`
 - `tools/universal_indexer/update_map.py`
@@ -520,7 +521,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/array.prototype.reduce, big.js, bin/bin.js, node_modules/object.fromentries, bin.js, node_modules/object.hasown, node_modules/function.prototype.name, node_modules/array.prototype.findlastindex, bin/semver.js, decimal.js, node_modules/array.prototype.flat, node_modules/array.prototype.toreversed, node_modules/lodash.merge, node_modules/object.groupby, bin/escodegen.js, node_modules/ipaddr.js, bin/webpack-dev-server.js, bin/cli.js, node_modules/engine.io, node_modules/array.prototype.tosorted, bin/nopt.js, node_modules/proxy-addr/node_modules/ipaddr.js, dist/cli.cjs, node_modules/big.js, bin/esgenerate.js, node_modules/object.values, bin/esparse.js, bin/nanoid.cjs, node_modules/string.prototype.trimstart, bin/esvalidate.js, node_modules/util.promisify, bin/react-scripts.js, node_modules/object.getownpropertydescriptors, node_modules/resolve.exports, node_modules/reflect.getprototypeof, node_modules/fs.realpath, node_modules/iterator.prototype, node_modules/lodash.debounce, node_modules/decimal.js, node_modules/regexp.prototype.flags, bin/babel-parser.js, hpack.js, node_modules/string.prototype.trimend, node_modules/lodash.sortby, bin/webpack.js, node_modules/hpack.js, dist/esm/bin.mjs, bin/jest.js, fixtures/cli.js, bin/eslint.js, node_modules/object.entries, bin/js-yaml.js, ipaddr.js, node_modules/array.prototype.flatmap, node_modules/string.prototype.trim, node_modules/object.assign, node_modules/lodash.uniq, node_modules/string.prototype.matchall, node_modules/lodash.memoize, node_modules/css.escape, node_modules/array.prototype.findlast, lib/cli.js, bin/cmd.js, bin/jiti.js, node_modules/socket.io, node_modules/fraction.js, fraction.js, node_modules/arraybuffer.prototype.slice, cli.js, node_modules/sanitize.css`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, node_modules/iterator.prototype, fixtures/cli.js, bin/eslint.js, node_modules/object.fromentries, ipaddr.js, node_modules/reflect.getprototypeof, node_modules/string.prototype.trim, node_modules/array.prototype.flatmap, bin/semver.js, node_modules/string.prototype.trimstart, bin.js, bin/bin.js, node_modules/fraction.js, node_modules/function.prototype.name, node_modules/util.promisify, node_modules/string.prototype.matchall, node_modules/lodash.sortby, node_modules/object.groupby, bin/esvalidate.js, node_modules/arraybuffer.prototype.slice, node_modules/array.prototype.reduce, node_modules/decimal.js, hpack.js, bin/cmd.js, node_modules/big.js, bin/webpack-dev-server.js, bin/webpack.js, node_modules/engine.io, bin/jest.js, node_modules/lodash.uniq, bin/esgenerate.js, node_modules/lodash.memoize, bin/react-scripts.js, node_modules/sanitize.css, node_modules/string.prototype.trimend, node_modules/array.prototype.findlastindex, node_modules/array.prototype.flat, node_modules/array.prototype.tosorted, fraction.js, node_modules/object.assign, node_modules/object.entries, bin/esparse.js, node_modules/lodash.merge, node_modules/array.prototype.findlast, cli.js, node_modules/regexp.prototype.flags, bin/cli.js, node_modules/lodash.debounce, node_modules/array.prototype.toreversed, node_modules/object.getownpropertydescriptors, bin/escodegen.js, bin/nopt.js, bin/jiti.js, dist/esm/bin.mjs, bin/js-yaml.js, decimal.js, bin/babel-parser.js, bin/nanoid.cjs, node_modules/object.values, dist/cli.cjs, node_modules/css.escape, node_modules/fs.realpath, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/resolve.exports, node_modules/hpack.js, lib/cli.js, node_modules/object.hasown, node_modules/ipaddr.js, big.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -719,7 +720,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/pstree.remy, bin/semver.js, bin/nodemon.js, bin/nodetouch.js, node_modules/socket.io, node_modules/ipaddr.js, cli.js, ipaddr.js, node_modules/engine.io`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, ipaddr.js, bin/nodetouch.js, bin/semver.js, node_modules/pstree.remy, bin/nodemon.js, cli.js, node_modules/engine.io, node_modules/ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1203,6 +1204,16 @@ class AgentMapExtractor:
 
         return path_to_registry, path_to_protocol
 
+    def _normalize_path(self, raw_path: Union[str, Path]) -> Path:
+        """💡 외부/에이전트 입력 경로를 PROJECT_ROOT 기준 안전 정규화 (하드코딩 방지)"""
+        path_obj = Path(raw_path)
+        if path_obj.is_absolute():
+            try:
+                return path_obj.relative_to(self.project_root)
+            except ValueError:
+                return path_obj
+        return path_obj
+
     def collect_files_in_targets(
         self, 
         target_paths: List[Union[str, Path]], 
@@ -1210,10 +1221,11 @@ class AgentMapExtractor:
     ) -> List[Path]:
         """지정한 상대 경로/폴더 목록 내부의 파일들을 정밀 수집합니다."""
         target_files = set()
-        excludes = [Path(e).as_posix() for e in (exclude_paths or [])]
+        excludes = [self._normalize_path(e).as_posix() for e in (exclude_paths or [])]
 
         for target in target_paths:
-            abs_target = self.project_root / target
+            norm_target = self._normalize_path(target)
+            abs_target = (self.project_root / norm_target).resolve()
             if not abs_target.exists():
                 print(f"⚠️ [경고] 요청한 경로가 존재하지 않습니다: {target}")
                 continue
@@ -1295,50 +1307,8 @@ class AgentMapExtractor:
             # 심볼 상세 트리 (L라인, CALLS, USED BY)
             file_symbols = symbols_by_file.get(posix_rel_path, [])
             for sym in file_symbols:
-                sym_type = sym.get("type", "function")
-                sym_name = sym.get("name", "")
-                full_name = sym.get("full_name", sym_name)
-                if not sym_name:
-                    continue
-
-                raw_args = sym.get("args")
-                if isinstance(raw_args, list):
-                    args_str = f"({', '.join(raw_args)})" if raw_args else ""
-                elif isinstance(raw_args, str) and raw_args:
-                    args_str = f"({raw_args})"
-                else:
-                    args_str = ""
-
-                start_line = sym.get("start_line")
-                end_line = sym.get("end_line")
-                line_str = f"[L{start_line}-L{end_line}]" if start_line and end_line and start_line != end_line else (f"[L{start_line}]" if start_line else "")
-
-                if sym_type == "class":
-                    icon_str = f"🧬 class {sym_name}"
-                elif sym_type == "json_key":
-                    icon_str = f"🔑 key \"{sym_name}\""
-                else:
-                    icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
-
-                output_lines.append(f"{indent}│   ├── {icon_str} {line_str}\n".rstrip() + "\n")
-
-                # CALLS & USED BY
-                calls = sym.get("calls", [])
-                if calls:
-                    output_lines.append(f"{indent}│   │   ├── 📞 [CALLS]: {', '.join(calls)}\n")
-
-                used_by_ids = sym.get("used_by", [])
-                if used_by_ids:
-                    used_by_info = []
-                    for u_id in used_by_ids:
-                        target = symbol_by_id.get(u_id)
-                        if target:
-                            u_file = target.get("file") or target.get("path", "")
-                            u_name = target.get("name", "")
-                            used_by_info.append(f"::{u_name}" if u_file == posix_rel_path else f"{u_file}::{u_name}")
-                        else:
-                            used_by_info.append(str(u_id))
-                    output_lines.append(f"{indent}│   │   ├── 🔗 [USED BY]: {', '.join(used_by_info)}\n")
+                formatted_lines = format_symbol_node(sym, symbol_by_id, posix_rel_path, indent)
+                output_lines.extend(formatted_lines)
 
         output_lines.append("```\n")
         final_map_str = "".join(output_lines)
@@ -1369,8 +1339,10 @@ class AgentSessionFactory:
         
         self.extractor = CodeExtractor(self.root_dir)
         self.patcher = CodePatcher(self.root_dir)
+        target_scan_dir = self.root_dir / "extraction_target_project" if (self.root_dir / "extraction_target_project").exists() else self.root_dir
+
         self.scale_detector = ProjectScaleDetector(
-            target_dir=self.root_dir / "extraction_target_project" if (self.root_dir / "extraction_target_project").exists() else self.root_dir
+            project_root=target_scan_dir
         )
         self.client = None
 
@@ -3753,6 +3725,66 @@ def main():
 
 --------------------------------------------------
 
+### 📄 tools/universal_indexer/map_formatter.py
+#### 🧱 Code Skeleton:
+```python
+def format_symbol_node(sym: Dict[str, Any], symbol_by_id: Dict[str, Dict], current_posix_path: str, indent: str) -> List[str]:
+    """심볼 노드 및 CALLS/USED BY 메타데이터 렌더링 포맷터"""
+    lines = []
+    sym_type = sym.get("type", "function")
+    sym_name = sym.get("name", "")
+    full_name = sym.get("full_name", sym_name)
+    if not sym_name:
+        return lines
+
+    # 1. 인자(Arguments) 복원
+    raw_args = sym.get("args")
+    if isinstance(raw_args, list):
+        args_str = f"({', '.join(raw_args)})" if raw_args else ""
+    elif isinstance(raw_args, str) and raw_args:
+        args_str = f"({raw_args})"
+    else:
+        args_str = ""
+
+    # 2. 줄범위 계산
+    start_line = sym.get("start_line")
+    end_line = sym.get("end_line")
+    line_str = f"[L{start_line}-L{end_line}]" if start_line and end_line and start_line != end_line else (f"[L{start_line}]" if start_line else "")
+
+    # 3. 타입별 아이콘 설정
+    if sym_type == "class":
+        icon_str = f"🧬 class {sym_name}"
+    elif sym_type == "json_key":
+        icon_str = f"🔑 key \"{sym_name}\""
+    else:
+        icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
+
+    lines.append(f"{indent}│   ├── {icon_str} {line_str}\n".rstrip() + "\n")
+
+    # 4. CALLS
+    calls = sym.get("calls", [])
+    if calls:
+        lines.append(f"{indent}│   │   ├── 📞 [CALLS]: {', '.join(calls)}\n")
+
+    # 5. USED BY
+    used_by_ids = sym.get("used_by", [])
+    if used_by_ids:
+        used_by_info = []
+        for u_id in used_by_ids:
+            target = symbol_by_id.get(u_id)
+            if target:
+                u_file = target.get("file") or target.get("path", "")
+                u_name = target.get("name", "")
+                used_by_info.append(f"::{u_name}" if u_file == current_posix_path else f"{u_file}::{u_name}")
+            else:
+                used_by_info.append(str(u_id))
+        lines.append(f"{indent}│   │   ├── 🔗 [USED BY]: {', '.join(used_by_info)}\n")
+
+    return lines
+```
+
+--------------------------------------------------
+
 ### 📄 tools/universal_indexer/switch.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
@@ -3799,7 +3831,7 @@ def extract_symbols(file_path: Path, project_root: Path):
     tree = parser.parse(bytes(content, "utf8"))
 
     symbols_summary_list = []
-    KEYWORDS = ["entity", "platform", "camera", "sensor", "agent", "navigator", "indexer", "retriever", "handler", "service", "controller"]
+    KEYWORDS = REGISTRY_KEYWORDS
 
     def traverse(node, current_symbol=None):
         """
