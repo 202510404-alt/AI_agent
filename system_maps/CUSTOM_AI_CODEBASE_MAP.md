@@ -64,6 +64,6 @@ project_root/
 │   │   ├── 🎯 def getAllConnectedClients() [L35-L41]
 │   │   ├── 🎯 def getLocalExternalIP() [L209-L219]
 │   ├── prompt.md [📂 extraction_target_project/prompt.md] -> [General File (319 lines)]
-│   ├── README.md [📂 extraction_target_project/README.md] -> [General File (121 lines)]
+│   ├── README.md [📂 extraction_target_project/README.md] -> [General File (126 lines)]
 │   ├── start.bat [📂 extraction_target_project/start.bat] -> [General File (25 lines)]
 ```

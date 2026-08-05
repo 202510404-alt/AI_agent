@@ -51,13 +51,57 @@ def load_env_file(env_path: Path) -> None:
                     key, value = line.split("=", 1)
                     key = key.strip()
                     value = value.strip().strip("'\"")  # 따옴표 제거
-                    if key and not os.environ.get(key):
+                    if key:
+                        # GEMINI_API_KEY 또는 GEMINI_API_KEY_1, GEMINI_API_KEY1 등 모든 키를 무조건 강제 동기화
                         os.environ[key] = value
+                        
+        # 단일 GEMINI_API_KEY가 없더라도 GEMINI_API_KEY1 또는 GEMINI_API_KEY_1이 있으면 기본 키로 매핑
+        if "GEMINI_API_KEY" not in os.environ:
+            first_key = os.environ.get("GEMINI_API_KEY1") or os.environ.get("GEMINI_API_KEY_1")
+            if first_key:
+                os.environ["GEMINI_API_KEY"] = first_key
+
         if DEBUG_MODE:
-            log_debug(lambda: f".env 파일 로드 성공: {env_path}")
+            log_debug(lambda: f".env 파일 로드 및 API Key 목록 반영 성공: {env_path}")
     except Exception as e:
         if DEBUG_MODE:
             log_debug(lambda: f".env 파일 파싱 중 예외 발생: {e}")
+
+
+def resolve_best_gemini_model(client) -> str:
+    """
+    현재 계정에서 사용 가능한 전체 Gemini 모델 목록을 조회하여
+    실제 사용 가능한 최신 표준 모델(1.5-flash -> 1.5-pro 등) 위주로 동적 선별합니다.
+    """
+    try:
+        available_models = []
+        for m in client.models.list():
+            supported = getattr(m, 'supported_actions', []) or getattr(m, 'supported_generation_methods', [])
+            if any(action in str(supported) for action in ["generateContent", "generate_content"]):
+                model_id = m.name.split("/")[-1] if "/" in m.name else m.name
+                # 미지원 또는 지원 중단 가능성이 있는 모델 배제
+                if "2.5" not in model_id:
+                    available_models.append(model_id)
+
+        if not available_models:
+            return "gemini-1.5-flash"
+
+        # 2.0/EXP/Preview 모델 제외 후, 1.5-flash -> 1.5-pro 순으로 우선선택
+        safe_models = [m for m in available_models if "2.0" not in m and "exp" not in m.lower()]
+        target_pool = safe_models if safe_models else available_models
+
+        for preferred in ["gemini-1.5-flash", "1.5-flash", "gemini-1.5-pro", "1.5-pro"]:
+            for model_id in target_pool:
+                if preferred in model_id.lower():
+                    if DEBUG_MODE:
+                        log_debug(lambda: f"🎯 [DYNAMIC MODEL] 자동 선택된 안정 모델: {model_id}")
+                    return model_id
+
+        return target_pool[0]
+    except Exception as e:
+        if DEBUG_MODE:
+            log_debug(lambda: f"⚠️ [MODEL RESOLUTION WARNING] 모델 목록 조회 예외 발생: {e}")
+        return "gemini-1.5-flash"
 
 
 class GeminiPlannerClient:
@@ -89,12 +133,19 @@ class GeminiPlannerClient:
                 if DEBUG_MODE:
                     log_debug(lambda: f"Google GenAI Client 초기화 실패: {e}")
 
-    def generate_plan(self, prompt: str, model_name: str = "gemini-2.5-flash", max_retries: int = 3) -> Dict[str, Any]:
+    def generate_plan(self, prompt: str, model_name: Optional[str] = None, max_retries: int = 3) -> Dict[str, Any]:
         """
         Gemini 모델에 프롬프트를 전달하고 구조화된 응답(JSON)을 추출합니다. (429 처리 자동 재시도 포함)
         """
+        # 하드코딩을 완전히 제거하고 동적 추론 모델 적용
+        target_model = model_name
+        if not target_model and self.client:
+            target_model = resolve_best_gemini_model(self.client)
+        elif not target_model:
+            target_model = "gemini-1.5-flash"
+
         if DEBUG_MODE:
-            log_debug(lambda: f"generate_plan 호출 - 모델: {model_name}, 프롬프트 길이: {len(prompt)}자")
+            log_debug(lambda: f"generate_plan 호출 - 자동 결정된 모델: {target_model}, 프롬프트 길이: {len(prompt)}자")
 
         # API 통신 환경 미구축 시 안전한 Mock 응답 반환
         if not self.client or not HAS_GENAI:
@@ -120,10 +171,10 @@ class GeminiPlannerClient:
         for attempt in range(1, max_retries + 1):
             try:
                 if DEBUG_MODE:
-                    log_debug(lambda: f"Gemini API 실시간 요청 발송 중 ({model_name}) [시도 {attempt}/{max_retries}]...")
+                    log_debug(lambda: f"Gemini API 실시간 요청 발송 중 ({target_model}) [시도 {attempt}/{max_retries}]...")
 
                 response = self.client.models.generate_content(
-                    model=model_name,
+                    model=target_model,
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         response_mime_type="application/json",

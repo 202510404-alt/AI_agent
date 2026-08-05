@@ -5,6 +5,7 @@ tools/multi_agent_system/agent_session.py
 
 import os
 from pathlib import Path
+from typing import Optional  # <-- 필수 import 추가
 from agent_core.plan.gemini_client import load_env_file, HAS_GENAI
 from tools.multi_agent_system.agent_code_extractor import CodeExtractor
 from tools.multi_agent_system.terminal_runner import run_terminal_command
@@ -17,25 +18,66 @@ if HAS_GENAI:
     from google.genai import types
 
 class KeyManager:
-    """env에 등록된 GEMINI_API_KEY_1, 2, 3... 및 GEMINI_API_KEY 들을 모아 순환 관리"""
-    def __init__(self):
+    """env에 등록된 모든 GEMINI_API_KEY 계열 키들을 번호 유무와 상관없이 동적 완전 수집 (상세 디버깅 강화)"""
+    def __init__(self, env_path: Path = None):
         self.keys = []
-        # GEMINI_API_KEY 기본값 체크
-        if os.environ.get("GEMINI_API_KEY"):
-            self.keys.append(os.environ.get("GEMINI_API_KEY"))
         
-        # GEMINI_API_KEY_1, GEMINI_API_KEY_2... 패턴 동적 수집
-        i = 1
-        while True:
-            key = os.environ.get(f"GEMINI_API_KEY_{i}")
-            if key:
-                if key not in self.keys:
-                    self.keys.append(key)
-                i += 1
-            else:
+        # .env 탐색 (전달받은 경로 -> 현재 작업 디렉토리 -> 상위 디렉토리 추적)
+        possible_paths = [
+            env_path,
+            Path.cwd() / ".env",
+            Path(__file__).resolve().parent.parent.parent / ".env"
+        ]
+        
+        target_env = None
+        for p in possible_paths:
+            print(f"🔍 [.ENV DIAGNOSTIC] 경로 검사 중: {p} (존재 여부: {p.exists() if p else False})")
+            if p and p.exists():
+                target_env = p
                 break
 
+        if target_env and target_env.exists():
+            print(f"✅ [.ENV DIAGNOSTIC] 타겟 .env 타깃 매핑 완료: {target_env}")
+            try:
+                line_count = 0
+                matched_count = 0
+                with open(target_env, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line_count += 1
+                        line = line.strip()
+                        if not line or line.startswith("#") or "=" not in line:
+                            continue
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("'\"")
+                        if k.startswith("GEMINI_API_KEY"):
+                            matched_count += 1
+                            print(f"   └─ 🔑 감지된 변수: '{k}' (값 길이: {len(v)}자)")
+                            os.environ[k] = v
+                            if v and v not in self.keys:
+                                self.keys.append(v)
+                print(f"📊 [.ENV DIAGNOSTIC] 읽은 총 라인: {line_count}줄 / 'GEMINI_API_KEY' 매칭: {matched_count}개")
+            except Exception as e:
+                print(f"⚠️ [.env 파싱 실패]: {e}")
+        else:
+            print("❌ [.ENV DIAGNOSTIC] 유효한 .env 파일을 찾지 못했습니다!")
+
+        # os.environ에 이미 로드되어 있던 키들도 2차 통합 수집 (GEMINI_API_KEY, GEMINI_API_KEY1~50, GEMINI_API_KEY_1~50)
+        base_key = os.environ.get("GEMINI_API_KEY")
+        if base_key and base_key not in self.keys:
+            self.keys.append(base_key)
+        
+        for i in range(1, 51):
+            key_no_underscore = os.environ.get(f"GEMINI_API_KEY{i}")
+            if key_no_underscore and key_no_underscore not in self.keys:
+                self.keys.append(key_no_underscore)
+                
+            key_with_underscore = os.environ.get(f"GEMINI_API_KEY_{i}")
+            if key_with_underscore and key_with_underscore not in self.keys:
+                self.keys.append(key_with_underscore)
+
         self.current_index = 0
+        print(f"🔑 [KEY MANAGER] 총 {len(self.keys)}개의 Gemini API Key가 성공적으로 로드되었습니다.")
 
     def get_current_key(self) -> str:
         if not self.keys:
@@ -56,6 +98,9 @@ class AgentSessionFactory:
         self.root_dir = root_dir.resolve()
         load_env_file(self.root_dir / ".env")
         
+        # 💡 객체 생성 시점에 KeyManager를 미리 초기화하여 속성을 생성합니다.
+        self.key_manager = KeyManager(env_path=self.root_dir / ".env")
+        
         self.extractor = CodeExtractor(self.root_dir)
         self.patcher = CodePatcher(self.root_dir)
         target_scan_dir = self.root_dir / "extraction_target_project" if (self.root_dir / "extraction_target_project").exists() else self.root_dir
@@ -65,15 +110,14 @@ class AgentSessionFactory:
         )
         self.client = None
 
-    def _prepare_codebase_map(self, max_shallow_depth: int = 3) -> tuple[str, bool]:
+    def prepare_step1_map(self, max_shallow_depth: int = 3) -> tuple[str, bool]:
         """
-        규모 진단 후 (맵 텍스트, oversized 여부) 튜플을 반환합니다.
+        [Step 1 인터페이스] 프로젝트 규모를 진단하고 (맵 텍스트, oversized 여부) 튜플을 반환합니다.
         """
         scan_target = self.root_dir / "extraction_target_project"
         target_dir = scan_target if scan_target.exists() else self.root_dir
 
         metrics = self.scale_detector.analyze_project_scale(target_dir=target_dir)
-        # 동적으로 산출된 Depth가 있으면 적용, 없으면 기본 전달값 사용
         effective_depth = metrics.get("recommended_depth", max_shallow_depth)
 
         if metrics["is_oversized"]:
@@ -86,10 +130,60 @@ class AgentSessionFactory:
             return shallow_map, True
         else:
             print(f"✅ [PROJECT SCALE] 적정 규모 프로젝트 (유효 코드 파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
-            # 적정 규모일 경우 대상 폴더 전체 추출
             target_rel_path = "extraction_target_project" if scan_target.exists() else "."
             full_map = extract_targeted_ai_map(target_paths=[target_rel_path], save_to_file=True)
             return full_map, False
+
+
+    def execute_worker_step(self, prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_retries: int = 5) -> str:
+        """
+        [Step 3 인터페이스] 단발성 LLM 요청을 수행합니다. (429 Quota 초과 시 API Key 자동 Rotate 처리)
+        """
+        if not HAS_GENAI:
+            raise RuntimeError("Google GenAI 패키지가 설치되지 않았습니다.")
+
+        from agent_core.plan.gemini_client import resolve_best_gemini_model
+
+        for attempt in range(1, max_retries + 1):
+            current_api_key = self.key_manager.get_current_key()
+            if not current_api_key:
+                raise RuntimeError(".env에 등록된 유효한 GEMINI_API_KEY가 없습니다.")
+
+            try:
+                self.client = genai.Client(api_key=current_api_key)
+                target_model = resolve_best_gemini_model(self.client)
+
+                response = self.client.models.generate_content(
+                    model=target_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        response_mime_type=response_mime_type,
+                        temperature=0.1
+                    )
+                )
+                return response.text
+
+            except Exception as e:
+                err_msg = str(e)
+                # 1. 429 쿼터 초과 -> Key Rotate 후 즉시 재시도
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                    print(f"⚠️ [API 429 EXHAUSTED] Key 번호 {self.key_manager.current_index + 1} 쿼터 초과. 다음 Key로 교체합니다... ({attempt}/{max_retries})")
+                    self.key_manager.rotate_key()
+                    continue
+
+                # 2. 503 서버 과부하 -> 짧게 대기(time.sleep) 후 동일 Key로 재시도
+                elif "503" in err_msg or "UNAVAILABLE" in err_msg:
+                    import time
+                    wait_sec = 3 * attempt
+                    print(f"⚠️ [API 503 UNAVAILABLE] 서버 과부하 발생! {wait_sec}초 후 다시 시도합니다... ({attempt}/{max_retries})")
+                    time.sleep(wait_sec)
+                    continue
+
+                else:
+                    raise e
+
+        raise RuntimeError("모든 GEMINI_API_KEY의 쿼터가 소진되었거나 요청 실패했습니다.")
 
     def _build_tools(self):
         """AI에게 전달할 Tool 패키징 (RPM 폭주 방지 딜레이 포함)"""
@@ -124,15 +218,24 @@ class AgentSessionFactory:
 
         return [extract_code_slice, safe_run_terminal_command, patch_code_slice, get_targeted_codebase_map]
 
-    def create_chat_session(self, model_name: str = "gemini-2.5-flash", shallow_depth: int = 3):
-        """모든 지형도와 도구가 준비된 Gemini Chat 세션을 생성합니다."""
-        self.key_manager = KeyManager()
+    def create_chat_session(self, model_name: Optional[str] = None, shallow_depth: int = 3):
+        """동적으로 사용 가능한 모델을 선별하여 지형도와 도구가 준비된 Gemini Chat 세션을 생성합니다."""
         current_api_key = self.key_manager.get_current_key()
 
         if not HAS_GENAI or not current_api_key:
             raise RuntimeError("Google GenAI 패키지 미설치 또는 .env에 등록된 GEMINI_API_KEY가 없습니다.")
 
         self.client = genai.Client(api_key=current_api_key)
+
+        # 하드코딩 매핑 제거 -> 전체 사용 가능한 모델 중 최적 모델을 동적으로 추출
+        target_model = model_name
+        if not target_model:
+            from agent_core.plan.gemini_client import resolve_best_gemini_model
+            target_model = resolve_best_gemini_model(self.client)
+
+        self.current_model = target_model  # 💡 디버깅용 모델 저장
+        print(f"🤖 [SESSION MODEL] Chat 세션 가동 모델: {target_model}")
+
         codebase_map, is_oversized = self._prepare_codebase_map(max_shallow_depth=shallow_depth)
         tools = self._build_tools()
 
@@ -164,16 +267,15 @@ class AgentSessionFactory:
 2. 파일 전체 수정 요구 시, 함부로 통째로 덮어쓰지 말고 `extract_code_slice` 및 `patch_code_slice`를 조합하여 작업을 수행하십시오.
 """
 
-        # Tool call 강제를 위한 dict 규격 생성
-        # (구조적 호환성을 위해 딕셔너리로 확실하게 전달)
+        # Tool call 설정을 필요에 맞춰 AUTO 또는 사용자 지정 조건으로 변경
         tool_config_dict = {
             "function_calling_config": {
-                "mode": "ANY"  # "ANY" 또는 "REQUIRED" -> 무조건 도구 호출 강제
+                "mode": "AUTO"  # 필요 시 도구를 선택적으로 호출할 수 있도록 AUTO로 변경
             }
         }
 
         chat = self.client.chats.create(
-            model=model_name,
+            model=target_model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 tools=tools,

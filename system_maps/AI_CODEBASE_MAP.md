@@ -5,7 +5,7 @@
 
 ```markdown
 project_root/
-├── .env [📂 .env] -> [General File (1 lines)]
+├── .env [📂 .env] -> [General File (7 lines)]
 ├── .gitignore [📂 .gitignore] -> [General File (23 lines)]
 ├── .idea/
 │   ├── .gitignore [📂 .idea/.gitignore] -> [General File (10 lines)]
@@ -36,7 +36,7 @@ project_root/
 │   │   ├── 🔑 key "python.createEnvironment.trigger" [L26]
 │   │   ├── 🔑 key "java.configuration.updateBuildConfiguration" [L27]
 │   │   ├── 🔑 key "python-envs.defaultEnvManager" [L28]
-├── a [📂 a] -> [General File (138 lines)]
+├── a [📂 a] -> [General File (41 lines)]
 ├── agent_core/
 │   ├── __init__.py [📂 agent_core/__init__.py]
 │   ├── execution/
@@ -45,16 +45,19 @@ project_root/
 │   │   ├── __init__.py [📂 agent_core/memory/__init__.py]
 │   ├── plan/
 │   │   ├── __init__.py [📂 agent_core/plan/__init__.py]
-│   │   ├── gemini_client.py [📂 agent_core/plan/gemini_client.py] -> [💡 📦 imp: agent_core.plan.schemas, google, google.genai, json, os, pathlib, typing | 🎯 def log_debug(message_func) [L21-30] | 🎯 def load_env_file(env_path) [L33-58] | 🧬 class GeminiPlannerClient [L61-146] |     └─ def __init__(api_key, root_dir) [L62-88] |     └─ def generate_plan(prompt, model_name) [L90-146]]
-│   │   │   ├── 🎯 def log_debug() [L21-L30]
-│   │   │   ├── 🎯 def load_env_file() [L33-L58]
+│   │   ├── gemini_client.py [📂 agent_core/plan/gemini_client.py] -> [💡 📦 imp: agent_core.plan.schemas, google, google.genai, json, os, pathlib, re, time, typing | 🎯 def log_debug(message_func) [L23-32] | 🎯 def load_env_file(env_path) [L35-68] | 🎯 def resolve_best_gemini_model(client) [L71-101] | 🧬 class GeminiPlannerClient [L104-221] |     └─ def __init__(api_key, root_dir) [L105-131] |     └─ def generate_plan(prompt, model_name, max_retries) [L133-221]]
+│   │   │   ├── 🎯 def log_debug() [L23-L32]
+│   │   │   ├── 🎯 def load_env_file() [L35-L68]
 │   │   │   │   ├── 📞 [CALLS]: log_debug
 │   │   │   │   ├── 🔗 [USED BY]: ::__init__
-│   │   │   ├── 🧬 class GeminiPlannerClient [L61-L146]
-│   │   │   ├── 🎯 def __init__() [L62-L88]
-│   │   │   │   ├── 📞 [CALLS]: load_env_file, log_debug
-│   │   │   ├── 🎯 def generate_plan() [L90-L146]
+│   │   │   ├── 🎯 def resolve_best_gemini_model() [L71-L101]
 │   │   │   │   ├── 📞 [CALLS]: log_debug
+│   │   │   │   ├── 🔗 [USED BY]: ::generate_plan
+│   │   │   ├── 🧬 class GeminiPlannerClient [L104-L221]
+│   │   │   ├── 🎯 def __init__() [L105-L131]
+│   │   │   │   ├── 📞 [CALLS]: load_env_file, log_debug
+│   │   │   ├── 🎯 def generate_plan() [L133-L221]
+│   │   │   │   ├── 📞 [CALLS]: resolve_best_gemini_model, log_debug
 │   │   ├── planner.py [📂 agent_core/plan/planner.py]
 │   │   ├── prompt_builder.py [📂 agent_core/plan/prompt_builder.py] -> [💡 📦 imp: agent_core.plan.schemas, pathlib, typing | 🎯 def log_debug(message_func) [L11-21] | 🧬 class PromptBuilder [L24-89] |     └─ def __init__(root_dir) [L25-33] |     └─ def _load_codebase_map() [L35-54] |     └─ def build_plan_prompt(user_goal, extra_context) [L56-89]]
 │   │   │   ├── 🎯 def log_debug() [L11-L21]
@@ -78,9 +81,15 @@ project_root/
 │   │   ├── test_ai_chat.py [📂 agent_core/plan/test_ai_chat.py] -> [💡 📦 imp: agent_core.plan.gemini_client, agent_core.plan.prompt_builder, google, google.genai, json, os, pathlib, sys, tools.multi_agent_system.agent_code_extractor | 🎯 def extract_code_slice(file_and_line) [L32-43] | 🎯 def run_interactive_chat() [L49-104]]
 │   │   │   ├── 🎯 def extract_code_slice() [L32-L43]
 │   │   │   ├── 🎯 def run_interactive_chat() [L49-L104]
+│   ├── tasks/
+│   │   ├── task_01/
+│   │   │   ├── checklist_01/
+│   │   │   │   ├── mission_01.md [📂 agent_core/tasks/task_01/checklist_01/mission_01.md] -> [General File (30 lines)]
+│   │   │   │   ├── mission_02.md [📂 agent_core/tasks/task_01/checklist_01/mission_02.md] -> [General File (30 lines)]
+│   │   │   │   ├── mission_03.md [📂 agent_core/tasks/task_01/checklist_01/mission_03.md] -> [General File (30 lines)]
 │   ├── validation/
 │   │   ├── __init__.py [📂 agent_core/validation/__init__.py]
-├── agent_debug.log [📂 agent_debug.log] -> [General File (2 lines)]
+├── agent_debug.log [📂 agent_debug.log] -> [General File (35 lines)]
 ├── agent_plan.md [📂 agent_plan.md] -> [General File (1101 lines)]
 ├── extraction_target_project/
 │   ├── .gitignore [📂 extraction_target_project/.gitignore] -> [General File (4 lines)]
@@ -94,7 +103,7 @@ project_root/
 │   │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   │   ├── 🔑 key "requires" [L5]
 │   │   │   ├── 🔑 key "packages" [L6]
-│   │   │   │   ├── 📞 [CALLS]: fixtures/cli.js, node_modules/array.prototype.findlast, node_modules/engine.io, node_modules/object.assign, node_modules/fs.realpath, node_modules/socket.io, big.js, node_modules/array.prototype.flat, node_modules/lodash.memoize, node_modules/object.fromentries, bin.js, dist/cli.cjs, node_modules/decimal.js, bin/esvalidate.js, node_modules/object.entries, node_modules/object.hasown, node_modules/util.promisify, bin/js-yaml.js, bin/eslint.js, node_modules/string.prototype.trim, node_modules/string.prototype.trimend, bin/cli.js, dist/esm/bin.mjs, node_modules/regexp.prototype.flags, node_modules/sanitize.css, node_modules/string.prototype.matchall, bin/nanoid.cjs, node_modules/iterator.prototype, node_modules/lodash.sortby, node_modules/array.prototype.findlastindex, bin/jiti.js, node_modules/lodash.merge, node_modules/lodash.uniq, cli.js, bin/bin.js, node_modules/array.prototype.reduce, bin/nopt.js, bin/babel-parser.js, node_modules/object.getownpropertydescriptors, node_modules/function.prototype.name, node_modules/big.js, bin/webpack-dev-server.js, bin/semver.js, bin/jest.js, bin/esgenerate.js, node_modules/object.values, decimal.js, node_modules/proxy-addr/node_modules/ipaddr.js, hpack.js, lib/cli.js, node_modules/lodash.debounce, node_modules/object.groupby, bin/escodegen.js, node_modules/ipaddr.js, node_modules/arraybuffer.prototype.slice, bin/webpack.js, node_modules/css.escape, bin/cmd.js, node_modules/resolve.exports, node_modules/array.prototype.tosorted, node_modules/fraction.js, node_modules/string.prototype.trimstart, bin/esparse.js, node_modules/array.prototype.flatmap, fraction.js, ipaddr.js, bin/react-scripts.js, node_modules/reflect.getprototypeof, node_modules/array.prototype.toreversed, node_modules/hpack.js
+│   │   │   │   ├── 📞 [CALLS]: node_modules/array.prototype.findlastindex, node_modules/array.prototype.flatmap, node_modules/util.promisify, bin/esvalidate.js, node_modules/arraybuffer.prototype.slice, bin/esgenerate.js, node_modules/array.prototype.findlast, bin/nanoid.cjs, node_modules/array.prototype.flat, bin/js-yaml.js, bin/semver.js, bin.js, bin/jest.js, node_modules/lodash.memoize, bin/esparse.js, node_modules/string.prototype.trim, node_modules/hpack.js, node_modules/engine.io, node_modules/object.fromentries, node_modules/reflect.getprototypeof, big.js, node_modules/regexp.prototype.flags, bin/cmd.js, node_modules/socket.io, bin/nopt.js, node_modules/array.prototype.tosorted, node_modules/array.prototype.toreversed, node_modules/function.prototype.name, node_modules/decimal.js, node_modules/object.hasown, bin/eslint.js, node_modules/ipaddr.js, node_modules/iterator.prototype, node_modules/lodash.debounce, bin/bin.js, node_modules/object.groupby, node_modules/string.prototype.trimstart, node_modules/object.getownpropertydescriptors, bin/webpack-dev-server.js, hpack.js, bin/webpack.js, bin/babel-parser.js, bin/react-scripts.js, fraction.js, node_modules/string.prototype.trimend, bin/escodegen.js, cli.js, node_modules/object.entries, node_modules/lodash.uniq, bin/jiti.js, node_modules/lodash.sortby, node_modules/object.assign, dist/cli.cjs, fixtures/cli.js, node_modules/big.js, decimal.js, node_modules/resolve.exports, node_modules/sanitize.css, bin/cli.js, node_modules/array.prototype.reduce, node_modules/string.prototype.matchall, ipaddr.js, dist/esm/bin.mjs, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/css.escape, node_modules/fraction.js, node_modules/object.values, lib/cli.js, node_modules/lodash.merge, node_modules/fs.realpath
 │   │   ├── package.json [📂 extraction_target_project/client/package.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "private" [bool] | 🔑 "dependencies" [dict] | 🔑 "scripts" [dict] | ...외 2개]
 │   │   │   ├── 🔑 key "name" [L2]
 │   │   │   ├── 🔑 key "version" [L3]
@@ -176,7 +185,7 @@ project_root/
 │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   ├── 🔑 key "requires" [L5]
 │   │   ├── 🔑 key "packages" [L6]
-│   │   │   ├── 📞 [CALLS]: cli.js, node_modules/engine.io, node_modules/ipaddr.js, node_modules/pstree.remy, bin/nodemon.js, node_modules/socket.io, bin/nodetouch.js, bin/semver.js, ipaddr.js
+│   │   │   ├── 📞 [CALLS]: node_modules/socket.io, node_modules/engine.io, node_modules/pstree.remy, ipaddr.js, bin/semver.js, node_modules/ipaddr.js, cli.js, bin/nodetouch.js, bin/nodemon.js
 │   ├── package.json [📂 extraction_target_project/package.json] -> [💡 📦 json_keys: 8개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "type" [str] | 🔑 "description" [str] | 🔑 "main" [str] | ...외 3개]
 │   │   ├── 🔑 key "name" [L2]
 │   │   ├── 🔑 key "version" [L3]
@@ -189,7 +198,7 @@ project_root/
 │   │   ├── 🔑 key "license" [L15]
 │   │   ├── 🔑 key "dependencies" [L16]
 │   ├── prompt.md [📂 extraction_target_project/prompt.md] -> [General File (319 lines)]
-│   ├── README.md [📂 extraction_target_project/README.md] -> [General File (121 lines)]
+│   ├── README.md [📂 extraction_target_project/README.md] -> [General File (126 lines)]
 │   ├── start.bat [📂 extraction_target_project/start.bat] -> [General File (25 lines)]
 ├── oldplan/
 │   ├── agent_plan1.md [📂 oldplan/agent_plan1.md] -> [General File (324 lines)]
@@ -197,10 +206,7 @@ project_root/
 │   ├── agent_plan3.md [📂 oldplan/agent_plan3.md] -> [General File (980 lines)]
 ├── prompt.md [📂 prompt.md] -> [General File (113 lines)]
 ├── README.md [📂 README.md] -> [General File (220 lines)]
-├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, os, pathlib, sys, tools.multi_agent_system.agent_session | 🎯 def run_interactive_chat() [L17-49] | 🎯 def main() [L53-66]]
-│   ├── 🎯 def run_interactive_chat() [L17-L49]
-│   ├── 🎯 def main() [L53-L66]
-│   │   ├── 📞 [CALLS]: run_interactive_chat
+├── run_test.py [📂 run_test.py]
 ├── scan_debug.txt [📂 scan_debug.txt] -> [General File (296 lines)]
 ├── setup_architecture.bat [📂 setup_architecture.bat] -> [General File (104 lines)]
 ├── start.py [📂 start.py] -> [💡 📦 imp: os, pathlib, shutil, stat, subprocess, sys, time | 🎯 def get_best_python() [L33-50] | 🎯 def auto_install_dependencies() [L59-80] | 🎯 def main() [L82-201]]
@@ -221,7 +227,7 @@ project_root/
 │   │   │   ├── 🎯 def extract_multi_slices() [L98-L255]
 │   │   │   ├── 🎯 def format_as_markdown() [L257-L277]
 │   │   │   ├── 🎯 def process() [L279-L313]
-│   │   ├── agent_map_extractor.py [📂 tools/multi_agent_system/agent_map_extractor.py] -> [💡 📦 imp: json, os, pathlib, sys, tools.universal_indexer.core_parsers.gitignore_parser, tools.universal_indexer.map_formatter, typing | 🧬 class AgentMapExtractor [L46-251] |     └─ def __init__(project_root) [L49-50] |     └─ def _load_jjap_context() [L52-59] |     └─ def _load_all_symbols() [L61-79] |     └─ def _load_registry_and_protocols() [L81-118] |     └─ def _normalize_path(raw_path) [L120-128] |     └─ def collect_files_in_targets(target_paths, exclude_paths) [L130-181] |     └─ def generate_custom_map(target_paths, exclude_paths, save_to_file) [L183-251] | 🎯 def extract_targeted_ai_map(target_paths, exclude_paths) [L255-257]]
+│   │   ├── agent_map_extractor.py [📂 tools/multi_agent_system/agent_map_extractor.py] -> [💡 📦 imp: json, os, pathlib, sys, tools.universal_indexer.core_parsers.gitignore_parser, tools.universal_indexer.map_formatter, typing | 🧬 class AgentMapExtractor [L46-251] |     └─ def __init__(project_root) [L49-50] |     └─ def _load_jjap_context() [L52-59] |     └─ def _load_all_symbols() [L61-79] |     └─ def _load_registry_and_protocols() [L81-118] |     └─ def _normalize_path(raw_path) [L120-128] |     └─ def collect_files_in_targets(target_paths, exclude_paths) [L130-181] |     └─ def generate_custom_map(target_paths, exclude_paths, save_to_file) [L183-251] | 🎯 def extract_targeted_ai_map(target_paths, exclude_paths, save_to_file) [L254-260]]
 │   │   │     ├── 🔑 [REGISTRY]: "AgentMapExtractor"
 │   │   │   ├── 🧬 class AgentMapExtractor [L46-L251]
 │   │   │   │   ├── 🔗 [USED BY]: ::extract_targeted_ai_map
@@ -232,15 +238,21 @@ project_root/
 │   │   │   ├── 🎯 def _normalize_path() [L120-L128]
 │   │   │   ├── 🎯 def collect_files_in_targets() [L130-L181]
 │   │   │   ├── 🎯 def generate_custom_map() [L183-L251]
-│   │   │   ├── 🎯 def extract_targeted_ai_map() [L255-L257]
+│   │   │   ├── 🎯 def extract_targeted_ai_map() [L254-L260]
 │   │   │   │   ├── 📞 [CALLS]: AgentMapExtractor
-│   │   ├── agent_session.py [📂 tools/multi_agent_system/agent_session.py] -> [💡 📦 imp: agent_core.plan.gemini_client, google, google.genai, os, pathlib, tools.multi_agent_system.agent_code_extractor, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.code_patcher, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner | 🧬 class AgentSessionFactory [L20-127] |     └─ def __init__(root_dir) [L22-33] |     └─ def _prepare_codebase_map(max_shallow_depth) [L35-59] |     └─ def _build_tools() [L61-81] |     └─ def create_chat_session(model_name, shallow_depth) [L83-127]]
+│   │   ├── agent_session.py [📂 tools/multi_agent_system/agent_session.py] -> [💡 📦 imp: agent_core.plan.gemini_client, google, google.genai, os, pathlib, time, tools.multi_agent_system.agent_code_extractor, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.code_patcher, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing | 🧬 class KeyManager [L20-93] |     └─ def __init__(env_path) [L22-80] |     └─ def get_current_key() [L82-85] |     └─ def rotate_key() [L87-93] | 🧬 class AgentSessionFactory [L95-238] |     └─ def __init__(root_dir) [L97-111] |     └─ def _prepare_codebase_map(max_shallow_depth) [L113-137] |     └─ def _build_tools() [L139-170] |     └─ def create_chat_session(model_name, shallow_depth) [L172-238]]
 │   │   │     ├── 🔑 [REGISTRY]: "AgentSessionFactory"
-│   │   │   ├── 🧬 class AgentSessionFactory [L20-L127]
-│   │   │   ├── 🎯 def __init__() [L22-L33]
-│   │   │   ├── 🎯 def _prepare_codebase_map() [L35-L59]
-│   │   │   ├── 🎯 def _build_tools() [L61-L81]
-│   │   │   ├── 🎯 def create_chat_session() [L83-L127]
+│   │   │   ├── 🧬 class KeyManager [L20-L93]
+│   │   │   │   ├── 🔗 [USED BY]: ::__init__
+│   │   │   ├── 🎯 def __init__() [L22-L80]
+│   │   │   ├── 🎯 def get_current_key() [L82-L85]
+│   │   │   ├── 🎯 def rotate_key() [L87-L93]
+│   │   │   ├── 🧬 class AgentSessionFactory [L95-L238]
+│   │   │   ├── 🎯 def __init__() [L97-L111]
+│   │   │   │   ├── 📞 [CALLS]: KeyManager
+│   │   │   ├── 🎯 def _prepare_codebase_map() [L113-L137]
+│   │   │   ├── 🎯 def _build_tools() [L139-L170]
+│   │   │   ├── 🎯 def create_chat_session() [L172-L238]
 │   │   ├── code_patcher.py [📂 tools/multi_agent_system/code_patcher.py] -> [💡 📦 imp: pathlib | 🧬 class CodePatcher [L9-65] |     └─ def __init__(root_dir) [L10-11] |     └─ def apply_patch(rel_path, existing_code, replacement_code) [L13-65]]
 │   │   │   ├── 🧬 class CodePatcher [L9-L65]
 │   │   │   ├── 🎯 def __init__() [L10-L11]
@@ -313,12 +325,12 @@ project_root/
 │   │   │   ├── 🎯 def load_protocols() [L100-L117]
 │   │   │   │   ├── 🔗 [USED BY]: ::parse_protocols_and_registries
 │   │   │   ├── 🎯 def parse_protocols_and_registries() [L120-L159]
-│   │   │   │   ├── 📞 [CALLS]: load_protocols, load_registry
+│   │   │   │   ├── 📞 [CALLS]: load_registry, load_protocols
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def load_all_symbols() [L163-L184]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def main() [L187-L318]
-│   │   │   │   ├── 📞 [CALLS]: load_all_symbols, parse_protocols_and_registries, load_jjap_context, collect_target_files
+│   │   │   │   ├── 📞 [CALLS]: load_all_symbols, load_jjap_context, collect_target_files, parse_protocols_and_registries
 │   │   │   ├── 🎯 def generate_ai_optimized_map() [L321-L322]
 │   │   │   │   ├── 📞 [CALLS]: main
 │   │   ├── indexer.py [📂 tools/universal_indexer/indexer.py] -> [💡 📦 imp: collections, config, hashlib, importlib.util, json, os, pathlib, typing | 🎯 def log(message) [L22-24] | 🧬 class AdvancedIndexerV2 [L26-217] |     └─ def __init__(project_root) [L31-41] |     └─ def _auto_load_parsers() [L43-74] |     └─ def scan_project() [L78-152] |     └─ def index_file(file_path, ext) [L154-194] |     └─ def save_index_data() [L196-217]]
@@ -362,7 +374,7 @@ project_root/
 │   │   │   ├── 🎯 def dispatch() [L86-L126]
 │   │   │   │   ├── 📞 [CALLS]: run_pipeline
 │   │   │   ├── 🎯 def main() [L128-L154]
-│   │   │   │   ├── 📞 [CALLS]: CodeChangeHandler, run_pipeline
+│   │   │   │   ├── 📞 [CALLS]: run_pipeline, CodeChangeHandler
 │   │   ├── map_formatter.py [📂 tools/universal_indexer/map_formatter.py] -> [💡 📦 imp: pathlib, typing | 🎯 def get_file_symbols_summary(file_meta) [L4-8] | 🎯 def format_symbol_node(sym, symbol_by_id, current_posix_path, indent) [L10-73]]
 │   │   │   ├── 🎯 def get_file_symbols_summary() [L4-L8]
 │   │   │   ├── 🎯 def format_symbol_node() [L10-L73]

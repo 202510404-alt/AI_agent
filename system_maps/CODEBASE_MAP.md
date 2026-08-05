@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **91개**
+현재 인덱싱된 총 파일 수: **93개**
 
 ## 🗂️ [Module Index]
 - `.env`
@@ -23,6 +23,9 @@
 - `agent_core/plan/prompt_builder.py`
 - `agent_core/plan/schemas.py`
 - `agent_core/plan/test_ai_chat.py`
+- `agent_core/tasks/task_01/checklist_01/mission_01.md`
+- `agent_core/tasks/task_01/checklist_01/mission_02.md`
+- `agent_core/tasks/task_01/checklist_01/mission_03.md`
 - `agent_core/validation/__init__.py`
 - `agent_debug.log`
 - `agent_plan.md`
@@ -63,7 +66,6 @@
 - `oldplan/agent_plan2.md`
 - `oldplan/agent_plan3.md`
 - `prompt.md`
-- `run_test.py`
 - `scan_debug.txt`
 - `setup_architecture.bat`
 - `tools/multi_agent_system/__init__.py`
@@ -247,13 +249,53 @@ def load_env_file(env_path: Path) -> None:
                     key, value = line.split("=", 1)
                     key = key.strip()
                     value = value.strip().strip("'\"")  # 따옴표 제거
-                    if key and not os.environ.get(key):
+                    if key:
+                        # GEMINI_API_KEY 또는 GEMINI_API_KEY_1, GEMINI_API_KEY1 등 모든 키를 무조건 강제 동기화
                         os.environ[key] = value
+                        
+        # 단일 GEMINI_API_KEY가 없더라도 GEMINI_API_KEY1 또는 GEMINI_API_KEY_1이 있으면 기본 키로 매핑
+        if "GEMINI_API_KEY" not in os.environ:
+            first_key = os.environ.get("GEMINI_API_KEY1") or os.environ.get("GEMINI_API_KEY_1")
+            if first_key:
+                os.environ["GEMINI_API_KEY"] = first_key
+
         if DEBUG_MODE:
-            log_debug(lambda: f".env 파일 로드 성공: {env_path}")
+            log_debug(lambda: f".env 파일 로드 및 API Key 목록 반영 성공: {env_path}")
     except Exception as e:
         if DEBUG_MODE:
             log_debug(lambda: f".env 파일 파싱 중 예외 발생: {e}")
+
+def resolve_best_gemini_model(client) -> str:
+    """
+    현재 계정에서 사용 가능한 전체 Gemini 모델 목록을 조회하여
+    실제 사용 가능한 최신 표준 모델(1.5-flash -> 1.5-pro 등) 위주로 동적 선별합니다.
+    """
+    try:
+        available_models = []
+        for m in client.models.list():
+            supported = getattr(m, 'supported_actions', []) or getattr(m, 'supported_generation_methods', [])
+            if any(action in str(supported) for action in ["generateContent", "generate_content"]):
+                model_id = m.name.split("/")[-1] if "/" in m.name else m.name
+                # 미지원 또는 지원 중단 가능성이 있는 모델 배제
+                if "2.5" not in model_id:
+                    available_models.append(model_id)
+
+        if not available_models:
+            return "gemini-1.5-flash"
+
+        # 1.5 계열 flash -> pro 순으로 최상단 탐색
+        for preferred in ["gemini-1.5-flash", "gemini-1.5-pro", "flash", "pro"]:
+            for model_id in available_models:
+                if preferred in model_id.lower():
+                    if DEBUG_MODE:
+                        log_debug(lambda: f"🎯 [DYNAMIC MODEL] 자동 선택된 Gemini 모델: {model_id}")
+                    return model_id
+
+        return available_models[0]
+    except Exception as e:
+        if DEBUG_MODE:
+            log_debug(lambda: f"⚠️ [MODEL RESOLUTION WARNING] 모델 목록 조회 예외 발생: {e}")
+        return "gemini-1.5-flash"
 
 class GeminiPlannerClient:
     def __init__(self, api_key: Optional[str] = None, root_dir: Optional[Path] = None):
@@ -284,12 +326,19 @@ class GeminiPlannerClient:
                 if DEBUG_MODE:
                     log_debug(lambda: f"Google GenAI Client 초기화 실패: {e}")
 
-    def generate_plan(self, prompt: str, model_name: str = "gemini-2.5-flash") -> Dict[str, Any]:
+    def generate_plan(self, prompt: str, model_name: Optional[str] = None, max_retries: int = 3) -> Dict[str, Any]:
         """
-        Gemini 모델에 프롬프트를 전달하고 구조화된 응답(JSON)을 추출합니다.
+        Gemini 모델에 프롬프트를 전달하고 구조화된 응답(JSON)을 추출합니다. (429 처리 자동 재시도 포함)
         """
+        # 하드코딩을 완전히 제거하고 동적 추론 모델 적용
+        target_model = model_name
+        if not target_model and self.client:
+            target_model = resolve_best_gemini_model(self.client)
+        elif not target_model:
+            target_model = "gemini-1.5-flash"
+
         if DEBUG_MODE:
-            log_debug(lambda: f"generate_plan 호출 - 모델: {model_name}, 프롬프트 길이: {len(prompt)}자")
+            log_debug(lambda: f"generate_plan 호출 - 자동 결정된 모델: {target_model}, 프롬프트 길이: {len(prompt)}자")
 
         # API 통신 환경 미구축 시 안전한 Mock 응답 반환
         if not self.client or not HAS_GENAI:
@@ -311,36 +360,61 @@ class GeminiPlannerClient:
                 ]
             }
 
-        # 실제 Gemini API 호출
-        try:
-            if DEBUG_MODE:
-                log_debug(lambda: f"Gemini API 실시간 요청 발송 중 ({model_name})...")
+        # ✅ [핵심 개선] 429 RESOURCE_EXHAUSTED 감지 및 자동 재시도 Loop
+        for attempt in range(1, max_retries + 1):
+            try:
+                if DEBUG_MODE:
+                    log_debug(lambda: f"Gemini API 실시간 요청 발송 중 ({target_model}) [시도 {attempt}/{max_retries}]...")
 
-            response = self.client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.2,
-                ),
-            )
+                response = self.client.models.generate_content(
+                    model=target_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.2,
+                    ),
+                )
 
-            raw_text = response.text
-            if DEBUG_MODE:
-                log_debug(lambda: f"Gemini 응답 수신 성공 (응답 길이: {len(raw_text)}자)")
+                raw_text = response.text
+                if DEBUG_MODE:
+                    log_debug(lambda: f"Gemini 응답 수신 성공 (응답 길이: {len(raw_text)}자)")
 
-            parsed_data = json.loads(raw_text)
-            return parsed_data
+                parsed_data = json.loads(raw_text)
+                return parsed_data
 
-        except Exception as e:
-            err_str = f"Gemini API 호출 오류: {e}"
-            if DEBUG_MODE:
-                log_debug(lambda: err_str)
-            return {
-                "status": "error",
-                "message": err_str,
-                "tasks": []
-            }
+            except Exception as e:
+                err_msg = str(e)
+                
+                # 429 Quota 초과 예외 감지
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                    # Retry-After delay 파싱 시도 (예: "retryDelay: '54s'")
+                    delay_match = re.search(r"retryDelay':\s*['\"](\d+)s['\"]", err_msg)
+                    wait_time = int(delay_match.group(1)) + 1 if delay_match else 20 * attempt
+
+                    notice = f"⚠️ [API Quota 429 초과] {wait_time}초 후 자동으로 재시도합니다... ({attempt}/{max_retries})"
+                    print(f"\n{notice}")
+                    if DEBUG_MODE:
+                        log_debug(lambda: notice)
+
+                    if attempt < max_retries:
+                        time.sleep(wait_time)
+                        continue
+                
+                # 재시도 실패 혹은 다른 예외인 경우
+                err_str = f"Gemini API 호출 오류: {e}"
+                if DEBUG_MODE:
+                    log_debug(lambda: err_str)
+                return {
+                    "status": "error",
+                    "message": err_str,
+                    "tasks": []
+                }
+
+        return {
+            "status": "error",
+            "message": "Gemini API 최대 재시도 횟수를 초과했습니다.",
+            "tasks": []
+        }
 ```
 
 --------------------------------------------------
@@ -593,6 +667,21 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 agent_core/tasks/task_01/checklist_01/mission_01.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/tasks/task_01/checklist_01/mission_02.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/tasks/task_01/checklist_01/mission_03.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 agent_core/validation/__init__.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
@@ -626,7 +715,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `fixtures/cli.js, node_modules/array.prototype.findlast, node_modules/engine.io, node_modules/object.assign, node_modules/fs.realpath, node_modules/socket.io, big.js, node_modules/array.prototype.flat, node_modules/lodash.memoize, node_modules/object.fromentries, bin.js, dist/cli.cjs, node_modules/decimal.js, bin/esvalidate.js, node_modules/object.entries, node_modules/object.hasown, node_modules/util.promisify, bin/js-yaml.js, bin/eslint.js, node_modules/string.prototype.trim, node_modules/string.prototype.trimend, bin/cli.js, dist/esm/bin.mjs, node_modules/regexp.prototype.flags, node_modules/sanitize.css, node_modules/string.prototype.matchall, bin/nanoid.cjs, node_modules/iterator.prototype, node_modules/lodash.sortby, node_modules/array.prototype.findlastindex, bin/jiti.js, node_modules/lodash.merge, node_modules/lodash.uniq, cli.js, bin/bin.js, node_modules/array.prototype.reduce, bin/nopt.js, bin/babel-parser.js, node_modules/object.getownpropertydescriptors, node_modules/function.prototype.name, node_modules/big.js, bin/webpack-dev-server.js, bin/semver.js, bin/jest.js, bin/esgenerate.js, node_modules/object.values, decimal.js, node_modules/proxy-addr/node_modules/ipaddr.js, hpack.js, lib/cli.js, node_modules/lodash.debounce, node_modules/object.groupby, bin/escodegen.js, node_modules/ipaddr.js, node_modules/arraybuffer.prototype.slice, bin/webpack.js, node_modules/css.escape, bin/cmd.js, node_modules/resolve.exports, node_modules/array.prototype.tosorted, node_modules/fraction.js, node_modules/string.prototype.trimstart, bin/esparse.js, node_modules/array.prototype.flatmap, fraction.js, ipaddr.js, bin/react-scripts.js, node_modules/reflect.getprototypeof, node_modules/array.prototype.toreversed, node_modules/hpack.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/array.prototype.findlastindex, node_modules/array.prototype.flatmap, node_modules/util.promisify, bin/esvalidate.js, node_modules/arraybuffer.prototype.slice, bin/esgenerate.js, node_modules/array.prototype.findlast, bin/nanoid.cjs, node_modules/array.prototype.flat, bin/js-yaml.js, bin/semver.js, bin.js, bin/jest.js, node_modules/lodash.memoize, bin/esparse.js, node_modules/string.prototype.trim, node_modules/hpack.js, node_modules/engine.io, node_modules/object.fromentries, node_modules/reflect.getprototypeof, big.js, node_modules/regexp.prototype.flags, bin/cmd.js, node_modules/socket.io, bin/nopt.js, node_modules/array.prototype.tosorted, node_modules/array.prototype.toreversed, node_modules/function.prototype.name, node_modules/decimal.js, node_modules/object.hasown, bin/eslint.js, node_modules/ipaddr.js, node_modules/iterator.prototype, node_modules/lodash.debounce, bin/bin.js, node_modules/object.groupby, node_modules/string.prototype.trimstart, node_modules/object.getownpropertydescriptors, bin/webpack-dev-server.js, hpack.js, bin/webpack.js, bin/babel-parser.js, bin/react-scripts.js, fraction.js, node_modules/string.prototype.trimend, bin/escodegen.js, cli.js, node_modules/object.entries, node_modules/lodash.uniq, bin/jiti.js, node_modules/lodash.sortby, node_modules/object.assign, dist/cli.cjs, fixtures/cli.js, node_modules/big.js, decimal.js, node_modules/resolve.exports, node_modules/sanitize.css, bin/cli.js, node_modules/array.prototype.reduce, node_modules/string.prototype.matchall, ipaddr.js, dist/esm/bin.mjs, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/css.escape, node_modules/fraction.js, node_modules/object.values, lib/cli.js, node_modules/lodash.merge, node_modules/fs.realpath`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -880,7 +969,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `cli.js, node_modules/engine.io, node_modules/ipaddr.js, node_modules/pstree.remy, bin/nodemon.js, node_modules/socket.io, bin/nodetouch.js, bin/semver.js, ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, node_modules/engine.io, node_modules/pstree.remy, ipaddr.js, bin/semver.js, node_modules/ipaddr.js, cli.js, bin/nodetouch.js, bin/nodemon.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -949,61 +1038,6 @@ def run_interactive_chat():
 
 ### 📄 prompt.md
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
-
---------------------------------------------------
-
-### 📄 run_test.py
-#### 🧱 Code Skeleton:
-```python
-def run_interactive_chat():
-    try:
-        # AI 세션을 '구워주는' 팩토리 호출
-        factory = AgentSessionFactory(ROOT_DIR)
-        chat = factory.create_chat_session()
-    except Exception as e:
-        print(f"❌ 세션 생성 실패: {e}")
-        return
-
-    print("\n==================================================================")
-    print("🤖 ASE-OS v1.3 Interactive AI Chat (Auto Execution Loop)")
-    print("==================================================================")
-    print("💡 사용자가 질의를 입력하면 AI가 필요 시 자동으로 도구를 실행합니다.")
-    print("💡 종료하시려면 'exit' 또는 'quit'를 입력하세요.\n")
-
-    while True:
-        try:
-            user_input = input("👤 User > ").strip()
-            if not user_input:
-                continue
-            if user_input.lower() in ["exit", "quit"]:
-                print("👋 대화를 종료합니다.")
-                break
-
-            print("\n🤖 [Step 1] AI 판단 및 도구 실행 중...")
-            response = chat.send_message(user_input)
-            print(f"\n🤖 AI > {response.text}\n")
-
-        except KeyboardInterrupt:
-            print("\n👋 대화를 종료합니다.")
-            break
-        except Exception as e:
-            print(f"\n💥 예외 발생: {e}\n")
-
-def main():
-    print("🚀 테스트 스크립트를 가동합니다...")
-    
-    # 1. 실행 시 디버그 로그 파일 초기화
-    if LOG_FILE_PATH.exists():
-        with open(LOG_FILE_PATH, "w", encoding="utf-8") as f:
-            f.write("=== [Jjap-Cursor Agent Debug Log Initialized] ===\n")
-            
-    print(f"📝 디버그 로그 위치: {LOG_FILE_PATH.resolve()}")
-    print(f"🎛️ 현재 DEBUG_MODE 상태: {DEBUG_MODE}\n")
-
-    # 2. 대화형 AI 인터랙션 진입
-    print("🤖 대화형 AI 테스트 모드로 진입합니다...")
-    run_interactive_chat()
-```
 
 --------------------------------------------------
 
@@ -1537,9 +1571,13 @@ class AgentMapExtractor:
 
         return final_map_str
 
-def extract_targeted_ai_map(target_paths: Optional[List[str]] = None, exclude_paths: Optional[List[str]] = None) -> str:
+def extract_targeted_ai_map(
+    target_paths: Optional[List[str]] = None, 
+    exclude_paths: Optional[List[str]] = None,
+    save_to_file: bool = True
+) -> str:
     extractor = AgentMapExtractor()
-    return extractor.generate_custom_map(target_paths, exclude_paths)
+    return extractor.generate_custom_map(target_paths, exclude_paths, save_to_file=save_to_file)
 ```
 
 --------------------------------------------------
@@ -1547,11 +1585,89 @@ def extract_targeted_ai_map(target_paths: Optional[List[str]] = None, exclude_pa
 ### 📄 tools/multi_agent_system/agent_session.py
 #### 🧱 Code Skeleton:
 ```python
+class KeyManager:
+    """env에 등록된 모든 GEMINI_API_KEY 계열 키들을 번호 유무와 상관없이 동적 완전 수집 (상세 디버깅 강화)"""
+    def __init__(self, env_path: Path = None):
+        self.keys = []
+        
+        # .env 탐색 (전달받은 경로 -> 현재 작업 디렉토리 -> 상위 디렉토리 추적)
+        possible_paths = [
+            env_path,
+            Path.cwd() / ".env",
+            Path(__file__).resolve().parent.parent.parent / ".env"
+        ]
+        
+        target_env = None
+        for p in possible_paths:
+            print(f"🔍 [.ENV DIAGNOSTIC] 경로 검사 중: {p} (존재 여부: {p.exists() if p else False})")
+            if p and p.exists():
+                target_env = p
+                break
+
+        if target_env and target_env.exists():
+            print(f"✅ [.ENV DIAGNOSTIC] 타겟 .env 타깃 매핑 완료: {target_env}")
+            try:
+                line_count = 0
+                matched_count = 0
+                with open(target_env, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line_count += 1
+                        line = line.strip()
+                        if not line or line.startswith("#") or "=" not in line:
+                            continue
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("'\"")
+                        if k.startswith("GEMINI_API_KEY"):
+                            matched_count += 1
+                            print(f"   └─ 🔑 감지된 변수: '{k}' (값 길이: {len(v)}자)")
+                            os.environ[k] = v
+                            if v and v not in self.keys:
+                                self.keys.append(v)
+                print(f"📊 [.ENV DIAGNOSTIC] 읽은 총 라인: {line_count}줄 / 'GEMINI_API_KEY' 매칭: {matched_count}개")
+            except Exception as e:
+                print(f"⚠️ [.env 파싱 실패]: {e}")
+        else:
+            print("❌ [.ENV DIAGNOSTIC] 유효한 .env 파일을 찾지 못했습니다!")
+
+        # os.environ에 이미 로드되어 있던 키들도 2차 통합 수집 (GEMINI_API_KEY, GEMINI_API_KEY1~50, GEMINI_API_KEY_1~50)
+        base_key = os.environ.get("GEMINI_API_KEY")
+        if base_key and base_key not in self.keys:
+            self.keys.append(base_key)
+        
+        for i in range(1, 51):
+            key_no_underscore = os.environ.get(f"GEMINI_API_KEY{i}")
+            if key_no_underscore and key_no_underscore not in self.keys:
+                self.keys.append(key_no_underscore)
+                
+            key_with_underscore = os.environ.get(f"GEMINI_API_KEY_{i}")
+            if key_with_underscore and key_with_underscore not in self.keys:
+                self.keys.append(key_with_underscore)
+
+        self.current_index = 0
+        print(f"🔑 [KEY MANAGER] 총 {len(self.keys)}개의 Gemini API Key가 성공적으로 로드되었습니다.")
+
+    def get_current_key(self) -> str:
+        if not self.keys:
+            return None
+        return self.keys[self.current_index]
+
+    def rotate_key(self) -> str:
+        """다음 API 키로 교체"""
+        if not self.keys:
+            return None
+        self.current_index = (self.current_index + 1) % len(self.keys)
+        print(f"🔄 [KEY ROTATION] API 키 변경됨! (현재 Key 번호: {self.current_index + 1}/{len(self.keys)})")
+        return self.get_current_key()
+
 class AgentSessionFactory:
     """AI 에이전트 생성 및 도구 바인딩 팩토리"""
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir.resolve()
         load_env_file(self.root_dir / ".env")
+        
+        # 💡 객체 생성 시점에 KeyManager를 미리 초기화하여 속성을 생성합니다.
+        self.key_manager = KeyManager(env_path=self.root_dir / ".env")
         
         self.extractor = CodeExtractor(self.root_dir)
         self.patcher = CodePatcher(self.root_dir)
@@ -1589,14 +1705,18 @@ class AgentSessionFactory:
             return full_map, False
 
     def _build_tools(self):
-        """AI에게 전달할 Tool 패키징"""
+        """AI에게 전달할 Tool 패키징 (RPM 폭주 방지 딜레이 포함)"""
+        import time
+
         def extract_code_slice(file_and_line: str) -> str:
             """특정 파일 및 라인 범위의 코드 슬라이스를 추출합니다."""
+            time.sleep(2)  # ⏱️ Rate Limit(RPM) 방어 딜레이
             res = self.extractor.process(file_and_line, auto_save=False)
             return res["markdown"] if res["markdown"] else "❌ 해당 코드를 찾을 수 없습니다."
 
         def patch_code_slice(file_path: str, existing_code: str, replacement_code: str) -> str:
             """파일 내 특정 '기존 코드'를 '수정된 코드'로 1:1 치환합니다."""
+            time.sleep(2)  # ⏱️ Rate Limit(RPM) 방어 딜레이
             res = self.patcher.apply_patch(file_path, existing_code, replacement_code)
             return res["message"]
 
@@ -1605,18 +1725,36 @@ class AgentSessionFactory:
             [규모 초과 시 사용] 특정 폴더/파일 경로 목록을 전달받아 해당 구역의 정밀 AI 코드베이스 맵을 생성하여 반환합니다.
             예: target_paths = ["extraction_target_project/src/controller", "extraction_target_project/src/models"]
             """
+            time.sleep(2)  # ⏱️ Rate Limit(RPM) 방어 딜레이
             print(f"\n🗺️ [TOOL EXECUTION] AI가 특정 구간 타깃 맵을 요청함: {target_paths}")
             return extract_targeted_ai_map(target_paths=target_paths, save_to_file=False)
 
-        return [extract_code_slice, run_terminal_command, patch_code_slice, get_targeted_codebase_map]
+        # terminal_runner 래핑
+        def safe_run_terminal_command(command: str) -> str:
+            """터미널 명령어를 실행합니다."""
+            time.sleep(2)  # ⏱️ Rate Limit(RPM) 방어 딜레이
+            return run_terminal_command(command)
 
-    def create_chat_session(self, model_name: str = "gemini-2.5-flash", shallow_depth: int = 3):
-        """모든 지형도와 도구가 준비된 Gemini Chat 세션을 생성합니다."""
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not HAS_GENAI or not api_key:
-            raise RuntimeError("Google GenAI 패키지 미설치 또는 API Key가 설정되지 않았습니다.")
+        return [extract_code_slice, safe_run_terminal_command, patch_code_slice, get_targeted_codebase_map]
 
-        self.client = genai.Client(api_key=api_key)
+    def create_chat_session(self, model_name: Optional[str] = None, shallow_depth: int = 3):
+        """동적으로 사용 가능한 모델을 선별하여 지형도와 도구가 준비된 Gemini Chat 세션을 생성합니다."""
+        current_api_key = self.key_manager.get_current_key()
+
+        if not HAS_GENAI or not current_api_key:
+            raise RuntimeError("Google GenAI 패키지 미설치 또는 .env에 등록된 GEMINI_API_KEY가 없습니다.")
+
+        self.client = genai.Client(api_key=current_api_key)
+
+        # 하드코딩 매핑 제거 -> 전체 사용 가능한 모델 중 최적 모델을 동적으로 추출
+        target_model = model_name
+        if not target_model:
+            from agent_core.plan.gemini_client import resolve_best_gemini_model
+            target_model = resolve_best_gemini_model(self.client)
+
+        self.current_model = target_model  # 💡 디버깅용 모델 저장
+        print(f"🤖 [SESSION MODEL] Chat 세션 가동 모델: {target_model}")
+
         codebase_map, is_oversized = self._prepare_codebase_map(max_shallow_depth=shallow_depth)
         tools = self._build_tools()
 
@@ -1628,32 +1766,43 @@ class AgentSessionFactory:
 필요한 구역의 정밀 세부 맵을 확보한 후 작업을 수행하십시오.
 """ if is_oversized else ""
 
+        # tools/multi_agent_system/agent_session.py 수정 구간
+
         system_instruction = f"""
 당신은 현재 프로젝트의 코드베이스 구조를 파악하고, 터미널 명령어로 디버깅하며 코드를 정밀 수정하는 AI 에이전트입니다.
 
 [프로젝트 코드베이스 지도]
 {codebase_map}
 {oversized_guideline}
+
 [사용 가능한 도구]
 1. `extract_code_slice("파일경로:시작줄-끝줄")`: 코드의 실제 내용을 확인합니다.
-2. `run_terminal_command("명령어")`: 터미널 명령어(테스트 등)를 구동하고 로그를 확인합니다.
+2. `run_terminal_command("명령어")`: 터미널 명령어(dir, find, pytest 등)를 구동합니다.
 3. `patch_code_slice(file_path, existing_code, replacement_code)`: 특정 코드 구간을 1:1 치환합니다.
-4. `get_targeted_codebase_map(target_paths=["경로1", "경로2"])`: 지정한 폴더/파일 하위의 정밀 심볼 및 관계망 맵을 새로 가져옵니다.
+4. `get_targeted_codebase_map(target_paths=["경로1"])`: 지정한 폴더/파일의 정밀 맵을 가져옵니다.
 
-[🚨 절대 규칙 - 코드 수정 수칙]
-1. 절대로 파일 전체 코드를 작성하거나 덮어쓰지 마십시오.
-2. 코드를 수정할 때는 반드시 `extract_code_slice`로 확인 후 `patch_code_slice`를 사용하십시오.
-3. `existing_code`는 기존 코드와 공백/줄바꿈 포함 100% 토씨 하나 안 틀리고 일치해야 합니다.
+[🚨 절대 규칙 - 검색 및 도구 호출 수칙]
+1. 지상 지도에 요구된 파일이 명확히 보이지 않거나 오타가 의심될 경우, 추측하여 "없다"고 답변하지 말고 즉시 `run_terminal_command`로 디렉토리를 직접 검색(예: dir /s /b)하여 실체 경로를 확인하십시오.
+2. 파일 전체 수정 요구 시, 함부로 통째로 덮어쓰지 말고 `extract_code_slice` 및 `patch_code_slice`를 조합하여 작업을 수행하십시오.
 """
 
+        # Tool call 설정을 필요에 맞춰 AUTO 또는 사용자 지정 조건으로 변경
+        tool_config_dict = {
+            "function_calling_config": {
+                "mode": "AUTO"  # 필요 시 도구를 선택적으로 호출할 수 있도록 AUTO로 변경
+            }
+        }
+
         chat = self.client.chats.create(
-            model=model_name,
+            model=target_model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 tools=tools,
                 temperature=0.2,
+                tool_config=tool_config_dict
             )
         )
+        
         return chat
 ```
 
