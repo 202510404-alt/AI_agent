@@ -4,6 +4,8 @@ agent_core/plan/gemini_client.py
 """
 
 import os
+import re
+import time
 import json
 from pathlib import Path
 from typing import Optional, Dict, Any
@@ -87,9 +89,9 @@ class GeminiPlannerClient:
                 if DEBUG_MODE:
                     log_debug(lambda: f"Google GenAI Client 초기화 실패: {e}")
 
-    def generate_plan(self, prompt: str, model_name: str = "gemini-2.5-flash") -> Dict[str, Any]:
+    def generate_plan(self, prompt: str, model_name: str = "gemini-2.5-flash", max_retries: int = 3) -> Dict[str, Any]:
         """
-        Gemini 모델에 프롬프트를 전달하고 구조화된 응답(JSON)을 추출합니다.
+        Gemini 모델에 프롬프트를 전달하고 구조화된 응답(JSON)을 추출합니다. (429 처리 자동 재시도 포함)
         """
         if DEBUG_MODE:
             log_debug(lambda: f"generate_plan 호출 - 모델: {model_name}, 프롬프트 길이: {len(prompt)}자")
@@ -114,33 +116,58 @@ class GeminiPlannerClient:
                 ]
             }
 
-        # 실제 Gemini API 호출
-        try:
-            if DEBUG_MODE:
-                log_debug(lambda: f"Gemini API 실시간 요청 발송 중 ({model_name})...")
+        # ✅ [핵심 개선] 429 RESOURCE_EXHAUSTED 감지 및 자동 재시도 Loop
+        for attempt in range(1, max_retries + 1):
+            try:
+                if DEBUG_MODE:
+                    log_debug(lambda: f"Gemini API 실시간 요청 발송 중 ({model_name}) [시도 {attempt}/{max_retries}]...")
 
-            response = self.client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.2,
-                ),
-            )
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        temperature=0.2,
+                    ),
+                )
 
-            raw_text = response.text
-            if DEBUG_MODE:
-                log_debug(lambda: f"Gemini 응답 수신 성공 (응답 길이: {len(raw_text)}자)")
+                raw_text = response.text
+                if DEBUG_MODE:
+                    log_debug(lambda: f"Gemini 응답 수신 성공 (응답 길이: {len(raw_text)}자)")
 
-            parsed_data = json.loads(raw_text)
-            return parsed_data
+                parsed_data = json.loads(raw_text)
+                return parsed_data
 
-        except Exception as e:
-            err_str = f"Gemini API 호출 오류: {e}"
-            if DEBUG_MODE:
-                log_debug(lambda: err_str)
-            return {
-                "status": "error",
-                "message": err_str,
-                "tasks": []
-            }
+            except Exception as e:
+                err_msg = str(e)
+                
+                # 429 Quota 초과 예외 감지
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                    # Retry-After delay 파싱 시도 (예: "retryDelay: '54s'")
+                    delay_match = re.search(r"retryDelay':\s*['\"](\d+)s['\"]", err_msg)
+                    wait_time = int(delay_match.group(1)) + 1 if delay_match else 20 * attempt
+
+                    notice = f"⚠️ [API Quota 429 초과] {wait_time}초 후 자동으로 재시도합니다... ({attempt}/{max_retries})"
+                    print(f"\n{notice}")
+                    if DEBUG_MODE:
+                        log_debug(lambda: notice)
+
+                    if attempt < max_retries:
+                        time.sleep(wait_time)
+                        continue
+                
+                # 재시도 실패 혹은 다른 예외인 경우
+                err_str = f"Gemini API 호출 오류: {e}"
+                if DEBUG_MODE:
+                    log_debug(lambda: err_str)
+                return {
+                    "status": "error",
+                    "message": err_str,
+                    "tasks": []
+                }
+
+        return {
+            "status": "error",
+            "message": "Gemini API 최대 재시도 횟수를 초과했습니다.",
+            "tasks": []
+        }

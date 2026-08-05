@@ -1,9 +1,19 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **56개**
+현재 인덱싱된 총 파일 수: **91개**
 
 ## 🗂️ [Module Index]
+- `.env`
+- `.idea/AI_agent.iml`
+- `.idea/gradle.xml`
+- `.idea/misc.xml`
+- `.idea/modules.xml`
+- `.idea/vcs.xml`
+- `.idea/workspace.xml`
 - `.vscode/settings.json`
+- `README.md`
+- `System Prompt.md`
+- `a`
 - `agent_core/__init__.py`
 - `agent_core/execution/__init__.py`
 - `agent_core/memory/__init__.py`
@@ -14,9 +24,20 @@
 - `agent_core/plan/schemas.py`
 - `agent_core/plan/test_ai_chat.py`
 - `agent_core/validation/__init__.py`
+- `agent_debug.log`
+- `agent_plan.md`
+- `extraction_target_project/AI_agent.code-workspace`
+- `extraction_target_project/README.md`
 - `extraction_target_project/client/package-lock.json`
 - `extraction_target_project/client/package.json`
+- `extraction_target_project/client/public/favicon.ico`
+- `extraction_target_project/client/public/favicon.svg`
+- `extraction_target_project/client/public/index.html`
+- `extraction_target_project/client/public/logo.svg`
+- `extraction_target_project/client/public/logo192.png`
+- `extraction_target_project/client/public/logo512.png`
 - `extraction_target_project/client/public/manifest.json`
+- `extraction_target_project/client/src/App.css`
 - `extraction_target_project/client/src/App.js`
 - `extraction_target_project/client/src/App.test.js`
 - `extraction_target_project/client/src/Button.js`
@@ -25,14 +46,26 @@
 - `extraction_target_project/client/src/Input.js`
 - `extraction_target_project/client/src/UploadFile.js`
 - `extraction_target_project/client/src/hooks/useWebRTC.js`
+- `extraction_target_project/client/src/index.css`
 - `extraction_target_project/client/src/index.js`
 - `extraction_target_project/client/src/reportWebVitals.js`
 - `extraction_target_project/client/src/setupTests.js`
 - `extraction_target_project/client/src/socket.js`
+- `extraction_target_project/client/src/style.css`
+- `extraction_target_project/client/src/styleCanvas.css`
+- `extraction_target_project/extraction_target_project.code-workspace`
 - `extraction_target_project/index.js`
 - `extraction_target_project/package-lock.json`
 - `extraction_target_project/package.json`
+- `extraction_target_project/prompt.md`
+- `extraction_target_project/start.bat`
+- `oldplan/agent_plan1.md`
+- `oldplan/agent_plan2.md`
+- `oldplan/agent_plan3.md`
+- `prompt.md`
 - `run_test.py`
+- `scan_debug.txt`
+- `setup_architecture.bat`
 - `tools/multi_agent_system/__init__.py`
 - `tools/multi_agent_system/agent_code_extractor.py`
 - `tools/multi_agent_system/agent_map_extractor.py`
@@ -40,6 +73,7 @@
 - `tools/multi_agent_system/code_patcher.py`
 - `tools/multi_agent_system/project_scale_detector.py`
 - `tools/multi_agent_system/terminal_runner.py`
+- `tools/universal_indexer/README.md`
 - `tools/universal_indexer/agent_navigator.py`
 - `tools/universal_indexer/config.py`
 - `tools/universal_indexer/context_builder.py`
@@ -56,11 +90,47 @@
 - `tools/universal_indexer/jjap_retriever.py`
 - `tools/universal_indexer/jjap_watcher.py`
 - `tools/universal_indexer/map_formatter.py`
+- `tools/universal_indexer/rule.txt`
 - `tools/universal_indexer/switch.py`
 - `tools/universal_indexer/tree_sitter_parser.py`
 - `tools/universal_indexer/update_map.py`
 
 ## 💀 [Skeleton & Dependency 명세서]
+### 📄 .env
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 .idea/AI_agent.iml
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 .idea/gradle.xml
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 .idea/misc.xml
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 .idea/modules.xml
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 .idea/vcs.xml
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 .idea/workspace.xml
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 .vscode/settings.json
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `terminal.integrated.sendKeybindingsToShell` (Line: 2~2)
@@ -106,6 +176,21 @@
   ├── "java.configuration.updateBuildConfiguration": str (val: interactive)
   ├── "python-envs.defaultEnvManager": str (val: ms-python.python:system)
 ```
+
+--------------------------------------------------
+
+### 📄 README.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 System Prompt.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 a
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
 
@@ -513,6 +598,26 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 agent_debug.log
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_plan.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/AI_agent.code-workspace
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/README.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 extraction_target_project/client/package-lock.json
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `name` (Line: 2~2)
@@ -521,7 +626,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, node_modules/iterator.prototype, fixtures/cli.js, bin/eslint.js, node_modules/object.fromentries, ipaddr.js, node_modules/reflect.getprototypeof, node_modules/string.prototype.trim, node_modules/array.prototype.flatmap, bin/semver.js, node_modules/string.prototype.trimstart, bin.js, bin/bin.js, node_modules/fraction.js, node_modules/function.prototype.name, node_modules/util.promisify, node_modules/string.prototype.matchall, node_modules/lodash.sortby, node_modules/object.groupby, bin/esvalidate.js, node_modules/arraybuffer.prototype.slice, node_modules/array.prototype.reduce, node_modules/decimal.js, hpack.js, bin/cmd.js, node_modules/big.js, bin/webpack-dev-server.js, bin/webpack.js, node_modules/engine.io, bin/jest.js, node_modules/lodash.uniq, bin/esgenerate.js, node_modules/lodash.memoize, bin/react-scripts.js, node_modules/sanitize.css, node_modules/string.prototype.trimend, node_modules/array.prototype.findlastindex, node_modules/array.prototype.flat, node_modules/array.prototype.tosorted, fraction.js, node_modules/object.assign, node_modules/object.entries, bin/esparse.js, node_modules/lodash.merge, node_modules/array.prototype.findlast, cli.js, node_modules/regexp.prototype.flags, bin/cli.js, node_modules/lodash.debounce, node_modules/array.prototype.toreversed, node_modules/object.getownpropertydescriptors, bin/escodegen.js, bin/nopt.js, bin/jiti.js, dist/esm/bin.mjs, bin/js-yaml.js, decimal.js, bin/babel-parser.js, bin/nanoid.cjs, node_modules/object.values, dist/cli.cjs, node_modules/css.escape, node_modules/fs.realpath, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/resolve.exports, node_modules/hpack.js, lib/cli.js, node_modules/object.hasown, node_modules/ipaddr.js, big.js`
+  - 🔗 *Calls (호출하는 것)*: `fixtures/cli.js, node_modules/array.prototype.findlast, node_modules/engine.io, node_modules/object.assign, node_modules/fs.realpath, node_modules/socket.io, big.js, node_modules/array.prototype.flat, node_modules/lodash.memoize, node_modules/object.fromentries, bin.js, dist/cli.cjs, node_modules/decimal.js, bin/esvalidate.js, node_modules/object.entries, node_modules/object.hasown, node_modules/util.promisify, bin/js-yaml.js, bin/eslint.js, node_modules/string.prototype.trim, node_modules/string.prototype.trimend, bin/cli.js, dist/esm/bin.mjs, node_modules/regexp.prototype.flags, node_modules/sanitize.css, node_modules/string.prototype.matchall, bin/nanoid.cjs, node_modules/iterator.prototype, node_modules/lodash.sortby, node_modules/array.prototype.findlastindex, bin/jiti.js, node_modules/lodash.merge, node_modules/lodash.uniq, cli.js, bin/bin.js, node_modules/array.prototype.reduce, bin/nopt.js, bin/babel-parser.js, node_modules/object.getownpropertydescriptors, node_modules/function.prototype.name, node_modules/big.js, bin/webpack-dev-server.js, bin/semver.js, bin/jest.js, bin/esgenerate.js, node_modules/object.values, decimal.js, node_modules/proxy-addr/node_modules/ipaddr.js, hpack.js, lib/cli.js, node_modules/lodash.debounce, node_modules/object.groupby, bin/escodegen.js, node_modules/ipaddr.js, node_modules/arraybuffer.prototype.slice, bin/webpack.js, node_modules/css.escape, bin/cmd.js, node_modules/resolve.exports, node_modules/array.prototype.tosorted, node_modules/fraction.js, node_modules/string.prototype.trimstart, bin/esparse.js, node_modules/array.prototype.flatmap, fraction.js, ipaddr.js, bin/react-scripts.js, node_modules/reflect.getprototypeof, node_modules/array.prototype.toreversed, node_modules/hpack.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -559,6 +664,36 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 extraction_target_project/client/public/favicon.ico
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/client/public/favicon.svg
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/client/public/index.html
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/client/public/logo.svg
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/client/public/logo192.png
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/client/public/logo512.png
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 extraction_target_project/client/public/manifest.json
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `short_name` (Line: 2~2)
@@ -580,6 +715,11 @@ def run_interactive_chat():
   ├── "theme_color": str (val: #243b55)
   ├── "background_color": str (val: #141e30)
 ```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/client/src/App.css
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
 
@@ -676,6 +816,11 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 extraction_target_project/client/src/index.css
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 extraction_target_project/client/src/index.js
 #### 🧱 Code Skeleton:
 ```python
@@ -703,6 +848,21 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 extraction_target_project/client/src/style.css
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/client/src/styleCanvas.css
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/extraction_target_project.code-workspace
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 extraction_target_project/index.js
 #### 🧱 Code Skeleton:
 ```python
@@ -720,7 +880,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, ipaddr.js, bin/nodetouch.js, bin/semver.js, node_modules/pstree.remy, bin/nodemon.js, cli.js, node_modules/engine.io, node_modules/ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `cli.js, node_modules/engine.io, node_modules/ipaddr.js, node_modules/pstree.remy, bin/nodemon.js, node_modules/socket.io, bin/nodetouch.js, bin/semver.js, ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -759,6 +919,36 @@ def run_interactive_chat():
   ├── "license": str (val: ISC)
   ├── "dependencies": Dict (keys: ['dateuuidv2', 'express', 'nodemon']...)
 ```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/prompt.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/start.bat
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 oldplan/agent_plan1.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 oldplan/agent_plan2.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 oldplan/agent_plan3.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 prompt.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
 
@@ -814,6 +1004,16 @@ def main():
     print("🤖 대화형 AI 테스트 모드로 진입합니다...")
     run_interactive_chat()
 ```
+
+--------------------------------------------------
+
+### 📄 scan_debug.txt
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 setup_architecture.bat
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
 
@@ -1216,14 +1416,22 @@ class AgentMapExtractor:
 
     def collect_files_in_targets(
         self, 
-        target_paths: List[Union[str, Path]], 
+        target_paths: Optional[List[Union[str, Path]]] = None, 
         exclude_paths: Optional[List[Union[str, Path]]] = None
     ) -> List[Path]:
         """지정한 상대 경로/폴더 목록 내부의 파일들을 정밀 수집합니다."""
+        from tools.universal_indexer.core_parsers.gitignore_parser import GitIgnoreMatcher
+        
         target_files = set()
         excludes = [self._normalize_path(e).as_posix() for e in (exclude_paths or [])]
+        gitignore_matcher = GitIgnoreMatcher(self.project_root)
 
-        for target in target_paths:
+        # 바이너리/미디어 확장자 차단 세트
+        binary_exts = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".mp3", ".mp4", ".zip", ".exe", ".dll", ".pdf", ".ttf", ".woff"}
+
+        effective_targets = target_paths if target_paths else [self.project_root]
+
+        for target in effective_targets:
             norm_target = self._normalize_path(target)
             abs_target = (self.project_root / norm_target).resolve()
             if not abs_target.exists():
@@ -1231,35 +1439,43 @@ class AgentMapExtractor:
                 continue
 
             if abs_target.is_file():
-                rel_posix = abs_target.relative_to(self.project_root).as_posix()
-                if not any(ex in rel_posix for ex in excludes):
-                    target_files.add(abs_target)
+                rel_path = abs_target.relative_to(self.project_root)
+                rel_posix = rel_path.as_posix()
+                if not gitignore_matcher.is_ignored(rel_path) and abs_target.suffix.lower() not in binary_exts:
+                    if not any(ex in rel_posix for ex in excludes):
+                        target_files.add(abs_target)
             elif abs_target.is_dir():
                 for root, dirs, files in os.walk(abs_target, followlinks=True):
                     normalized_root = root.replace("\\", "/")
                     if any(kw in normalized_root for kw in EXCLUDE_KEYWORDS):
                         continue
                     
-                    rel_root = Path(root).relative_to(self.project_root).as_posix()
-                    if any(ex in rel_root for ex in excludes):
+                    rel_root = Path(root).relative_to(self.project_root)
+                    if gitignore_matcher.is_ignored(rel_root) or any(ex in rel_root.as_posix() for ex in excludes):
                         continue
 
                     for file in files:
                         full_path = Path(root) / file
-                        rel_file = full_path.relative_to(self.project_root).as_posix()
-                        if not any(ex in rel_file for ex in excludes):
+                        rel_file = full_path.relative_to(self.project_root)
+                        rel_file_posix = rel_file.as_posix()
+
+                        if gitignore_matcher.is_ignored(rel_file) or full_path.suffix.lower() in binary_exts:
+                            continue
+
+                        if not any(ex in rel_file_posix for ex in excludes):
                             target_files.add(full_path)
 
         return sorted(list(target_files))
 
     def generate_custom_map(
         self, 
-        target_paths: List[Union[str, Path]], 
+        target_paths: Optional[List[Union[str, Path]]] = None, 
         exclude_paths: Optional[List[Union[str, Path]]] = None,
         save_to_file: bool = True
     ) -> str:
         """
-        에이전트가 지시한 target_paths 영역만 정밀하게 쪼개어 AI 코드베이스 맵 문자열을 생성합니다.
+        에이전트가 지시한 target_paths 영역을 정밀하게 쪼개어 AI 코드베이스 맵 문자열을 생성합니다.
+        (target_paths 미입력 시 프로젝트 전체 추출)
         """
         target_files = self.collect_files_in_targets(target_paths, exclude_paths)
         jjap_context = self._load_jjap_context()
@@ -1288,7 +1504,7 @@ class AgentMapExtractor:
 
             indent = "│   " * (len(parts) - 1)
             file_meta = jjap_context.get(posix_rel_path, {})
-            symbols_info = file_meta.get("symbols_summary", "")
+            symbols_info = get_file_symbols_summary(file_meta)
 
             if symbols_info:
                 output_lines.append(f"{indent}├── {file_name} [📂 {posix_rel_path}] -> [{symbols_info}]\n")
@@ -1321,7 +1537,7 @@ class AgentMapExtractor:
 
         return final_map_str
 
-def extract_targeted_ai_map(target_paths: List[str], exclude_paths: Optional[List[str]] = None) -> str:
+def extract_targeted_ai_map(target_paths: Optional[List[str]] = None, exclude_paths: Optional[List[str]] = None) -> str:
     extractor = AgentMapExtractor()
     return extractor.generate_custom_map(target_paths, exclude_paths)
 ```
@@ -1354,17 +1570,19 @@ class AgentSessionFactory:
         target_dir = scan_target if scan_target.exists() else self.root_dir
 
         metrics = self.scale_detector.analyze_project_scale(target_dir=target_dir)
+        # 동적으로 산출된 Depth가 있으면 적용, 없으면 기본 전달값 사용
+        effective_depth = metrics.get("recommended_depth", max_shallow_depth)
 
         if metrics["is_oversized"]:
-            print(f"⚠️ [PROJECT SCALE] 감당 불가 프로젝트 감지! (파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
-            print(f"🔍 상위 {max_shallow_depth}단계 얕은 겉핥기 지도를 생성합니다...")
+            print(f"⚠️ [PROJECT SCALE] 대규모 프로젝트 감지! (유효 코드 파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
+            print(f"🔍 동적 Depth({effective_depth}단계) 겉핥기 지도를 생성합니다...")
             shallow_map = self.scale_detector.generate_shallow_structure_map(
-                max_depth=max_shallow_depth, 
+                max_depth=effective_depth, 
                 target_dir=target_dir
             )
             return shallow_map, True
         else:
-            print(f"✅ [PROJECT SCALE] 감당 가능한 적정 규모 프로젝트 (파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
+            print(f"✅ [PROJECT SCALE] 적정 규모 프로젝트 (유효 코드 파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
             # 적정 규모일 경우 대상 폴더 전체 추출
             target_rel_path = "extraction_target_project" if scan_target.exists() else "."
             full_map = extract_targeted_ai_map(target_paths=[target_rel_path], save_to_file=True)
@@ -1512,17 +1730,41 @@ class ProjectScaleDetector:
     def __init__(
         self, 
         project_root: Path,
-        max_files: int = 150,           # 감당 가능 최대 파일 수
-        max_total_lines: int = 15000,    # 감당 가능 최대 코드 줄 수
-        max_estimated_tokens: int = 60000 # 감당 가능 최대 토큰 수
+        max_files: int = 500,             # 상향 조정된 최대 파일 수
+        max_total_lines: int = 50000,     # 상향 조정된 최대 소스코드 줄 수
+        max_estimated_tokens: int = 200000, # 상향 조정된 최대 토큰 수
+        max_file_size_bytes: int = 300 * 1024, # 300KB 초과 시 대용량 파일 스킵
+        sample_line_limit: int = 20        # 반복 데이터 파일 샘플링 라인 수
     ):
         self.project_root = Path(project_root).resolve()
         self.max_files = max_files
         self.max_total_lines = max_total_lines
         self.max_estimated_tokens = max_estimated_tokens
+        self.max_file_size_bytes = max_file_size_bytes
+        self.sample_line_limit = sample_line_limit
+        self.gitignore_matcher = GitIgnoreMatcher(self.project_root)
+
+    def _is_binary_file(self, file_path: Path) -> bool:
+        """확장자, MIME Type, Null Byte 검사로 바이너리/미디어 파일 판별"""
+        if file_path.suffix.lower() in BINARY_EXTENSIONS:
+            return True
+            
+        mime, _ = mimetypes.guess_type(file_path)
+        if mime and not (mime.startswith("text/") or mime in ["application/json", "application/javascript", "application/xml"]):
+            return True
+
+        try:
+            with open(file_path, "rb") as f:
+                chunk = f.read(1024)
+                if b"\x00" in chunk: # Null byte 감지 시 바이너리로 판단
+                    return True
+        except Exception:
+            return True
+
+        return False
 
     def analyze_project_scale(self, target_dir: Optional[Path] = None) -> Dict[str, Any]:
-        """프로젝트 또는 특정 대상 폴더의 규모 수치를 측정합니다."""
+        """프로젝트 규모를 정밀 측정하며, Dynamic Depth를 계산합니다."""
         scan_dir = target_dir or self.project_root
         file_count = 0
         total_lines = 0
@@ -1533,15 +1775,41 @@ class ProjectScaleDetector:
                 continue
 
             for file in files:
-                file_count += 1
                 file_path = Path(root) / file
+                rel_path = file_path.relative_to(self.project_root)
+
+                # 1. gitignore 필터링
+                if self.gitignore_matcher.is_ignored(rel_path):
+                    continue
+
+                # 2. 미디어/바이너리 파일 차단
+                if self._is_binary_file(file_path):
+                    continue
+
+                # 3. 300KB 초과 대용량 파일은 1개 파일로 카운트하되 줄 수 산출 스킵
+                if file_path.stat().st_size > self.max_file_size_bytes:
+                    file_count += 1
+                    total_lines += 50 # 대용량 스킵 가상 산정값
+                    continue
+
+                file_count += 1
+                ext = file_path.suffix.lower()
+
                 try:
                     with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                        total_lines += sum(1 for _ in f)
+                        # 4. JSON/CSV 등 반복 구조 데이터 파일은 상위 N줄만 샘플링
+                        if ext in REPETITIVE_DATA_EXTENSIONS:
+                            sample_count = 0
+                            for _ in f:
+                                sample_count += 1
+                                if sample_count >= self.sample_line_limit:
+                                    break
+                            total_lines += sample_count
+                        else:
+                            total_lines += sum(1 for _ in f)
                 except Exception:
                     pass
 
-        # 대략적인 토큰 수 산출 (1줄당 평균 8~10 토큰 환산)
         estimated_tokens = total_lines * 9
         is_oversized = (
             file_count > self.max_files or 
@@ -1549,11 +1817,22 @@ class ProjectScaleDetector:
             estimated_tokens > self.max_estimated_tokens
         )
 
+        # 5. Dynamic Depth 계산 (규모에 맞춰 탐색 깊이 2~5 단계 자동 산출)
+        if file_count > 1500 or total_lines > 100000:
+            recommended_depth = 2
+        elif file_count > 800 or total_lines > 60000:
+            recommended_depth = 3
+        elif file_count > 400 or total_lines > 30000:
+            recommended_depth = 4
+        else:
+            recommended_depth = 5
+
         return {
             "file_count": file_count,
             "total_lines": total_lines,
             "estimated_tokens": estimated_tokens,
-            "is_oversized": is_oversized
+            "is_oversized": is_oversized,
+            "recommended_depth": recommended_depth
         }
 
     def generate_shallow_structure_map(self, max_depth: int = 3, target_dir: Optional[Path] = None) -> str:
@@ -1649,6 +1928,11 @@ def run_terminal_command(command: str, cwd: str = None, timeout: int = 30) -> st
     except Exception as e:
         return f"💥 [실행 예외 발생] {str(e)}"
 ```
+
+--------------------------------------------------
+
+### 📄 tools/universal_indexer/README.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
 
@@ -3095,11 +3379,11 @@ def main():
             indent = "│   " * (len(parts) - 1)
 
             file_meta = jjap_context.get(posix_rel_path, {})
-            symbols_info = file_meta.get("symbols_summary", "")
+            symbols_info = get_file_symbols_summary(file_meta)
 
             if not symbols_info and posix_rel_path.startswith("extraction_target_project/extraction_target_project/"):
                 shorter_path = posix_rel_path.replace("extraction_target_project/extraction_target_project/", "extraction_target_project/", 1)
-                symbols_info = jjap_context.get(shorter_path, {}).get("symbols_summary", "")
+                symbols_info = get_file_symbols_summary(jjap_context.get(shorter_path, {}))
 
             if symbols_info:
                 f.write(f"{indent}├── {file_name} [📂 {display_path}] -> [{symbols_info}]\n")
@@ -3281,6 +3565,17 @@ class AdvancedIndexerV2:
                     self.index_file(file_path, ext)
                     total_scanned_count += 1
                 else:
+                    # 💡 [정석 반영] 파서가 없는 일반 파일도 라인 수를 측정하여 파일 메타데이터(files_context)에 등록
+                    try:
+                        rel_path_str = file_path.relative_to(self.project_root).as_posix()
+                        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                            total_lines = sum(1 for _ in f)
+                        self.files_context[rel_path_str] = {
+                            "symbols_summary": f"General File ({total_lines} lines)",
+                            "total_lines": total_lines
+                        }
+                    except Exception:
+                        pass
                     total_ignored_count += 1
 
         # 🔗 [글로벌 used_by 역방향 바인딩 후처리 엔진]
@@ -3728,6 +4023,12 @@ def main():
 ### 📄 tools/universal_indexer/map_formatter.py
 #### 🧱 Code Skeleton:
 ```python
+def get_file_symbols_summary(file_meta: Dict[str, Any]) -> str:
+    """유연한 장부 참조: symbols_summary 또는 summary 키를 동적으로 상호 지원"""
+    if not isinstance(file_meta, dict):
+        return ""
+    return file_meta.get("symbols_summary") or file_meta.get("summary") or ""
+
 def format_symbol_node(sym: Dict[str, Any], symbol_by_id: Dict[str, Dict], current_posix_path: str, indent: str) -> List[str]:
     """심볼 노드 및 CALLS/USED BY 메타데이터 렌더링 포맷터"""
     lines = []
@@ -3746,13 +4047,24 @@ def format_symbol_node(sym: Dict[str, Any], symbol_by_id: Dict[str, Dict], curre
     else:
         args_str = ""
 
-    # 2. 줄범위 계산
+    # 2. 줄범위 계산 (전체 파일 타입 / 심볼 타입에 맞게 동적 바인딩)
     start_line = sym.get("start_line")
     end_line = sym.get("end_line")
-    line_str = f"[L{start_line}-L{end_line}]" if start_line and end_line and start_line != end_line else (f"[L{start_line}]" if start_line else "")
+    total_lines = sym.get("total_lines")
+
+    if sym_type == "file" and total_lines:
+        line_str = f"[L1-L{total_lines}]"
+    elif start_line and end_line and start_line != end_line:
+        line_str = f"[L{start_line}-L{end_line}]"
+    elif start_line:
+        line_str = f"[L{start_line}]"
+    else:
+        line_str = ""
 
     # 3. 타입별 아이콘 설정
-    if sym_type == "class":
+    if sym_type == "file":
+        icon_str = f"📂 {sym_name}"
+    elif sym_type == "class":
         icon_str = f"🧬 class {sym_name}"
     elif sym_type == "json_key":
         icon_str = f"🔑 key \"{sym_name}\""
@@ -3782,6 +4094,11 @@ def format_symbol_node(sym: Dict[str, Any], symbol_by_id: Dict[str, Dict], curre
 
     return lines
 ```
+
+--------------------------------------------------
+
+### 📄 tools/universal_indexer/rule.txt
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
 

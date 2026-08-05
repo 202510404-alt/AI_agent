@@ -13,6 +13,7 @@ from config import (
     PROTOCOL_JSON_PATH,
     AI_MAP_MD_PATH
 )
+from map_formatter import format_symbol_node, get_file_symbols_summary
 
 
 def load_jjap_context():
@@ -225,11 +226,11 @@ def main():
             indent = "│   " * (len(parts) - 1)
 
             file_meta = jjap_context.get(posix_rel_path, {})
-            symbols_info = file_meta.get("symbols_summary", "")
+            symbols_info = get_file_symbols_summary(file_meta)
 
             if not symbols_info and posix_rel_path.startswith("extraction_target_project/extraction_target_project/"):
                 shorter_path = posix_rel_path.replace("extraction_target_project/extraction_target_project/", "extraction_target_project/", 1)
-                symbols_info = jjap_context.get(shorter_path, {}).get("symbols_summary", "")
+                symbols_info = get_file_symbols_summary(jjap_context.get(shorter_path, {}))
 
             if symbols_info:
                 f.write(f"{indent}├── {file_name} [📂 {display_path}] -> [{symbols_info}]\n")

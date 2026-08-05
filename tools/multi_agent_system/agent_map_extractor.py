@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from typing import List, Optional, Union, Dict, Any, Tuple
-from tools.universal_indexer.map_formatter import format_symbol_node # ✅ 이제 정상 로드됨
+from tools.universal_indexer.map_formatter import format_symbol_node, get_file_symbols_summary
 
 # 🔄 마스터 루트 역추적 (tools/multi_agent_system/ 에 위치함을 보장)
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -132,11 +132,16 @@ class AgentMapExtractor:
         target_paths: Optional[List[Union[str, Path]]] = None, 
         exclude_paths: Optional[List[Union[str, Path]]] = None
     ) -> List[Path]:
-        """지정한 상대 경로/폴더 목록 내부의 파일들을 정밀 수집합니다. (지정 안 할 시 ROOT 전체)"""
+        """지정한 상대 경로/폴더 목록 내부의 파일들을 정밀 수집합니다."""
+        from tools.universal_indexer.core_parsers.gitignore_parser import GitIgnoreMatcher
+        
         target_files = set()
         excludes = [self._normalize_path(e).as_posix() for e in (exclude_paths or [])]
+        gitignore_matcher = GitIgnoreMatcher(self.project_root)
 
-        # 💡 범위가 전달되지 않거나 빈 리스트일 경우 루트 디렉토리 전체 지정
+        # 바이너리/미디어 확장자 차단 세트
+        binary_exts = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".mp3", ".mp4", ".zip", ".exe", ".dll", ".pdf", ".ttf", ".woff"}
+
         effective_targets = target_paths if target_paths else [self.project_root]
 
         for target in effective_targets:
@@ -147,23 +152,30 @@ class AgentMapExtractor:
                 continue
 
             if abs_target.is_file():
-                rel_posix = abs_target.relative_to(self.project_root).as_posix()
-                if not any(ex in rel_posix for ex in excludes):
-                    target_files.add(abs_target)
+                rel_path = abs_target.relative_to(self.project_root)
+                rel_posix = rel_path.as_posix()
+                if not gitignore_matcher.is_ignored(rel_path) and abs_target.suffix.lower() not in binary_exts:
+                    if not any(ex in rel_posix for ex in excludes):
+                        target_files.add(abs_target)
             elif abs_target.is_dir():
                 for root, dirs, files in os.walk(abs_target, followlinks=True):
                     normalized_root = root.replace("\\", "/")
                     if any(kw in normalized_root for kw in EXCLUDE_KEYWORDS):
                         continue
                     
-                    rel_root = Path(root).relative_to(self.project_root).as_posix()
-                    if any(ex in rel_root for ex in excludes):
+                    rel_root = Path(root).relative_to(self.project_root)
+                    if gitignore_matcher.is_ignored(rel_root) or any(ex in rel_root.as_posix() for ex in excludes):
                         continue
 
                     for file in files:
                         full_path = Path(root) / file
-                        rel_file = full_path.relative_to(self.project_root).as_posix()
-                        if not any(ex in rel_file for ex in excludes):
+                        rel_file = full_path.relative_to(self.project_root)
+                        rel_file_posix = rel_file.as_posix()
+
+                        if gitignore_matcher.is_ignored(rel_file) or full_path.suffix.lower() in binary_exts:
+                            continue
+
+                        if not any(ex in rel_file_posix for ex in excludes):
                             target_files.add(full_path)
 
         return sorted(list(target_files))
@@ -205,7 +217,7 @@ class AgentMapExtractor:
 
             indent = "│   " * (len(parts) - 1)
             file_meta = jjap_context.get(posix_rel_path, {})
-            symbols_info = file_meta.get("symbols_summary", "")
+            symbols_info = get_file_symbols_summary(file_meta)
 
             if symbols_info:
                 output_lines.append(f"{indent}├── {file_name} [📂 {posix_rel_path}] -> [{symbols_info}]\n")
@@ -238,11 +250,14 @@ class AgentMapExtractor:
 
         return final_map_str
 
-
-# 💡 간단 가동 모듈 함수 인터페이스 (target_paths 기본값을 None으로 지정)
-def extract_targeted_ai_map(target_paths: Optional[List[str]] = None, exclude_paths: Optional[List[str]] = None) -> str:
+# 💡 간단 가동 모듈 함수 인터페이스 (save_to_file 파라미터 추가 및 바이패스)
+def extract_targeted_ai_map(
+    target_paths: Optional[List[str]] = None, 
+    exclude_paths: Optional[List[str]] = None,
+    save_to_file: bool = True
+) -> str:
     extractor = AgentMapExtractor()
-    return extractor.generate_custom_map(target_paths, exclude_paths)
+    return extractor.generate_custom_map(target_paths, exclude_paths, save_to_file=save_to_file)
 
 
 if __name__ == "__main__":

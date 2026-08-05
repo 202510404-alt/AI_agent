@@ -105,6 +105,17 @@ class AdvancedIndexerV2:
                     self.index_file(file_path, ext)
                     total_scanned_count += 1
                 else:
+                    # 💡 [정석 반영] 파서가 없는 일반 파일도 라인 수를 측정하여 파일 메타데이터(files_context)에 등록
+                    try:
+                        rel_path_str = file_path.relative_to(self.project_root).as_posix()
+                        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                            total_lines = sum(1 for _ in f)
+                        self.files_context[rel_path_str] = {
+                            "symbols_summary": f"General File ({total_lines} lines)",
+                            "total_lines": total_lines
+                        }
+                    except Exception:
+                        pass
                     total_ignored_count += 1
 
         # 🔗 [글로벌 used_by 역방향 바인딩 후처리 엔진]

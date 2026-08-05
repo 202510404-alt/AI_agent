@@ -1,6 +1,12 @@
 from pathlib import Path
 from typing import Dict, Any, List
 
+def get_file_symbols_summary(file_meta: Dict[str, Any]) -> str:
+    """유연한 장부 참조: symbols_summary 또는 summary 키를 동적으로 상호 지원"""
+    if not isinstance(file_meta, dict):
+        return ""
+    return file_meta.get("symbols_summary") or file_meta.get("summary") or ""
+
 def format_symbol_node(sym: Dict[str, Any], symbol_by_id: Dict[str, Dict], current_posix_path: str, indent: str) -> List[str]:
     """심볼 노드 및 CALLS/USED BY 메타데이터 렌더링 포맷터"""
     lines = []
@@ -19,13 +25,24 @@ def format_symbol_node(sym: Dict[str, Any], symbol_by_id: Dict[str, Dict], curre
     else:
         args_str = ""
 
-    # 2. 줄범위 계산
+    # 2. 줄범위 계산 (전체 파일 타입 / 심볼 타입에 맞게 동적 바인딩)
     start_line = sym.get("start_line")
     end_line = sym.get("end_line")
-    line_str = f"[L{start_line}-L{end_line}]" if start_line and end_line and start_line != end_line else (f"[L{start_line}]" if start_line else "")
+    total_lines = sym.get("total_lines")
+
+    if sym_type == "file" and total_lines:
+        line_str = f"[L1-L{total_lines}]"
+    elif start_line and end_line and start_line != end_line:
+        line_str = f"[L{start_line}-L{end_line}]"
+    elif start_line:
+        line_str = f"[L{start_line}]"
+    else:
+        line_str = ""
 
     # 3. 타입별 아이콘 설정
-    if sym_type == "class":
+    if sym_type == "file":
+        icon_str = f"📂 {sym_name}"
+    elif sym_type == "class":
         icon_str = f"🧬 class {sym_name}"
     elif sym_type == "json_key":
         icon_str = f"🔑 key \"{sym_name}\""

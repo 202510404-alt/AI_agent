@@ -1,138 +1,41 @@
-import random
-import os
-import time
+무료 Gemini API(Gemini Developer API)를 사용할 때 이 문제가 발생하는 원인은 API 호출 횟수 초과보다 AI가 도구(Tool)를 루프(Loop)로 연속 실행하면서 과도하게 요청을 보냈기 때문일 가능성이 큽니다.
 
-# 게임 설정
-WIDTH = 10
-HEIGHT = 20
-BLOCK_TYPES = [
-    # I
-    [[1, 1, 1, 1]],
-    # J
-    [[1, 0, 0],
-     [1, 1, 1]],
-    # L
-    [[0, 0, 1],
-     [1, 1, 1]],
-    # O
-    [[1, 1],
-     [1, 1]],
-    # S
-    [[0, 1, 1],
-     [1, 1, 0]],
-    # T
-    [[0, 1, 0],
-     [1, 1, 1]],
-    # Z
-    [[1, 1, 0],
-     [0, 1, 1]]
-]
-COLORS = {
-    0: ' ',  # 빈 공간
-    1: '█',  # 블록
-}
+1. 429 에러가 계속 발생한 원인
+로그를 살펴보면 다음과 같은 흐름으로 에러가 터졌습니다.
 
-class Tetris:
-    def __init__(self):
-        self.board = [[0 for _ in range(WIDTH)] for _ in range(HEIGHT)]
-        self.current_block = self.new_block()
-        self.block_x = WIDTH // 2 - len(self.current_block[0]) // 2
-        self.block_y = 0
-        self.game_over = False
-        self.score = 0
+지속적인 Command Loop 실행:
+AI가 파일 a를 찾기 위해 dir a → dir extraction_target_project/a → dir /s /b a → dir → ls -F 등 단시간에 수차례의 터미널 도구를 연달아 호출했습니다.
+요청 폭주 (RPM / TPM 초과):
+Gemini Free Tier는 1분당 요청 수 제한(RPM, 보통 15 RPM) 및 1분당 토큰 수 제한(TPM)이 엄격하게 적용됩니다. AI가 스크립트 실행 후 짧은 시간 안에 5~10번 이상의 도구를 연속해서 호출하고 그 결과를 다시 AI에 전달하는 과정에서 1분당 호출 한도를 훌쩍 넘어선 것입니다.
+대기 후 재시도 방식의 한계:15초 -> 30초 -> 45초...로 백오프(Backoff) 대기를 걸었지만, 이미 누적된 토큰 또는 RPM 제한 리셋 타이밍과 맞지 않았거나, 한 번에 소비한 토큰량이 많아 제한이 계속 유지된 것입니다.
+2. 해결 방안 (어떻게 수정해야 할까?)
+프로젝트 코드(run_test.py 및 Agent 루프 관리부)에서 다음 조치들을 적용하면 이 문제를 예방할 수 있습니다.
 
-    def new_block(self):
-        return random.choice(BLOCK_TYPES)
+① 도구 연속 호출 사이 간격(Delay) 부여
+AI가 도구를 호출한 뒤 결과를 받아 다시 AI 모델을 부를 때, 최소 2~4초 정도의 강제 time.sleep()을 걸어 짧은 시간에 RPM이 튀는 것을 방지해야 합니다.
 
-    def rotate_block(self, block):
-        return [list(row) for row in zip(*block[::-1])]
+Python
 
-    def check_collision(self, block, x, y):
-        for row_idx, row in enumerate(block):
-            for col_idx, cell in enumerate(row):
-                if cell:
-                    board_x = x + col_idx
-                    board_y = y + row_idx
-                    if not (0 <= board_x < WIDTH and 0 <= board_y < HEIGHT):
-                        return True  # 벽 밖으로 나감
-                    if self.board[board_y][board_x]:
-                        return True  # 다른 블록과 충돌
-        return False
+import time# AI Agent가 Tool 실행 결과를 받고 다음 판단을 위해 Gemini를 다시 호출하기 직전
+time.sleep(3)  # RPM(1분당 요청 제한) 초과 방지용 슬립
+② AI의 '도구 루프 실행 횟수' 제한
+AI가 파일 하나 찾겠다고 command를 5~10번 연속 실행하지 못하도록, 단일 사용자 요청당 최대 도구 실행 횟수(Max Iteration)를 3~4회 정도로 제한합니다.
 
-    def merge_block(self):
-        for row_idx, row in enumerate(self.current_block):
-            for col_idx, cell in enumerate(row):
-                if cell:
-                    self.board[self.block_y + row_idx][self.block_x + col_idx] = 1
-        self.clear_lines()
+Python
 
-    def clear_lines(self):
-        new_board = []
-        lines_cleared = 0
-        for row in self.board:
-            if 0 in row:
-                new_board.append(row)
-            else:
-                lines_cleared += 1
-                self.score += 100  # 한 줄 지울 때마다 100점 추가
-        for _ in range(lines_cleared):
-            new_board.insert(0, [0 for _ in range(WIDTH)])
-        self.board = new_board
+MAX_TOOL_CALLS = 3
+tool_call_count = 0while tool_call_count < MAX_TOOL_CALLS:
+    # Tool 실행 로직 ...
+    tool_call_count += 1
+③ System Prompt로 도구 낭비 최소화
+AI에게 최상단 디렉토리 스캔 시 명령어를 여러 번 나누어 치지 말고 한 번에 정확한 명령어를 치거나, 파일 탐색 결과를 한 번에 받아 파싱하도록 지시합니다.
 
-    def move_block(self, dx, dy):
-        if not self.check_collision(self.current_block, self.block_x + dx, self.block_y + dy):
-            self.block_x += dx
-            self.block_y += dy
-            return True
-        return False
+시스템 프롬프트 예시:
+"파일 탐색 시 dir이나 ls 명령어를 연속으로 여러 번 실행하지 마라. 한 번의 검색으로 필요한 파일을 찾지 못하면 사용자에게 위치를 질문하라."
+④ 에러 처리 시 exponential backoff + jitter 설정
+API 호출부(Google GenAI SDK)에서 429 에러 발생 시 재시도 로직을 작성할 때, 대기 시간을 정직하게 15, 30, 45초로 더하기보다는 리셋 시점(보통 60초)을 완전히 넘긴 후 요청하도록 조정합니다.
 
-    def drop_block(self):
-        while self.move_block(0, 1):
-            pass
-        self.merge_block()
-        self.current_block = self.new_block()
-        self.block_x = WIDTH // 2 - len(self.current_block[0]) // 2
-        self.block_y = 0
-        if self.check_collision(self.current_block, self.block_x, self.block_y):
-            self.game_over = True
+3. 결론
+"ㅈ된 것"은 아니며 계정이 정지되거나 한 것이 아니라 무료 플랜의 1분당 API 제한(RPM/TPM)을 순간적으로 초과한 것입니다. 약 1분 정도 지나면 다시 정상 작동합니다.
 
-    def rotate_current_block(self):
-        rotated = self.rotate_block(self.current_block)
-        if not self.check_collision(rotated, self.block_x, self.block_y):
-            self.current_block = rotated
-
-    def draw(self):
-        os.system('cls' if os.name == 'nt' else 'clear')
-        display_board = [row[:] for row in self.board]
-        for row_idx, row in enumerate(self.current_block):
-            for col_idx, cell in enumerate(row):
-                if cell:
-                    display_board[self.block_y + row_idx][self.block_x + col_idx] = 1
-
-        print("Score:", self.score)
-        for row in display_board:
-            print('|' + ''.join(COLORS[cell] for cell in row) + '|')
-        print('+' + '-' * WIDTH + '+')
-
-    def run(self):
-        while not self.game_over:
-            self.draw()
-            time.sleep(0.5)  # 블록이 떨어지는 속도 조절
-
-            # 사용자 입력 처리 (간단하게 구현)
-            # 실제 게임에서는 비동기 입력 처리가 필요
-            # 여기서는 단순히 블록을 아래로 떨어뜨림
-            if not self.move_block(0, 1):
-                self.merge_block()
-                self.current_block = self.new_block()
-                self.block_x = WIDTH // 2 - len(self.current_block[0]) // 2
-                self.block_y = 0
-                if self.check_collision(self.current_block, self.block_x, self.block_y):
-                    self.game_over = True
-
-        self.draw()
-        print("Game Over! Final Score:", self.score)
-
-if __name__ == "__main__":
-    game = Tetris()
-    game.run()
+하지만 에이전트 스크립트 특성상 "생각 -> 도구실행 -> 결과확인 -> 생각 -> 도구실행"이 짧은 순간에 여러 번 반복되기 때문에, 에이전트 Loop 내부의 time.sleep() 추가 및 최대 반복 횟수 제한을 걸어두는 것이 근본적인 해결책입니다.
