@@ -26,28 +26,32 @@ class CodePatcher:
             with open(target_path, "r", encoding="utf-8") as f:
                 content = f.read()
 
-            # 줄바꿈 단일화 (CRLF / LF 오차로 인한 매칭 실패 방지)
+            # 줄바꿈 단일화 (들여쓰기 파괴 방지를 위해 .strip() 제거)
             clean_content = content.replace("\r\n", "\n")
-            clean_existing = existing_code.replace("\r\n", "\n").strip()
-            clean_replacement = replacement_code.replace("\r\n", "\n").strip()
+            clean_existing = existing_code.replace("\r\n", "\n")
+            clean_replacement = replacement_code.replace("\r\n", "\n")
 
-            # 1. 100% 완전 일치 여부 검증
-            if clean_existing not in clean_content:
-                return {
-                    "success": False,
-                    "message": f"❌ [PATCH FAIL] 입력한 '기존 코드'가 {rel_path} 파일 내에 100% 일치하는 구간이 없습니다. 정확한 슬라이스를 지정하세요."
-                }
+            # A. 신규 작성 또는 빈 파일 덮어쓰기 처리 (existing_code가 빈 문자열인 경우)
+            if not clean_existing:
+                patched_content = clean_replacement
+            else:
+                # B. 100% 완전 일치 여부 검증
+                if clean_existing not in clean_content:
+                    return {
+                        "success": False,
+                        "message": f"❌ [PATCH FAIL] 입력한 '기존 코드'가 {rel_path} 파일 내에 100% 일치하는 구간이 없습니다."
+                    }
 
-            # 2. 파일 내 동일한 기존 코드가 2개 이상 존재하는지 출현 횟수 검증 (중복 치환 방지)
-            match_count = clean_content.count(clean_existing)
-            if match_count > 1:
-                return {
-                    "success": False,
-                    "message": f"⚠️ [PATCH FAIL] 지정한 '기존 코드'가 {rel_path} 내에 {match_count}개 존재합니다. 문맥(전후 라인)을 더 포함하여 유일하게 지정하세요."
-                }
+                # C. 중복 구간 존재 여부 검증
+                match_count = clean_content.count(clean_existing)
+                if match_count > 1:
+                    return {
+                        "success": False,
+                        "message": f"⚠️ [PATCH FAIL] 지정한 '기존 코드'가 {rel_path} 내에 {match_count}개 존재합니다. 문맥을 더 포함하세요."
+                    }
 
-            # 3. 핀포인트 1:1 정밀 치환 실행
-            patched_content = clean_content.replace(clean_existing, clean_replacement, 1)
+                # D. 1:1 정밀 치환 실행
+                patched_content = clean_content.replace(clean_existing, clean_replacement, 1)
 
             # 4. 파일 저장
             with open(target_path, "w", encoding="utf-8") as f:

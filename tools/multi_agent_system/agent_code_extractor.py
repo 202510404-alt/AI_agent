@@ -106,7 +106,7 @@ class CodeExtractor:
         print(f"⚙️ 현재 매핑 모드: {self.scan_mode} (기준 경로: {self.root_dir})")
         print("="*60)
 
-        pattern = r"([a-zA-Z0-9_\-\./\\]+\.[a-zA-Z0-9]+)[\s:]+(?:L)?(\d+)(?:\s*-\s*(?:L)?(\d+))?"
+        pattern = r"([a-zA-Z0-9_\-\./\\]+)[\s:]+(?:L)?(\d+)(?:\s*-\s*(?:L)?(\d+))?"
         matches = re.findall(pattern, raw_prompt)
 
         print(f"🔍 정규식 1차 타겟 스캔 결과: {matches}")
