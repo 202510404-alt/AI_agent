@@ -3,7 +3,7 @@ import ast
 import json
 from pathlib import Path
 
-from config import (
+from tools.universal_indexer.config import (
     PROJECT_ROOT,
     get_scan_mode,
     EXCLUDE_KEYWORDS,

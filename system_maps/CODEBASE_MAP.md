@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **93개**
+현재 인덱싱된 총 파일 수: **94개**
 
 ## 🗂️ [Module Index]
 - `.env`
@@ -66,6 +66,7 @@
 - `oldplan/agent_plan2.md`
 - `oldplan/agent_plan3.md`
 - `prompt.md`
+- `run_test.py`
 - `scan_debug.txt`
 - `setup_architecture.bat`
 - `tools/multi_agent_system/__init__.py`
@@ -283,15 +284,26 @@ def resolve_best_gemini_model(client) -> str:
         if not available_models:
             return "gemini-1.5-flash"
 
-        # 1.5 계열 flash -> pro 순으로 최상단 탐색
-        for preferred in ["gemini-1.5-flash", "gemini-1.5-pro", "flash", "pro"]:
-            for model_id in available_models:
+        # 2.0/EXP/Preview 모델 제외 후, 1.5-flash -> 1.5-pro 순으로 우선선택
+        safe_models = [m for m in available_models if "2.0" not in m and "exp" not in m.lower()]
+        target_pool = safe_models if safe_models else available_models
+
+        # .env에서 MODEL_KEYWORDS를 읽어오고, 없으면 기본 키워드 순서 사용
+        env_keywords = os.environ.get("MODEL_KEYWORDS", "")
+        if env_keywords:
+            preferred_keywords = [kw.strip().lower() for kw in env_keywords.split(",") if kw.strip()]
+        else:
+            preferred_keywords = ["1.5-flash-002", "1.5-flash-8b", "1.5-flash", "1.5-pro"]
+
+        # 키워드 순서대로 지원 가능한 모델 탐색 및 매칭
+        for preferred in preferred_keywords:
+            for model_id in target_pool:
                 if preferred in model_id.lower():
                     if DEBUG_MODE:
-                        log_debug(lambda: f"🎯 [DYNAMIC MODEL] 자동 선택된 Gemini 모델: {model_id}")
+                        log_debug(lambda: f"🎯 [DYNAMIC MODEL] 키워환 '{preferred}' 매칭 선택: {model_id}")
                     return model_id
 
-        return available_models[0]
+        return target_pool[0]
     except Exception as e:
         if DEBUG_MODE:
             log_debug(lambda: f"⚠️ [MODEL RESOLUTION WARNING] 모델 목록 조회 예외 발생: {e}")
@@ -453,7 +465,7 @@ class PromptBuilder:
     def _load_codebase_map(self) -> str:
         """create_ai_map.py로 생성된 요약 지도를 읽어옵니다."""
         if DEBUG_MODE:
-            log_debug(lambda: f"코드베이스 지도 파일 읽기 시도: {self.map_file}")
+            log_debug(lambda: "[DEBUG_LOG] Attempting to read codebase map file from target path.")
 
         if self.map_file.exists():
             try:
@@ -715,7 +727,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/array.prototype.findlastindex, node_modules/array.prototype.flatmap, node_modules/util.promisify, bin/esvalidate.js, node_modules/arraybuffer.prototype.slice, bin/esgenerate.js, node_modules/array.prototype.findlast, bin/nanoid.cjs, node_modules/array.prototype.flat, bin/js-yaml.js, bin/semver.js, bin.js, bin/jest.js, node_modules/lodash.memoize, bin/esparse.js, node_modules/string.prototype.trim, node_modules/hpack.js, node_modules/engine.io, node_modules/object.fromentries, node_modules/reflect.getprototypeof, big.js, node_modules/regexp.prototype.flags, bin/cmd.js, node_modules/socket.io, bin/nopt.js, node_modules/array.prototype.tosorted, node_modules/array.prototype.toreversed, node_modules/function.prototype.name, node_modules/decimal.js, node_modules/object.hasown, bin/eslint.js, node_modules/ipaddr.js, node_modules/iterator.prototype, node_modules/lodash.debounce, bin/bin.js, node_modules/object.groupby, node_modules/string.prototype.trimstart, node_modules/object.getownpropertydescriptors, bin/webpack-dev-server.js, hpack.js, bin/webpack.js, bin/babel-parser.js, bin/react-scripts.js, fraction.js, node_modules/string.prototype.trimend, bin/escodegen.js, cli.js, node_modules/object.entries, node_modules/lodash.uniq, bin/jiti.js, node_modules/lodash.sortby, node_modules/object.assign, dist/cli.cjs, fixtures/cli.js, node_modules/big.js, decimal.js, node_modules/resolve.exports, node_modules/sanitize.css, bin/cli.js, node_modules/array.prototype.reduce, node_modules/string.prototype.matchall, ipaddr.js, dist/esm/bin.mjs, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/css.escape, node_modules/fraction.js, node_modules/object.values, lib/cli.js, node_modules/lodash.merge, node_modules/fs.realpath`
+  - 🔗 *Calls (호출하는 것)*: `decimal.js, node_modules/lodash.memoize, bin/semver.js, bin/cli.js, node_modules/string.prototype.trimend, bin/cmd.js, node_modules/string.prototype.matchall, bin/jest.js, bin/webpack-dev-server.js, bin/js-yaml.js, node_modules/array.prototype.toreversed, node_modules/lodash.uniq, hpack.js, node_modules/object.groupby, node_modules/big.js, node_modules/lodash.debounce, node_modules/lodash.sortby, node_modules/resolve.exports, node_modules/fraction.js, node_modules/sanitize.css, node_modules/reflect.getprototypeof, node_modules/array.prototype.reduce, bin/jiti.js, fixtures/cli.js, big.js, node_modules/array.prototype.flat, bin/bin.js, bin/react-scripts.js, node_modules/string.prototype.trimstart, node_modules/ipaddr.js, cli.js, node_modules/object.assign, bin/esgenerate.js, node_modules/lodash.merge, bin/nopt.js, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/array.prototype.findlastindex, node_modules/socket.io, node_modules/util.promisify, bin/esparse.js, lib/cli.js, bin/babel-parser.js, node_modules/decimal.js, bin/eslint.js, node_modules/fs.realpath, node_modules/object.entries, node_modules/array.prototype.flatmap, ipaddr.js, node_modules/regexp.prototype.flags, dist/cli.cjs, bin.js, node_modules/array.prototype.findlast, node_modules/string.prototype.trim, node_modules/function.prototype.name, node_modules/object.fromentries, node_modules/css.escape, node_modules/hpack.js, node_modules/object.getownpropertydescriptors, node_modules/object.values, dist/esm/bin.mjs, fraction.js, node_modules/engine.io, node_modules/iterator.prototype, bin/escodegen.js, bin/webpack.js, node_modules/array.prototype.tosorted, node_modules/arraybuffer.prototype.slice, bin/nanoid.cjs, node_modules/object.hasown, bin/esvalidate.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -969,7 +981,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, node_modules/engine.io, node_modules/pstree.remy, ipaddr.js, bin/semver.js, node_modules/ipaddr.js, cli.js, bin/nodetouch.js, bin/nodemon.js`
+  - 🔗 *Calls (호출하는 것)*: `bin/nodemon.js, bin/semver.js, node_modules/engine.io, ipaddr.js, bin/nodetouch.js, cli.js, node_modules/pstree.remy, node_modules/ipaddr.js, node_modules/socket.io`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1038,6 +1050,217 @@ def run_interactive_chat():
 
 ### 📄 prompt.md
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 run_test.py
+#### 🧱 Code Skeleton:
+```python
+def load_mission_file(mission_rel_path: str) -> dict:
+    """JSON 미션 파일 로더 및 규격 검증"""
+    mission_path = ROOT_DIR / mission_rel_path
+    if not mission_path.exists():
+        raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
+    
+    with open(mission_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    # 필수 키 검증
+    required_keys = ["task_id", "target_file", "description"]
+    for key in required_keys:
+        if key not in data:
+            raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
+            
+    return data
+
+def clean_json_response(raw_response: str) -> str:
+    """LLM 응답에서 마크다운 코드 블록(```json ... ```)을 제거하고 순수 JSON 문자열 추출"""
+    text = raw_response.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\n?", "", text)
+        text = re.sub(r"\n?```$", "", text)
+    return text.strip()
+
+def run_step_worker_pipeline(mission_rel_path: str):
+    print(f"\n🚀 [WORKER PIPELINE] 파이프라인 가동: '{mission_rel_path}'")
+    factory = AgentSessionFactory(ROOT_DIR)
+    
+    # JSON 미션 데이터 로드
+    mission_data = load_mission_file(mission_rel_path)
+    target_file_path = mission_data["target_file"]
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+    # -----------------------------------------------------------------
+    # 🔍 [Step 1] 프로젝트 규모 진단 및 동적 지형도 생성 (1-Step / 2-Step 분기)
+    # -----------------------------------------------------------------
+    print("\n🗺️ [Step 1] 프로젝트 규모 측정 및 코드베이스 맵 준비...")
+    scale_detector = ProjectScaleDetector(project_root=ROOT_DIR)
+    scale_info = scale_detector.analyze_project_scale()
+
+    if scale_info["is_oversized"]:
+        print(f"⚠️ 대형 프로젝트 감지 ({scale_info['file_count']}개 파일, {scale_info['total_lines']}줄): 2단계 지형도 탐색 진행")
+        shallow_map = scale_detector.generate_shallow_structure_map(
+            max_depth=scale_info["recommended_depth"]
+        )
+        
+        select_sys_instruction = (
+            "STRICT PROTOCOL: Output raw JSON string array only. No commentary. "
+            "Select ONLY minimum directories directly related to mission target."
+        )
+
+        select_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Project Shallow Structure Map:
+{shallow_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Extract ONLY the absolute minimum relative directory/file paths directly required for the mission.
+- NO extra explanations, markdown tags, or conversational fluff.
+
+[3. REQUIRED FORMAT]
+["path/to/dir_or_file"]"""
+        
+        try:
+            raw_dirs = factory.execute_worker_step(
+                prompt=select_prompt,
+                system_instruction=select_sys_instruction,
+                response_mime_type="application/json"
+            )
+            target_dirs = json.loads(clean_json_response(raw_dirs))
+            if not isinstance(target_dirs, list):
+                target_dirs = [target_dirs]
+                
+            print(f"🎯 [Step 1 AI 선택 경로] {target_dirs}")
+            codebase_map = extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
+        except Exception as e:
+            print(f"⚠️ [Step 1 Warning] AI 경로 선택 처리 중 예외 발생({e}), 전체 기본 맵으로 대체 진행")
+            codebase_map = extract_targeted_ai_map(save_to_file=False)
+    else:
+        print("✅ 일반 규모 프로젝트: AI 호출 없이 전체 AI 코드베이스 맵 direct 생성")
+        codebase_map = extract_targeted_ai_map(save_to_file=False)
+
+    # -----------------------------------------------------------------
+    # 📄 [Step 2] 미션 기반 동적 필요 코드 영역 추론 및 추출 (하드코딩 제거)
+    # -----------------------------------------------------------------
+    print("\n📄 [Step 2] 미션 및 지형도 맵 기반 필요 코드 영역 동적 추출...")
+    
+    extract_sys_instruction = (
+        "STRICT PROTOCOL: Output JSON string array matching [\"relative/path.py:start-end\"] only. "
+        "Strictly limit targets to the mission's designated Target File or mandatory reference files. "
+        "Do NOT slice unrequested system files."
+    )
+
+    extract_target_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Current Codebase Map:
+{codebase_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Specify target relative file paths and line ranges required to fulfill the mission.
+- Do NOT request code slices for unreferenced system architecture files.
+
+[3. REQUIRED FORMAT]
+["{target_file_path}:1-100"]"""
+
+    try:
+        raw_slice_targets = factory.execute_worker_step(
+            prompt=extract_target_prompt,
+            system_instruction=extract_sys_instruction,
+            response_mime_type="application/json"
+        )
+        slice_target_list = json.loads(clean_json_response(raw_slice_targets))
+        
+        if isinstance(slice_target_list, list) and len(slice_target_list) > 0:
+            slice_prompt_str = " ".join(slice_target_list)
+            print(f"🔍 [Step 2 AI 요청 슬라이스 Target] {slice_prompt_str}")
+            slice_res = factory.extractor.process(slice_prompt_str, auto_save=False)
+            target_code = slice_res.get("markdown", "")
+        else:
+            target_code = "(AI가 추출할 별도 코드 영역을 지정하지 않아 맵 기본 정보로 진행합니다.)"
+    except Exception as e:
+        print(f"⚠️ [Step 2 Warning] 필요 코드 영역 동적 추출 실패({e}), 기본 맵 정보 활용")
+        target_code = "(코드 슬라이스 추출 중 예외가 발생하여 맵 정보만을 기반으로 진행합니다.)"
+
+    print(f"📄 [Step 2 준비 완료] 추출된 코드 영역 길이: {len(target_code)}자")
+
+    # -----------------------------------------------------------------
+    # 🤖 [Step 3] LLM 단발성(Stateless) 패치 생성 요청
+    # -----------------------------------------------------------------
+    print("\n🤖 [Step 3] LLM 단발성 수정 패치 생성 중...")
+    
+    system_prompt = f"""STRICT EXECUTION PROTOCOL & SANDBOX RULES:
+1. TARGET FILE BINDING: 'file_path' MUST be strictly set to '{target_file_path}'.
+2. READ-ONLY SCOPE: Provided reference code slices from system files are READ-ONLY context. NEVER attempt to modify them.
+3. ZERO CONVERSATIONAL FLUFF: Output valid raw JSON ONLY. NO markdown tags, NO preamble, NO postscript, NO explanations.
+4. EXACT MATCH REPLACEMENT: 'existing_code' must match the target code section exactly for string replacement. If creating a new file or target file is empty, use an empty string "".
+5. NO UNSANCTIONED REFACTORS: Do not add unrequested code, comments, or refactor existing architectures."""
+
+    user_prompt = f"""[1. CURRENT STATE & CONTEXT]
+■ Exact Target File Path:
+{target_file_path}
+
+■ Mission Data:
+{mission_str}
+
+■ Read-Only Context Code (DO NOT MODIFY THESE FILES):
+{target_code}
+
+[2. OUTPUT CONSTRAINTS]
+- Target file_path MUST be exactly: "{target_file_path}"
+- Modifications to system infrastructure files are strictly prohibited.
+
+[3. REQUIRED FORMAT]
+{{
+  "file_path": "{target_file_path}",
+  "existing_code": "exact_string_to_be_replaced",
+  "replacement_code": "exact_new_string_to_apply"
+}}"""
+
+    raw_response = factory.execute_worker_step(
+        prompt=user_prompt,
+        system_instruction=system_prompt,
+        response_mime_type="application/json"
+    )
+
+    # -----------------------------------------------------------------
+    # 🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용
+    # -----------------------------------------------------------------
+    print("\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용...")
+    try:
+        cleaned_json_text = clean_json_response(raw_response)
+        patch_data = json.loads(cleaned_json_text)
+        file_path = patch_data.get("file_path")
+        existing_code = patch_data.get("existing_code")
+        replacement_code = patch_data.get("replacement_code")
+
+        # 기존 bool 조건문 버그 수정: is not None 체크를 통해 ""(신규 생성/빈 기존 코드) 허용
+        if file_path is not None and existing_code is not None and replacement_code is not None:
+            patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
+            print(f"📌 [PATCH RESULT] {patch_result['message']}")
+        else:
+            print(f"⚠️ [PATCH FAIL] 필수 파라미터가 유효하지 않습니다: {patch_data}")
+
+    except Exception as e:
+        print(f"❌ [STEP 4 ERROR] 패치 응답 해석 또는 적용 중 오류 발생: {e}")
+        print(f"📄 Raw LLM Response:\n{raw_response}")
+
+def main():
+    print("🚀 ASE-OS v1.3 Step Worker Pipeline 테스트 가동...")
+
+    if LOG_FILE_PATH.exists():
+        with open(LOG_FILE_PATH, "w", encoding="utf-8") as f:
+            f.write("=== [Step Worker Pipeline Debug Log Initialized] ===\n")
+
+    # JSON 규격 미션 파일 실행
+    mission_file_path = "agent_core/tasks/task_01/checklist_01/mission_01.json"
+    run_step_worker_pipeline(mission_file_path)
+```
 
 --------------------------------------------------
 
@@ -1678,15 +1901,14 @@ class AgentSessionFactory:
         )
         self.client = None
 
-    def _prepare_codebase_map(self, max_shallow_depth: int = 3) -> tuple[str, bool]:
+    def prepare_step1_map(self, max_shallow_depth: int = 3) -> tuple[str, bool]:
         """
-        규모 진단 후 (맵 텍스트, oversized 여부) 튜플을 반환합니다.
+        [Step 1 인터페이스] 프로젝트 규모를 진단하고 (맵 텍스트, oversized 여부) 튜플을 반환합니다.
         """
         scan_target = self.root_dir / "extraction_target_project"
         target_dir = scan_target if scan_target.exists() else self.root_dir
 
         metrics = self.scale_detector.analyze_project_scale(target_dir=target_dir)
-        # 동적으로 산출된 Depth가 있으면 적용, 없으면 기본 전달값 사용
         effective_depth = metrics.get("recommended_depth", max_shallow_depth)
 
         if metrics["is_oversized"]:
@@ -1699,10 +1921,61 @@ class AgentSessionFactory:
             return shallow_map, True
         else:
             print(f"✅ [PROJECT SCALE] 적정 규모 프로젝트 (유효 코드 파일 {metrics['file_count']}개, {metrics['total_lines']}줄)")
-            # 적정 규모일 경우 대상 폴더 전체 추출
             target_rel_path = "extraction_target_project" if scan_target.exists() else "."
             full_map = extract_targeted_ai_map(target_paths=[target_rel_path], save_to_file=True)
             return full_map, False
+
+
+    def execute_worker_step(self, prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_retries: int = 5) -> str:
+        """
+        [Step 3 인터페이스] 단발성 LLM 요청을 수행합니다. (429 Quota 초과 시 API Key 자동 Rotate 처리)
+        """
+        if not HAS_GENAI:
+            raise RuntimeError("Google GenAI 패키지가 설치되지 않았습니다.")
+
+        from agent_core.plan.gemini_client import resolve_best_gemini_model
+
+        for attempt in range(1, max_retries + 1):
+            current_api_key = self.key_manager.get_current_key()
+            if not current_api_key:
+                raise RuntimeError(".env에 등록된 유효한 GEMINI_API_KEY가 없습니다.")
+
+            try:
+                self.client = genai.Client(api_key=current_api_key)
+                target_model = resolve_best_gemini_model(self.client)
+
+                response = self.client.models.generate_content(
+                    model=target_model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        response_mime_type=response_mime_type,
+                        temperature=0.1
+                    )
+                )
+                return response.text
+
+            except Exception as e:
+                err_msg = str(e)
+                # 1. 429 쿼터 초과 -> Key Rotate 후 즉시 재시도
+                if "429" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+                    print(f"⚠️ [API 429 EXHAUSTED] Key 번호 {self.key_manager.current_index + 1} 쿼터 초과. 다음 Key로 교체합니다... ({attempt}/{max_retries})")
+                    self.key_manager.rotate_key()
+                    continue
+
+                # 2. 503 서버 과부하 -> Key Rotate + 대기
+                elif "503" in err_msg or "UNAVAILABLE" in err_msg:
+                    import time
+                    wait_sec = 2 * attempt
+                    print(f"⚠️ [API 503 UNAVAILABLE] 서버 과부하 발생! Key 교체 후 {wait_sec}초 대기... ({attempt}/{max_retries})")
+                    self.key_manager.rotate_key()
+                    time.sleep(wait_sec)
+                    continue
+
+                else:
+                    raise e
+
+        raise RuntimeError("모든 GEMINI_API_KEY의 쿼터가 소진되었거나 요청 실패했습니다.")
 
     def _build_tools(self):
         """AI에게 전달할 Tool 패키징 (RPM 폭주 방지 딜레이 포함)"""

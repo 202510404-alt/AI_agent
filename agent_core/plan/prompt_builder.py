@@ -35,7 +35,7 @@ class PromptBuilder:
     def _load_codebase_map(self) -> str:
         """create_ai_map.py로 생성된 요약 지도를 읽어옵니다."""
         if DEBUG_MODE:
-            log_debug(lambda: f"코드베이스 지도 파일 읽기 시도: {self.map_file}")
+            log_debug(lambda: "[DEBUG_LOG] Attempting to read codebase map file from target path.")
 
         if self.map_file.exists():
             try:

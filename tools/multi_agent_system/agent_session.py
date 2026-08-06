@@ -172,11 +172,12 @@ class AgentSessionFactory:
                     self.key_manager.rotate_key()
                     continue
 
-                # 2. 503 서버 과부하 -> 짧게 대기(time.sleep) 후 동일 Key로 재시도
+                # 2. 503 서버 과부하 -> Key Rotate + 대기
                 elif "503" in err_msg or "UNAVAILABLE" in err_msg:
                     import time
-                    wait_sec = 3 * attempt
-                    print(f"⚠️ [API 503 UNAVAILABLE] 서버 과부하 발생! {wait_sec}초 후 다시 시도합니다... ({attempt}/{max_retries})")
+                    wait_sec = 2 * attempt
+                    print(f"⚠️ [API 503 UNAVAILABLE] 서버 과부하 발생! Key 교체 후 {wait_sec}초 대기... ({attempt}/{max_retries})")
+                    self.key_manager.rotate_key()
                     time.sleep(wait_sec)
                     continue
 

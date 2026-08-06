@@ -90,11 +90,19 @@ def resolve_best_gemini_model(client) -> str:
         safe_models = [m for m in available_models if "2.0" not in m and "exp" not in m.lower()]
         target_pool = safe_models if safe_models else available_models
 
-        for preferred in ["gemini-1.5-flash", "1.5-flash", "gemini-1.5-pro", "1.5-pro"]:
+        # .env에서 MODEL_KEYWORDS를 읽어오고, 없으면 기본 키워드 순서 사용
+        env_keywords = os.environ.get("MODEL_KEYWORDS", "")
+        if env_keywords:
+            preferred_keywords = [kw.strip().lower() for kw in env_keywords.split(",") if kw.strip()]
+        else:
+            preferred_keywords = ["1.5-flash-002", "1.5-flash-8b", "1.5-flash", "1.5-pro"]
+
+        # 키워드 순서대로 지원 가능한 모델 탐색 및 매칭
+        for preferred in preferred_keywords:
             for model_id in target_pool:
                 if preferred in model_id.lower():
                     if DEBUG_MODE:
-                        log_debug(lambda: f"🎯 [DYNAMIC MODEL] 자동 선택된 안정 모델: {model_id}")
+                        log_debug(lambda: f"🎯 [DYNAMIC MODEL] 키워환 '{preferred}' 매칭 선택: {model_id}")
                     return model_id
 
         return target_pool[0]

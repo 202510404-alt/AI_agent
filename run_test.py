@@ -10,60 +10,177 @@ sys.path.append(str(ROOT_DIR))
 
 from agent_core.plan.schemas import LOG_FILE_PATH, DEBUG_MODE
 from tools.multi_agent_system.agent_session import AgentSessionFactory
+from tools.multi_agent_system.project_scale_detector import ProjectScaleDetector
+from tools.multi_agent_system.agent_map_extractor import extract_targeted_ai_map
+
+def load_mission_file(mission_rel_path: str) -> dict:
+    """JSON 미션 파일 로더 및 규격 검증"""
+    mission_path = ROOT_DIR / mission_rel_path
+    if not mission_path.exists():
+        raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
+    
+    with open(mission_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    # 필수 키 검증
+    required_keys = ["task_id", "target_file", "description"]
+    for key in required_keys:
+        if key not in data:
+            raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
+            
+    return data
+
+def clean_json_response(raw_response: str) -> str:
+    """LLM 응답에서 마크다운 코드 블록(```json ... ```)을 제거하고 순수 JSON 문자열 추출"""
+    text = raw_response.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\n?", "", text)
+        text = re.sub(r"\n?```$", "", text)
+    return text.strip()
 
 # =====================================================================
 # ⚙️ Step 기반 순차 실행 일꾼 파이프라인 (Worker Pipeline)
 # =====================================================================
-def run_step_worker_pipeline(user_goal: str):
-    print(f"\n🚀 [WORKER PIPELINE] 파이프라인 가동: '{user_goal}'")
+def run_step_worker_pipeline(mission_rel_path: str):
+    print(f"\n🚀 [WORKER PIPELINE] 파이프라인 가동: '{mission_rel_path}'")
     factory = AgentSessionFactory(ROOT_DIR)
-
-    # -----------------------------------------------------------------
-    # 🔍 [Step 1] 프로젝트 규모 진단 및 코드베이스 지형도 생성
-    # -----------------------------------------------------------------
-    print("\n🗺️ [Step 1] 프로젝트 지도 작성 및 범위 분석 중...")
-    codebase_map, is_oversized = factory.prepare_step1_map()
     
-    # -----------------------------------------------------------------
-    # 📄 [Step 2] 정규식/슬라이서 이용 필요 코드 영역 준비
-    # -----------------------------------------------------------------
-    print("\n📄 [Step 2] 분석 및 수정 필요 코드 영역 추출...")
-    # 예시: extraction_target_project 내 main.py 코드 슬라이스 추출
-    target_file_rel = "extraction_target_project/main.py"
-    target_file_abs = factory.root_dir / target_file_rel
+    # JSON 미션 데이터 로드
+    mission_data = load_mission_file(mission_rel_path)
+    target_file_path = mission_data["target_file"]
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
 
-    if target_file_abs.exists():
-        slice_res = factory.extractor.process(f"{target_file_rel}:1-100", auto_save=False)
-        target_code = slice_res.get("markdown", "")
+    # -----------------------------------------------------------------
+    # 🔍 [Step 1] 프로젝트 규모 진단 및 동적 지형도 생성 (1-Step / 2-Step 분기)
+    # -----------------------------------------------------------------
+    print("\n🗺️ [Step 1] 프로젝트 규모 측정 및 코드베이스 맵 준비...")
+    scale_detector = ProjectScaleDetector(project_root=ROOT_DIR)
+    scale_info = scale_detector.analyze_project_scale()
+
+    if scale_info["is_oversized"]:
+        print(f"⚠️ 대형 프로젝트 감지 ({scale_info['file_count']}개 파일, {scale_info['total_lines']}줄): 2단계 지형도 탐색 진행")
+        shallow_map = scale_detector.generate_shallow_structure_map(
+            max_depth=scale_info["recommended_depth"]
+        )
+        
+        select_sys_instruction = (
+            "STRICT PROTOCOL: Output raw JSON string array only. No commentary. "
+            "Select ONLY minimum directories directly related to mission target."
+        )
+
+        select_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Project Shallow Structure Map:
+{shallow_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Extract ONLY the absolute minimum relative directory/file paths directly required for the mission.
+- NO extra explanations, markdown tags, or conversational fluff.
+
+[3. REQUIRED FORMAT]
+["path/to/dir_or_file"]"""
+        
+        try:
+            raw_dirs = factory.execute_worker_step(
+                prompt=select_prompt,
+                system_instruction=select_sys_instruction,
+                response_mime_type="application/json"
+            )
+            target_dirs = json.loads(clean_json_response(raw_dirs))
+            if not isinstance(target_dirs, list):
+                target_dirs = [target_dirs]
+                
+            print(f"🎯 [Step 1 AI 선택 경로] {target_dirs}")
+            codebase_map = extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
+        except Exception as e:
+            print(f"⚠️ [Step 1 Warning] AI 경로 선택 처리 중 예외 발생({e}), 전체 기본 맵으로 대체 진행")
+            codebase_map = extract_targeted_ai_map(save_to_file=False)
     else:
-        target_code = "(대상 파일이 없어 기본 맵 정보를 기초로 수정 작업을 진행합니다.)"
+        print("✅ 일반 규모 프로젝트: AI 호출 없이 전체 AI 코드베이스 맵 direct 생성")
+        codebase_map = extract_targeted_ai_map(save_to_file=False)
+
+    # -----------------------------------------------------------------
+    # 📄 [Step 2] 미션 기반 동적 필요 코드 영역 추론 및 추출 (하드코딩 제거)
+    # -----------------------------------------------------------------
+    print("\n📄 [Step 2] 미션 및 지형도 맵 기반 필요 코드 영역 동적 추출...")
+    
+    extract_sys_instruction = (
+        "STRICT PROTOCOL: Output JSON string array matching [\"relative/path.py:start-end\"] only. "
+        "Strictly limit targets to the mission's designated Target File or mandatory reference files. "
+        "Do NOT slice unrequested system files."
+    )
+
+    extract_target_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Current Codebase Map:
+{codebase_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Specify target relative file paths and line ranges required to fulfill the mission.
+- Do NOT request code slices for unreferenced system architecture files.
+
+[3. REQUIRED FORMAT]
+["{target_file_path}:start_line-end_line"]"""
+
+    try:
+        raw_slice_targets = factory.execute_worker_step(
+            prompt=extract_target_prompt,
+            system_instruction=extract_sys_instruction,
+            response_mime_type="application/json"
+        )
+        slice_target_list = json.loads(clean_json_response(raw_slice_targets))
+        
+        if isinstance(slice_target_list, list) and len(slice_target_list) > 0:
+            slice_prompt_str = " ".join(slice_target_list)
+            print(f"🔍 [Step 2 AI 요청 슬라이스 Target] {slice_prompt_str}")
+            slice_res = factory.extractor.process(slice_prompt_str, auto_save=False)
+            target_code = slice_res.get("markdown", "")
+        else:
+            target_code = "(AI가 추출할 별도 코드 영역을 지정하지 않아 맵 기본 정보로 진행합니다.)"
+    except Exception as e:
+        print(f"⚠️ [Step 2 Warning] 필요 코드 영역 동적 추출 실패({e}), 기본 맵 정보 활용")
+        target_code = "(코드 슬라이스 추출 중 예외가 발생하여 맵 정보만을 기반으로 진행합니다.)"
+
+    print(f"📄 [Step 2 준비 완료] 추출된 코드 영역 길이: {len(target_code)}자")
 
     # -----------------------------------------------------------------
     # 🤖 [Step 3] LLM 단발성(Stateless) 패치 생성 요청
     # -----------------------------------------------------------------
     print("\n🤖 [Step 3] LLM 단발성 수정 패치 생성 중...")
     
-    # 💡 백틱(```)을 제거하여 UI/검은박스가 깨지는 현상을 방지했습니다.
-    system_prompt = """당신은 정밀한 코드 수정안(Patch)을 생성하는 핵심 AI Worker입니다.
-반드시 아래 JSON 포맷에 맞추어 응답해야 하며, 다른 설명 텍스트를 포함하지 마십시오.
+    system_prompt = f"""STRICT EXECUTION PROTOCOL & SANDBOX RULES:
+1. TARGET FILE BINDING: 'file_path' MUST be strictly set to '{target_file_path}'.
+2. READ-ONLY SCOPE: Provided reference code slices from system files are READ-ONLY context. NEVER attempt to modify them.
+3. ZERO CONVERSATIONAL FLUFF: Output valid raw JSON ONLY. NO markdown tags, NO preamble, NO postscript, NO explanations.
+4. EXACT MATCH REPLACEMENT: 'existing_code' must match the target code section exactly for string replacement. If creating a new file or target file is empty, use an empty string "".
+5. NO UNSANCTIONED REFACTORS: Do not add unrequested code, comments, or refactor existing architectures."""
 
-{
-  "file_path": "대상_파일_상대_경로",
-  "existing_code": "치환할_기존_코드_구간",
-  "replacement_code": "새롭게_교체할_코드_구간"
-}
-"""
+    user_prompt = f"""[1. CURRENT STATE & CONTEXT]
+■ Exact Target File Path:
+{target_file_path}
 
-    user_prompt = f"""[사용자 수정 목표]
-{user_goal}
+■ Mission Data:
+{mission_str}
 
-[프로젝트 구조 정보]
-{codebase_map}
-
-[현재 관련 코드 영역]
+■ Read-Only Context Code (DO NOT MODIFY THESE FILES):
 {target_code}
 
-위 내용을 기반으로 코드를 수정하기 위한 정확한 JSON 패치를 생성해 주세요."""
+[2. OUTPUT CONSTRAINTS]
+- Target file_path MUST be exactly: "{target_file_path}"
+- Modifications to system infrastructure files are strictly prohibited.
+
+[3. REQUIRED FORMAT]
+{{
+  "file_path": "{target_file_path}",
+  "existing_code": "exact_string_to_be_replaced",
+  "replacement_code": "exact_new_string_to_apply"
+}}"""
 
     raw_response = factory.execute_worker_step(
         prompt=user_prompt,
@@ -76,18 +193,14 @@ def run_step_worker_pipeline(user_goal: str):
     # -----------------------------------------------------------------
     print("\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용...")
     try:
-        # JSON 블록 정제
-        cleaned_json_text = raw_response.strip()
-        if cleaned_json_text.startswith("```"):
-            cleaned_json_text = re.sub(r"^```(?:json)?\n?", "", cleaned_json_text)
-            cleaned_json_text = re.sub(r"\n?```$", "", cleaned_json_text)
-
+        cleaned_json_text = clean_json_response(raw_response)
         patch_data = json.loads(cleaned_json_text)
         file_path = patch_data.get("file_path")
         existing_code = patch_data.get("existing_code")
         replacement_code = patch_data.get("replacement_code")
 
-        if file_path and existing_code and replacement_code:
+        # 기존 bool 조건문 버그 수정: is not None 체크를 통해 ""(신규 생성/빈 기존 코드) 허용
+        if file_path is not None and existing_code is not None and replacement_code is not None:
             patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
             print(f"📌 [PATCH RESULT] {patch_result['message']}")
         else:
@@ -107,9 +220,9 @@ def main():
         with open(LOG_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("=== [Step Worker Pipeline Debug Log Initialized] ===\n")
 
-    # 사용자 목표 설정 후 순차 파이프라인 실행
-    user_goal = "main.py 파일의 메인 실행부 예외 처리를 보강하고 디버그 로그 기록 기능을 추가해 줘."
-    run_step_worker_pipeline(user_goal)
+    # Target File이 'a'로 정상 수정된 JSON 규격 미션 파일 지정
+    mission_file_path = "agent_core/tasks/task_01/checklist_01/mission_01.json"
+    run_step_worker_pipeline(mission_file_path)
 
 if __name__ == "__main__":
     main()
