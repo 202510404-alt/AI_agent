@@ -64,6 +64,11 @@ class CodeExtractor:
         """
         clean_path_str = raw_path_str.strip().replace("\\", "/")
         
+        # 🚨 [SECURITY GUARD] .env 등 환경변수 및 민감 정보 파일 접근 원천 차단
+        if any(part.startswith(".env") or part.endswith(".env") for part in clean_path_str.split("/")):
+            print(f"🛡️ [SECURITY BLOCKED] 민감 파일 접근이 차단되었습니다: {clean_path_str}")
+            return None
+
         # 1차 시도: 모드별 스펙에 맞춘 경로 조립
         if self.scan_mode == "SRC":
             if clean_path_str.startswith("src/src/"):

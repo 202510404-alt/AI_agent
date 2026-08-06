@@ -12,6 +12,15 @@ from agent_core.plan.schemas import LOG_FILE_PATH, DEBUG_MODE
 from tools.multi_agent_system.agent_session import AgentSessionFactory
 from tools.multi_agent_system.project_scale_detector import ProjectScaleDetector
 from tools.multi_agent_system.agent_map_extractor import extract_targeted_ai_map
+from tools.multi_agent_system.terminal_runner import run_terminal_command
+
+def build_log_regex_pattern(template_msg: str) -> str:
+    """미션의 디버그 로그 메시지 내 변수 표기({x}, {str} 등)를 Regex 유연 패턴으로 자동 변환"""
+    escaped = re.escape(template_msg)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
+    escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
+    return escaped
 
 def load_mission_file(mission_rel_path: str) -> dict:
     """JSON 미션 파일 로더 및 규격 검증"""
@@ -169,6 +178,23 @@ Current Codebase Map:
     print(f"📄 [Step 2 준비 완료] 추출된 코드 영역 길이: {len(target_code)}자")
 
     # -----------------------------------------------------------------
+    # 🛡️ API 예외 처리 및 키 자동 로테이션 안전 호출 헬퍼
+    # -----------------------------------------------------------------
+    def safe_execute_step(prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 5) -> str:
+        for attempt in range(max_attempts):
+            try:
+                return factory.execute_worker_step(
+                    prompt=prompt,
+                    system_instruction=system_instruction,
+                    response_mime_type=response_mime_type
+                )
+            except Exception as e:
+                print(f"⚠️ [LLM 호출 예외 발생] ({e}) -> 다음 키로 스위칭 및 재시도 ({attempt + 1}/{max_attempts})")
+                if hasattr(factory, "switch_to_next_key"):
+                    factory.switch_to_next_key()
+        raise RuntimeError("🚨 모든 Gemini API Key가 소진되었거나 PERMISSION_DENIED 오류로 인해 실패했습니다.")
+
+    # -----------------------------------------------------------------
     # 🤖 [Step 3] LLM 단발성(Stateless) 패치 생성 요청
     # -----------------------------------------------------------------
     print("\n🤖 [Step 3] LLM 단발성 수정 패치 생성 중...")
@@ -199,41 +225,146 @@ Generate a single JSON object to execute the mission:
 }}
 </OUTPUT_INSTRUCTIONS>"""
 
-    raw_response = factory.execute_worker_step(
+    raw_response = safe_execute_step(
         prompt=user_prompt,
         system_instruction=system_prompt,
         response_mime_type="application/json"
     )
 
     # -----------------------------------------------------------------
-    # 🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용
+    # 🛠️ [Step 4 ~ Step 6] 검증 및 자기 복구 실행 루프
     # -----------------------------------------------------------------
-    print("\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용...")
-    try:
-        cleaned_json_text = clean_json_response(raw_response)
-        # strict=False 옵션을 추가하여 제어 문자(\n, \t 등)로 인한 json.loads 파싱 에러 방지
-        patch_data = json.loads(cleaned_json_text, strict=False)
+    max_retries = 3
+    retry_count = 0
 
-        # 🛡️ [안전장치] AI가 [{ ... }] 리스트 형태로 응답했을 경우 첫 번째 요소 추출
-        if isinstance(patch_data, list) and len(patch_data) > 0:
-            patch_data = patch_data[0]
+    while retry_count <= max_retries:
+        print(f"\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 {retry_count + 1}/{max_retries + 1})...")
+        patch_success = False
+        try:
+            cleaned_json_text = clean_json_response(raw_response)
+            patch_data = json.loads(cleaned_json_text, strict=False)
 
-        if isinstance(patch_data, dict):
-            file_path = patch_data.get("file_path")
-            existing_code = patch_data.get("existing_code")
-            replacement_code = patch_data.get("replacement_code")
+            if isinstance(patch_data, list) and len(patch_data) > 0:
+                patch_data = patch_data[0]
 
-            if file_path is not None and existing_code is not None and replacement_code is not None:
-                patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
-                print(f"📌 [PATCH RESULT] {patch_result['message']}")
+            if isinstance(patch_data, dict):
+                file_path = patch_data.get("file_path")
+                existing_code = patch_data.get("existing_code")
+                replacement_code = patch_data.get("replacement_code")
+
+                if file_path is not None and existing_code is not None and replacement_code is not None:
+                    patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
+                    print(f"📌 [PATCH RESULT] {patch_result['message']}")
+                    patch_success = patch_result.get("success", False)
+                else:
+                    print(f"⚠️ [PATCH FAIL] 필수 키 값이 누락되었습니다: {patch_data}")
             else:
-                print(f"⚠️ [PATCH FAIL] 필수 키 값이 누락되었습니다: {patch_data}")
-        else:
-            print(f"⚠️ [PATCH FAIL] JSON 응답 데이터 형식이 올바르지 않습니다: {type(patch_data)}")
+                print(f"⚠️ [PATCH FAIL] JSON 응답 데이터 형식이 올바르지 않습니다: {type(patch_data)}")
 
-    except Exception as e:
-        print(f"❌ [STEP 4 ERROR] 패치 응답 해석 또는 적용 중 오류 발생: {e}")
-        print(f"📄 Raw LLM Response:\n{raw_response}")
+        except Exception as e:
+            print(f"❌ [STEP 4 ERROR] 패치 응답 해석 또는 적용 중 오류 발생: {e}")
+
+        # -------------------------------------------------------------
+        # 💻 [Step 5] Terminal Runner 가동 및 디버깅 로그 정규식 검증
+        # -------------------------------------------------------------
+        print("\n💻 [Step 5] Terminal Runner 실행 및 로그 검증...")
+        entrypoint = mission_data.get("standalone_entrypoint", f"python3 {target_file_path}")
+        terminal_output = run_terminal_command(entrypoint, cwd=str(ROOT_DIR))
+        print(f"📄 [TERMINAL OUTPUT]\n{terminal_output}")
+
+        debug_spec = mission_data.get("debug_log_spec", {})
+        expected_msg = debug_spec.get("message", "")
+        
+        if expected_msg:
+            regex_pattern = build_log_regex_pattern(expected_msg)
+            is_verified = bool(re.search(regex_pattern, terminal_output))
+        else:
+            is_verified = True
+
+        if patch_success and is_verified:
+            print("\n🎉 [SUCCESS] 모든 디버깅 로그 및 작업 검증 완료!")
+            return
+        
+        retry_count += 1
+        if retry_count > max_retries:
+            print("\n🚨 [FAIL] 최대 재시도 횟수를 초과하여 작업을 중단합니다.")
+            return
+
+        # -------------------------------------------------------------
+        # 🩺 [Step 6-1] 정보 충분성 진단 (Self-Diagnosis)
+        # -------------------------------------------------------------
+        print(f"\n🩺 [Step 6-1] 정보 충분성 진단 (재시도 {retry_count}/{max_retries})...")
+        diag_prompt = f"""Target File: {target_file_path}
+Mission Data: {mission_str}
+Current Sliced Code: {target_code}
+Terminal Output: {terminal_output}
+
+Can you fix the code with the CURRENT provided code slice and terminal output alone?
+Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanation"}}"""
+
+        try:
+            diag_res = factory.execute_worker_step(
+                prompt=diag_prompt,
+                system_instruction="STRICT PROTOCOL: Output raw JSON object with 'is_sufficient' boolean field only.",
+                response_mime_type="application/json"
+            )
+            diag_data = json.loads(clean_json_response(diag_res))
+            is_sufficient = diag_data.get("is_sufficient", False)
+        except Exception:
+            is_sufficient = False
+
+        if is_sufficient:
+            # ---------------------------------------------------------
+            # 🔄 [Step 6-2] 단일 패치 재수정 (Direct Fix)
+            # ---------------------------------------------------------
+            print("🔄 [Step 6-2] 정보 충분 -> 단일 수정 패치 재작성 중...")
+            fix_user_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
+<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
+<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
+Generate corrected JSON patch:
+{{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}"""
+            raw_response = factory.execute_worker_step(
+                prompt=fix_user_prompt,
+                system_instruction=system_prompt,
+                response_mime_type="application/json"
+            )
+        else:
+            # ---------------------------------------------------------
+            # 🌐 [Retry Step 1] 시야 확장 재탐색 (Broad Re-exploration)
+            # ---------------------------------------------------------
+            print("🌐 [Retry Step 1] 정보 부족 -> 시야 확장 및 다중 경로 재탐색 진행...")
+            scale_detector = ProjectScaleDetector(project_root=ROOT_DIR)
+            shallow_map = scale_detector.generate_shallow_structure_map()
+            
+            broad_prompt = f"""Target File: {target_file_path}
+Mission Data: {mission_str}
+Project Structure: {shallow_map}
+Previous Error Log: {terminal_output}
+
+Select ALL relevant directory/file relative paths to inspect.
+Output JSON string array matching: ["path/1", "path/2"]"""
+            try:
+                raw_dirs = factory.execute_worker_step(
+                    prompt=broad_prompt,
+                    system_instruction="STRICT PROTOCOL: Output JSON string array of multiple target paths only.",
+                    response_mime_type="application/json"
+                )
+                target_dirs = json.loads(clean_json_response(raw_dirs))
+                if not isinstance(target_dirs, list):
+                    target_dirs = [target_dirs]
+                codebase_map = extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
+            except Exception:
+                codebase_map = extract_targeted_ai_map(save_to_file=False)
+
+            fallback_prompt = f"{target_file_path}:1-200"
+            slice_res = factory.extractor.process(fallback_prompt, auto_save=False)
+            target_code = slice_res.get("markdown", "")
+            
+            raw_response = factory.execute_worker_step(
+                prompt=f"<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>\n<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>",
+                system_instruction=system_prompt,
+                response_mime_type="application/json"
+            )
 
 # =====================================================================
 # 🚀 메인 실행 진입점

@@ -1,1 +1,39 @@
-a
+import os
+import json
+
+def load_codebase_map(file_path="codebase_map.json"):
+    """
+    프로젝트 루트 경로 기준으로 AI 코드베이스 맵을 읽는 함수.
+    """
+    # 디버그 로그 출력 여부 확인 (toggle_key: DEBUG_TASK_001)
+    if os.environ.get("DEBUG_TASK_001") == "true":
+        print("[DEBUG_LOG] Attempting to read codebase map file from target path.")
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print(f"[ERROR] File not found: {file_path}")
+        return None
+    except json.JSONDecodeError:
+        print(f"[ERROR] Failed to parse JSON: {file_path}")
+        return None
+    except Exception as e:
+        print(f"[ERROR] An unexpected error occurred: {e}")
+        return None
+
+if __name__ == "__main__":
+    # 테스트를 위한 환경 설정 및 실행
+    os.environ["DEBUG_TASK_001"] = "true"
+    
+    # 테스트용 파일 생성 (실제 환경에서는 파일이 이미 존재해야 함)
+    test_file = "codebase_map.json"
+    with open(test_file, "w", encoding="utf-8") as f:
+        json.dump({"project": "test", "version": "1.0"}, f)
+
+    map_data = load_codebase_map(test_file)
+    print(f"Loaded Map Data: {map_data}")
+
+    # 테스트용 파일 삭제
+    if os.path.exists(test_file):
+        os.remove(test_file)

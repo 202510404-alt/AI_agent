@@ -5,7 +5,7 @@
 
 ```markdown
 project_root/
-├── .env [📂 .env] -> [General File (11 lines)]
+├── .env [📂 .env] -> [General File (12 lines)]
 ├── .gitignore [📂 .gitignore] -> [General File (23 lines)]
 ├── .idea/
 │   ├── .gitignore [📂 .idea/.gitignore] -> [General File (10 lines)]
@@ -36,16 +36,25 @@ project_root/
 │   │   ├── 🔑 key "python.createEnvironment.trigger" [L26]
 │   │   ├── 🔑 key "java.configuration.updateBuildConfiguration" [L27]
 │   │   ├── 🔑 key "python-envs.defaultEnvManager" [L28]
-├── a [📂 a] -> [General File (41 lines)]
+├── a [📂 a] -> [General File (39 lines)]
 ├── agent_core/
 │   ├── __init__.py [📂 agent_core/__init__.py]
 │   ├── execution/
 │   │   ├── __init__.py [📂 agent_core/execution/__init__.py]
-│   ├── memory/
-│   │   ├── __init__.py [📂 agent_core/memory/__init__.py]
-│   ├── plan/
-│   │   ├── __init__.py [📂 agent_core/plan/__init__.py]
-│   │   ├── gemini_client.py [📂 agent_core/plan/gemini_client.py] -> [💡 📦 imp: agent_core.plan.schemas, google, google.genai, json, os, pathlib, re, time, typing | 🎯 def log_debug(message_func) [L23-32] | 🎯 def load_env_file(env_path) [L35-68] | 🎯 def resolve_best_gemini_model(client) [L71-112] | 🧬 class GeminiPlannerClient [L115-232] |     └─ def __init__(api_key, root_dir) [L116-142] |     └─ def generate_plan(prompt, model_name, max_retries) [L144-232]]
+│   │   ├── step_worker.py [📂 agent_core/execution/step_worker.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, re, sys, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing | 🧬 class ExecutionResult [L20-34] |     └─ def __init__(success, message, logs, patch_applied) [L22-26] |     └─ def to_dict() [L28-34] | 🧬 class StepExecutionWorker [L37-413] |     └─ def __init__(project_root) [L43-46] |     └─ def build_log_regex_pattern(template_msg) [L52-58] |     └─ def clean_json_response(raw_response) [L61-67] |     └─ def load_mission(mission_input) [L69-86] |     └─ def _safe_execute_step(prompt, system_instruction, response_mime_type, max_attempts) [L88-101] |     └─ def execute(mission_input) [L106-413]]
+│   │   │   ├── 🧬 class ExecutionResult [L20-L34]
+│   │   │   ├── 🎯 def __init__() [L22-L26]
+│   │   │   ├── 🎯 def to_dict() [L28-L34]
+│   │   │   ├── 🧬 class StepExecutionWorker [L37-L413]
+│   │   │   ├── 🎯 def __init__() [L43-L46]
+│   │   │   ├── 🎯 def build_log_regex_pattern() [L52-L58]
+│   │   │   ├── 🎯 def clean_json_response() [L61-L67]
+│   │   │   ├── 🎯 def load_mission() [L69-L86]
+│   │   │   ├── 🎯 def _safe_execute_step() [L88-L101]
+│   │   │   ├── 🎯 def execute() [L106-L413]
+│   │   │   │   ├── 📞 [CALLS]: ExecutionResult
+│   ├── llm/
+│   │   ├── gemini_client.py [📂 agent_core/llm/gemini_client.py] -> [💡 📦 imp: agent_core.plan.schemas, google, google.genai, json, os, pathlib, re, time, typing | 🎯 def log_debug(message_func) [L23-32] | 🎯 def load_env_file(env_path) [L35-68] | 🎯 def resolve_best_gemini_model(client) [L71-112] | 🧬 class GeminiPlannerClient [L115-232] |     └─ def __init__(api_key, root_dir) [L116-142] |     └─ def generate_plan(prompt, model_name, max_retries) [L144-232]]
 │   │   │   ├── 🎯 def log_debug() [L23-L32]
 │   │   │   ├── 🎯 def load_env_file() [L35-L68]
 │   │   │   │   ├── 📞 [CALLS]: log_debug
@@ -58,6 +67,10 @@ project_root/
 │   │   │   │   ├── 📞 [CALLS]: log_debug, load_env_file
 │   │   │   ├── 🎯 def generate_plan() [L144-L232]
 │   │   │   │   ├── 📞 [CALLS]: log_debug, resolve_best_gemini_model
+│   ├── memory/
+│   │   ├── __init__.py [📂 agent_core/memory/__init__.py]
+│   ├── plan/
+│   │   ├── __init__.py [📂 agent_core/plan/__init__.py]
 │   │   ├── planner.py [📂 agent_core/plan/planner.py]
 │   │   ├── prompt_builder.py [📂 agent_core/plan/prompt_builder.py] -> [💡 📦 imp: agent_core.plan.schemas, pathlib, typing | 🎯 def log_debug(message_func) [L11-21] | 🧬 class PromptBuilder [L24-89] |     └─ def __init__(root_dir) [L25-33] |     └─ def _load_codebase_map() [L35-54] |     └─ def build_plan_prompt(user_goal, extra_context) [L56-89]]
 │   │   │   ├── 🎯 def log_debug() [L11-L21]
@@ -77,7 +90,7 @@ project_root/
 │   │   │   ├── 🧬 class Task [L61-L70]
 │   │   │   ├── 🧬 class ExecutionResult [L74-L79]
 │   │   │   ├── 🎯 def to_symbol_ref() [L82-L104]
-│   │   │   │   ├── 📞 [CALLS]: log_debug, SymbolRef
+│   │   │   │   ├── 📞 [CALLS]: SymbolRef, log_debug
 │   │   ├── test_ai_chat.py [📂 agent_core/plan/test_ai_chat.py] -> [💡 📦 imp: agent_core.plan.gemini_client, agent_core.plan.prompt_builder, google, google.genai, json, os, pathlib, sys, tools.multi_agent_system.agent_code_extractor | 🎯 def extract_code_slice(file_and_line) [L32-43] | 🎯 def run_interactive_chat() [L49-104]]
 │   │   │   ├── 🎯 def extract_code_slice() [L32-L43]
 │   │   │   ├── 🎯 def run_interactive_chat() [L49-L104]
@@ -110,7 +123,7 @@ project_root/
 │   │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   │   ├── 🔑 key "requires" [L5]
 │   │   │   ├── 🔑 key "packages" [L6]
-│   │   │   │   ├── 📞 [CALLS]: node_modules/array.prototype.findlast, bin/esvalidate.js, node_modules/resolve.exports, bin/cli.js, node_modules/object.assign, bin/escodegen.js, bin/bin.js, lib/cli.js, bin/webpack.js, dist/cli.cjs, node_modules/function.prototype.name, fixtures/cli.js, node_modules/lodash.sortby, node_modules/engine.io, node_modules/fraction.js, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/lodash.merge, bin/react-scripts.js, big.js, node_modules/reflect.getprototypeof, bin/nanoid.cjs, node_modules/object.fromentries, bin/cmd.js, node_modules/array.prototype.reduce, bin/esparse.js, node_modules/iterator.prototype, ipaddr.js, node_modules/regexp.prototype.flags, bin/js-yaml.js, bin/esgenerate.js, bin/babel-parser.js, node_modules/object.getownpropertydescriptors, dist/esm/bin.mjs, node_modules/array.prototype.tosorted, bin/jiti.js, node_modules/css.escape, node_modules/fs.realpath, node_modules/sanitize.css, node_modules/array.prototype.flatmap, hpack.js, node_modules/string.prototype.trimend, node_modules/array.prototype.flat, node_modules/object.hasown, node_modules/big.js, node_modules/lodash.debounce, node_modules/ipaddr.js, bin.js, node_modules/array.prototype.findlastindex, node_modules/arraybuffer.prototype.slice, node_modules/string.prototype.matchall, node_modules/string.prototype.trim, cli.js, node_modules/object.values, bin/eslint.js, node_modules/util.promisify, node_modules/object.entries, node_modules/array.prototype.toreversed, node_modules/hpack.js, fraction.js, decimal.js, node_modules/object.groupby, bin/jest.js, bin/semver.js, node_modules/string.prototype.trimstart, bin/webpack-dev-server.js, node_modules/decimal.js, bin/nopt.js, node_modules/lodash.uniq, node_modules/socket.io, node_modules/lodash.memoize
+│   │   │   │   ├── 📞 [CALLS]: node_modules/array.prototype.tosorted, bin/babel-parser.js, node_modules/socket.io, node_modules/object.values, node_modules/reflect.getprototypeof, node_modules/sanitize.css, node_modules/object.fromentries, bin/react-scripts.js, node_modules/fraction.js, bin/webpack-dev-server.js, node_modules/object.hasown, ipaddr.js, node_modules/object.assign, node_modules/object.groupby, node_modules/hpack.js, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/lodash.sortby, decimal.js, node_modules/object.entries, dist/cli.cjs, node_modules/array.prototype.findlast, node_modules/string.prototype.trimend, node_modules/big.js, node_modules/iterator.prototype, bin/cli.js, bin/esparse.js, node_modules/lodash.uniq, fixtures/cli.js, bin/semver.js, cli.js, bin/cmd.js, fraction.js, node_modules/regexp.prototype.flags, bin/webpack.js, bin/bin.js, node_modules/css.escape, node_modules/resolve.exports, hpack.js, node_modules/array.prototype.flatmap, node_modules/string.prototype.trim, node_modules/string.prototype.trimstart, lib/cli.js, node_modules/string.prototype.matchall, node_modules/arraybuffer.prototype.slice, node_modules/array.prototype.toreversed, bin/js-yaml.js, big.js, dist/esm/bin.mjs, node_modules/fs.realpath, bin/nanoid.cjs, bin/nopt.js, bin.js, bin/escodegen.js, node_modules/decimal.js, bin/jest.js, node_modules/function.prototype.name, bin/esvalidate.js, bin/jiti.js, bin/eslint.js, node_modules/lodash.debounce, node_modules/object.getownpropertydescriptors, node_modules/array.prototype.flat, node_modules/array.prototype.findlastindex, node_modules/util.promisify, node_modules/lodash.memoize, node_modules/array.prototype.reduce, node_modules/lodash.merge, bin/esgenerate.js, node_modules/ipaddr.js, node_modules/engine.io
 │   │   ├── package.json [📂 extraction_target_project/client/package.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "private" [bool] | 🔑 "dependencies" [dict] | 🔑 "scripts" [dict] | ...외 2개]
 │   │   │   ├── 🔑 key "name" [L2]
 │   │   │   ├── 🔑 key "version" [L3]
@@ -192,7 +205,7 @@ project_root/
 │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   ├── 🔑 key "requires" [L5]
 │   │   ├── 🔑 key "packages" [L6]
-│   │   │   ├── 📞 [CALLS]: node_modules/pstree.remy, bin/nodemon.js, node_modules/engine.io, ipaddr.js, node_modules/ipaddr.js, bin/semver.js, bin/nodetouch.js, cli.js, node_modules/socket.io
+│   │   │   ├── 📞 [CALLS]: node_modules/socket.io, node_modules/pstree.remy, bin/nodetouch.js, cli.js, bin/nodemon.js, bin/semver.js, ipaddr.js, node_modules/ipaddr.js, node_modules/engine.io
 │   ├── package.json [📂 extraction_target_project/package.json] -> [💡 📦 json_keys: 8개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "type" [str] | 🔑 "description" [str] | 🔑 "main" [str] | ...외 3개]
 │   │   ├── 🔑 key "name" [L2]
 │   │   ├── 🔑 key "version" [L3]
@@ -213,15 +226,15 @@ project_root/
 │   ├── agent_plan3.md [📂 oldplan/agent_plan3.md] -> [General File (980 lines)]
 ├── prompt.md [📂 prompt.md] -> [General File (113 lines)]
 ├── README.md [📂 README.md] -> [General File (220 lines)]
-├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, re, sys, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.project_scale_detector | 🎯 def load_mission_file(mission_rel_path) [L16-31] | 🎯 def clean_json_response(raw_response) [L33-39] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L44-235] | 🎯 def main() [L240-249]]
-│   ├── 🎯 def load_mission_file() [L16-L31]
+├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, re, sys, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner | 🎯 def build_log_regex_pattern(template_msg) [L17-23] | 🎯 def load_mission_file(mission_rel_path) [L25-40] | 🎯 def clean_json_response(raw_response) [L42-48] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L53-367] | 🎯 def main() [L372-381]]
+│   ├── 🎯 def build_log_regex_pattern() [L17-L23]
+│   ├── 🎯 def load_mission_file() [L25-L40]
 │   │   ├── 🔗 [USED BY]: ::run_step_worker_pipeline
-│   ├── 🎯 def clean_json_response() [L33-L39]
-│   │   ├── 🔗 [USED BY]: ::run_step_worker_pipeline
-│   ├── 🎯 def run_step_worker_pipeline() [L44-L235]
-│   │   ├── 📞 [CALLS]: load_mission_file, clean_json_response
+│   ├── 🎯 def clean_json_response() [L42-L48]
+│   ├── 🎯 def run_step_worker_pipeline() [L53-L367]
+│   │   ├── 📞 [CALLS]: safe_execute_step, build_log_regex_pattern, load_mission_file, clean_json_response
 │   │   ├── 🔗 [USED BY]: ::main
-│   ├── 🎯 def main() [L240-L249]
+│   ├── 🎯 def main() [L372-L381]
 │   │   ├── 📞 [CALLS]: run_step_worker_pipeline
 ├── scan_debug.txt [📂 scan_debug.txt] -> [General File (296 lines)]
 ├── setup_architecture.bat [📂 setup_architecture.bat] -> [General File (104 lines)]
@@ -235,14 +248,14 @@ project_root/
 ├── tools/
 │   ├── multi_agent_system/
 │   │   ├── __init__.py [📂 tools/multi_agent_system/__init__.py]
-│   │   ├── agent_code_extractor.py [📂 tools/multi_agent_system/agent_code_extractor.py] -> [💡 📦 imp: json, pathlib, re, switch, sys, traceback | 🧬 class CodeExtractor [L16-313] |     └─ def __init__(root_dir) [L22-48] |     └─ def _load_database() [L50-57] |     └─ def resolve_file_path(raw_path_str) [L59-96] |     └─ def extract_multi_slices(raw_prompt) [L98-255] |     └─ def format_as_markdown(extracted_slices) [L257-277] |     └─ def process(raw_prompt, auto_save, output_path) [L279-313]]
-│   │   │   ├── 🧬 class CodeExtractor [L16-L313]
+│   │   ├── agent_code_extractor.py [📂 tools/multi_agent_system/agent_code_extractor.py] -> [💡 📦 imp: json, pathlib, re, switch, sys, traceback | 🧬 class CodeExtractor [L16-318] |     └─ def __init__(root_dir) [L22-48] |     └─ def _load_database() [L50-57] |     └─ def resolve_file_path(raw_path_str) [L59-101] |     └─ def extract_multi_slices(raw_prompt) [L103-260] |     └─ def format_as_markdown(extracted_slices) [L262-282] |     └─ def process(raw_prompt, auto_save, output_path) [L284-318]]
+│   │   │   ├── 🧬 class CodeExtractor [L16-L318]
 │   │   │   ├── 🎯 def __init__() [L22-L48]
 │   │   │   ├── 🎯 def _load_database() [L50-L57]
-│   │   │   ├── 🎯 def resolve_file_path() [L59-L96]
-│   │   │   ├── 🎯 def extract_multi_slices() [L98-L255]
-│   │   │   ├── 🎯 def format_as_markdown() [L257-L277]
-│   │   │   ├── 🎯 def process() [L279-L313]
+│   │   │   ├── 🎯 def resolve_file_path() [L59-L101]
+│   │   │   ├── 🎯 def extract_multi_slices() [L103-L260]
+│   │   │   ├── 🎯 def format_as_markdown() [L262-L282]
+│   │   │   ├── 🎯 def process() [L284-L318]
 │   │   ├── agent_map_extractor.py [📂 tools/multi_agent_system/agent_map_extractor.py] -> [💡 📦 imp: json, os, pathlib, sys, tools.universal_indexer.core_parsers.gitignore_parser, tools.universal_indexer.map_formatter, typing | 🧬 class AgentMapExtractor [L46-251] |     └─ def __init__(project_root) [L49-50] |     └─ def _load_jjap_context() [L52-59] |     └─ def _load_all_symbols() [L61-79] |     └─ def _load_registry_and_protocols() [L81-118] |     └─ def _normalize_path(raw_path) [L120-128] |     └─ def collect_files_in_targets(target_paths, exclude_paths) [L130-181] |     └─ def generate_custom_map(target_paths, exclude_paths, save_to_file) [L183-251] | 🎯 def extract_targeted_ai_map(target_paths, exclude_paths, save_to_file) [L254-260]]
 │   │   │     ├── 🔑 [REGISTRY]: "AgentMapExtractor"
 │   │   │   ├── 🧬 class AgentMapExtractor [L46-L251]
@@ -270,10 +283,10 @@ project_root/
 │   │   │   ├── 🎯 def execute_worker_step() [L138-L187]
 │   │   │   ├── 🎯 def _build_tools() [L189-L220]
 │   │   │   ├── 🎯 def create_chat_session() [L222-L288]
-│   │   ├── code_patcher.py [📂 tools/multi_agent_system/code_patcher.py] -> [💡 📦 imp: pathlib | 🧬 class CodePatcher [L9-65] |     └─ def __init__(root_dir) [L10-11] |     └─ def apply_patch(rel_path, existing_code, replacement_code) [L13-65]]
-│   │   │   ├── 🧬 class CodePatcher [L9-L65]
+│   │   ├── code_patcher.py [📂 tools/multi_agent_system/code_patcher.py] -> [💡 📦 imp: pathlib | 🧬 class CodePatcher [L9-69] |     └─ def __init__(root_dir) [L10-11] |     └─ def apply_patch(rel_path, existing_code, replacement_code) [L13-69]]
+│   │   │   ├── 🧬 class CodePatcher [L9-L69]
 │   │   │   ├── 🎯 def __init__() [L10-L11]
-│   │   │   ├── 🎯 def apply_patch() [L13-L65]
+│   │   │   ├── 🎯 def apply_patch() [L13-L69]
 │   │   ├── project_scale_detector.py [📂 tools/multi_agent_system/project_scale_detector.py] -> [💡 📦 imp: mimetypes, os, pathlib, tools.universal_indexer.core_parsers.gitignore_parser, typing | 🧬 class ProjectScaleDetector [L31-178] |     └─ def __init__(project_root, max_files, max_total_lines, max_estimated_tokens, max_file_size_bytes, sample_line_limit) [L32-47] |     └─ def _is_binary_file(file_path) [L49-66] |     └─ def analyze_project_scale(target_dir) [L68-138] |     └─ def generate_shallow_structure_map(max_depth, target_dir) [L140-178]]
 │   │   │   ├── 🧬 class ProjectScaleDetector [L31-L178]
 │   │   │   ├── 🎯 def __init__() [L32-L47]
@@ -342,12 +355,12 @@ project_root/
 │   │   │   ├── 🎯 def load_protocols() [L100-L117]
 │   │   │   │   ├── 🔗 [USED BY]: ::parse_protocols_and_registries
 │   │   │   ├── 🎯 def parse_protocols_and_registries() [L120-L159]
-│   │   │   │   ├── 📞 [CALLS]: load_registry, load_protocols
+│   │   │   │   ├── 📞 [CALLS]: load_protocols, load_registry
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def load_all_symbols() [L163-L184]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def main() [L187-L318]
-│   │   │   │   ├── 📞 [CALLS]: load_jjap_context, parse_protocols_and_registries, load_all_symbols, collect_target_files
+│   │   │   │   ├── 📞 [CALLS]: load_jjap_context, load_all_symbols, collect_target_files, parse_protocols_and_registries
 │   │   │   ├── 🎯 def generate_ai_optimized_map() [L321-L322]
 │   │   │   │   ├── 📞 [CALLS]: main
 │   │   ├── indexer.py [📂 tools/universal_indexer/indexer.py] -> [💡 📦 imp: collections, config, hashlib, importlib.util, json, os, pathlib, typing | 🎯 def log(message) [L22-24] | 🧬 class AdvancedIndexerV2 [L26-217] |     └─ def __init__(project_root) [L31-41] |     └─ def _auto_load_parsers() [L43-74] |     └─ def scan_project() [L78-152] |     └─ def index_file(file_path, ext) [L154-194] |     └─ def save_index_data() [L196-217]]
