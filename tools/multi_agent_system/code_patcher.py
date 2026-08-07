@@ -16,7 +16,19 @@ class CodePatcher:
         """
         target_path = (self.root_dir / rel_path.strip().replace("\\", "/")).resolve()
         
+        clean_existing = existing_code.replace("\r\n", "\n")
+        clean_replacement = replacement_code.replace("\r\n", "\n")
+
+        # 신규 파일 생성 처리 (파일이 존재하지 않을 때 existing_code가 빈 문자열이면 파일 생성)
         if not target_path.exists() or not target_path.is_file():
+            if clean_existing == "":
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(target_path, "w", encoding="utf-8") as f:
+                    f.write(clean_replacement)
+                return {
+                    "success": True,
+                    "message": f"✨ [PATCH CREATED] 신규 파일이 성공적으로 생성되었습니다: {rel_path}"
+                }
             return {
                 "success": False,
                 "message": f"❌ [PATCH FAIL] 대상 파일을 찾을 수 없습니다: {rel_path}"

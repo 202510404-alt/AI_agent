@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent.resolve()
 sys.path.append(str(ROOT_DIR))
 
-from agent_core.plan.gemini_client import load_env_file, HAS_GENAI
+from agent_core.llm.gemini_client import load_env_file, HAS_GENAI
 from agent_core.plan.prompt_builder import PromptBuilder
 from tools.multi_agent_system.agent_code_extractor import CodeExtractor
 

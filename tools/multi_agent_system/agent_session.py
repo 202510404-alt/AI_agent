@@ -6,7 +6,7 @@ tools/multi_agent_system/agent_session.py
 import os
 from pathlib import Path
 from typing import Optional  # <-- 필수 import 추가
-from agent_core.plan.gemini_client import load_env_file, HAS_GENAI
+from agent_core.llm.gemini_client import load_env_file, HAS_GENAI
 from tools.multi_agent_system.agent_code_extractor import CodeExtractor
 from tools.multi_agent_system.terminal_runner import run_terminal_command
 from tools.multi_agent_system.code_patcher import CodePatcher
@@ -92,13 +92,15 @@ class KeyManager:
         print(f"🔄 [KEY ROTATION] API 키 변경됨! (현재 Key 번호: {self.current_index + 1}/{len(self.keys)})")
         return self.get_current_key()
 
+from agent_core.llm.gemini_client import DynamicKeyModelManager
+
 class AgentSessionFactory:
     """AI 에이전트 생성 및 도구 바인딩 팩토리"""
     def __init__(self, root_dir: Path):
         self.root_dir = root_dir.resolve()
         load_env_file(self.root_dir / ".env")
         
-        # 💡 객체 생성 시점에 KeyManager를 미리 초기화하여 속성을 생성합니다.
+        self.manager = DynamicKeyModelManager(self.root_dir)
         self.key_manager = KeyManager(env_path=self.root_dir / ".env")
         
         self.extractor = CodeExtractor(self.root_dir)
@@ -109,6 +111,12 @@ class AgentSessionFactory:
             project_root=target_scan_dir
         )
         self.client = None
+
+    def switch_to_next_key(self, last_error_msg: str = ""):
+        """에러 리포팅을 반영하여 1.5 계열 완충 후 2.0 순차 회전을 실행합니다."""
+        cur_key = getattr(self.manager, "last_used_key_name", "UNKNOWN")
+        cur_model = getattr(self.manager, "last_used_model_name", "UNKNOWN")
+        self.manager.report_error(cur_key, cur_model, last_error_msg or "PERMISSION_DENIED")
 
     def prepare_step1_map(self, max_shallow_depth: int = 3) -> tuple[str, bool]:
         """
@@ -139,10 +147,13 @@ class AgentSessionFactory:
         """
         [Step 3 인터페이스] 단발성 LLM 요청을 수행합니다. (429 Quota 초과 시 API Key 자동 Rotate 처리)
         """
+        import time
+        time.sleep(0.8)  # ⏱️ 연속 호출 폭주 방지용 최소 완충 딜레이
+
         if not HAS_GENAI:
             raise RuntimeError("Google GenAI 패키지가 설치되지 않았습니다.")
 
-        from agent_core.plan.gemini_client import resolve_best_gemini_model
+        from agent_core.llm.gemini_client import resolve_best_gemini_model
 
         for attempt in range(1, max_retries + 1):
             current_api_key = self.key_manager.get_current_key()
@@ -231,7 +242,7 @@ class AgentSessionFactory:
         # 하드코딩 매핑 제거 -> 전체 사용 가능한 모델 중 최적 모델을 동적으로 추출
         target_model = model_name
         if not target_model:
-            from agent_core.plan.gemini_client import resolve_best_gemini_model
+            from agent_core.llm.gemini_client import resolve_best_gemini_model
             target_model = resolve_best_gemini_model(self.client)
 
         self.current_model = target_model  # 💡 디버깅용 모델 저장

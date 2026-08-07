@@ -5,7 +5,7 @@
 
 ```markdown
 project_root/
-├── .env [📂 .env] -> [General File (12 lines)]
+├── .env [📂 .env] -> [General File (6 lines)]
 ├── .gitignore [📂 .gitignore] -> [General File (23 lines)]
 ├── .idea/
 │   ├── .gitignore [📂 .idea/.gitignore] -> [General File (10 lines)]
@@ -36,7 +36,7 @@ project_root/
 │   │   ├── 🔑 key "python.createEnvironment.trigger" [L26]
 │   │   ├── 🔑 key "java.configuration.updateBuildConfiguration" [L27]
 │   │   ├── 🔑 key "python-envs.defaultEnvManager" [L28]
-├── a [📂 a] -> [General File (39 lines)]
+├── a [📂 a] -> [General File (22 lines)]
 ├── agent_core/
 │   ├── __init__.py [📂 agent_core/__init__.py]
 │   ├── execution/
@@ -54,19 +54,23 @@ project_root/
 │   │   │   ├── 🎯 def execute() [L106-L413]
 │   │   │   │   ├── 📞 [CALLS]: ExecutionResult
 │   ├── llm/
-│   │   ├── gemini_client.py [📂 agent_core/llm/gemini_client.py] -> [💡 📦 imp: agent_core.plan.schemas, google, google.genai, json, os, pathlib, re, time, typing | 🎯 def log_debug(message_func) [L23-32] | 🎯 def load_env_file(env_path) [L35-68] | 🎯 def resolve_best_gemini_model(client) [L71-112] | 🧬 class GeminiPlannerClient [L115-232] |     └─ def __init__(api_key, root_dir) [L116-142] |     └─ def generate_plan(prompt, model_name, max_retries) [L144-232]]
+│   │   ├── gemini_client.py [📂 agent_core/llm/gemini_client.py] -> [💡 📦 imp: agent_core.plan.schemas, google, google.genai, json, os, pathlib, re, time, typing | 🎯 def log_debug(message_func) [L23-32] | 🎯 def load_env_file(env_path) [L35-70] | 🎯 def resolve_best_gemini_model(client, blocked_models) [L96-105] | 🧬 class DynamicKeyModelManager [L108-169] |     └─ def __init__(root_dir) [L115-123] |     └─ def get_available_pair() [L125-154] |     └─ def report_error(key_name, model_name, error_str) [L156-169] | 🧬 class GeminiPlannerClient [L172-214] |     └─ def __init__(api_key, root_dir) [L173-176] |     └─ def generate_plan(prompt, model_name, max_retries) [L178-214]]
 │   │   │   ├── 🎯 def log_debug() [L23-L32]
-│   │   │   ├── 🎯 def load_env_file() [L35-L68]
+│   │   │   ├── 🎯 def load_env_file() [L35-L70]
 │   │   │   │   ├── 📞 [CALLS]: log_debug
+│   │   │   │   ├── 🔗 [USED BY]: ::__init__, ::get_available_pair
+│   │   │   ├── 🎯 def resolve_best_gemini_model() [L96-L105]
+│   │   │   ├── 🧬 class DynamicKeyModelManager [L108-L169]
 │   │   │   │   ├── 🔗 [USED BY]: ::__init__
-│   │   │   ├── 🎯 def resolve_best_gemini_model() [L71-L112]
-│   │   │   │   ├── 📞 [CALLS]: log_debug
-│   │   │   │   ├── 🔗 [USED BY]: ::generate_plan
-│   │   │   ├── 🧬 class GeminiPlannerClient [L115-L232]
-│   │   │   ├── 🎯 def __init__() [L116-L142]
-│   │   │   │   ├── 📞 [CALLS]: log_debug, load_env_file
-│   │   │   ├── 🎯 def generate_plan() [L144-L232]
-│   │   │   │   ├── 📞 [CALLS]: log_debug, resolve_best_gemini_model
+│   │   │   ├── 🎯 def __init__() [L115-L123]
+│   │   │   │   ├── 📞 [CALLS]: load_env_file
+│   │   │   ├── 🎯 def get_available_pair() [L125-L154]
+│   │   │   │   ├── 📞 [CALLS]: load_env_file
+│   │   │   ├── 🎯 def report_error() [L156-L169]
+│   │   │   ├── 🧬 class GeminiPlannerClient [L172-L214]
+│   │   │   ├── 🎯 def __init__() [L173-L176]
+│   │   │   │   ├── 📞 [CALLS]: DynamicKeyModelManager
+│   │   │   ├── 🎯 def generate_plan() [L178-L214]
 │   ├── memory/
 │   │   ├── __init__.py [📂 agent_core/memory/__init__.py]
 │   ├── plan/
@@ -90,26 +94,29 @@ project_root/
 │   │   │   ├── 🧬 class Task [L61-L70]
 │   │   │   ├── 🧬 class ExecutionResult [L74-L79]
 │   │   │   ├── 🎯 def to_symbol_ref() [L82-L104]
-│   │   │   │   ├── 📞 [CALLS]: SymbolRef, log_debug
+│   │   │   │   ├── 📞 [CALLS]: log_debug, SymbolRef
 │   │   ├── test_ai_chat.py [📂 agent_core/plan/test_ai_chat.py] -> [💡 📦 imp: agent_core.plan.gemini_client, agent_core.plan.prompt_builder, google, google.genai, json, os, pathlib, sys, tools.multi_agent_system.agent_code_extractor | 🎯 def extract_code_slice(file_and_line) [L32-43] | 🎯 def run_interactive_chat() [L49-104]]
 │   │   │   ├── 🎯 def extract_code_slice() [L32-L43]
 │   │   │   ├── 🎯 def run_interactive_chat() [L49-L104]
 │   ├── tasks/
 │   │   ├── task_01/
 │   │   │   ├── checklist_01/
-│   │   │   │   ├── mission_01.json [📂 agent_core/tasks/task_01/checklist_01/mission_01.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "task_id" [str] | 🔑 "target_file" [str] | 🔑 "dependencies" [list] | 🔑 "description" [str] | 🔑 "debug_log_spec" [dict] | ...외 2개]
+│   │   │   │   ├── mission_01.json [📂 agent_core/tasks/task_01/checklist_01/mission_01.json] -> [💡 📦 json_keys: 8개 포착 | 🔑 "task_id" [str] | 🔑 "target_file" [str] | 🔑 "entrypoint" [str] | 🔑 "test_type" [str] | 🔑 "use_browser_test" [bool] | ...외 3개]
 │   │   │   │   │   ├── 🔑 key "task_id" [L2]
 │   │   │   │   │   ├── 🔑 key "target_file" [L3]
-│   │   │   │   │   ├── 🔑 key "dependencies" [L4]
-│   │   │   │   │   ├── 🔑 key "description" [L5]
-│   │   │   │   │   ├── 🔑 key "debug_log_spec" [L6]
-│   │   │   │   │   ├── 🔑 key "standalone_entrypoint" [L11]
-│   │   │   │   │   ├── 🔑 key "predicted_summary" [L12]
+│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/client/src/Canvas.js, Canvas.js
+│   │   │   │   │   ├── 🔑 key "entrypoint" [L4]
+│   │   │   │   │   ├── 🔑 key "test_type" [L6]
+│   │   │   │   │   ├── 🔑 key "use_browser_test" [L7]
+│   │   │   │   │   ├── 🔑 key "implementation_blueprint" [L9]
+│   │   │   │   │   │   ├── 📞 [CALLS]: Canvas.js
+│   │   │   │   │   ├── 🔑 key "browser_test_spec" [L26]
+│   │   │   │   │   ├── 🔑 key "expected_terminal_outputs" [L38]
 │   │   │   │   ├── mission_02.json [📂 agent_core/tasks/task_01/checklist_01/mission_02.json]
 │   │   │   │   ├── mission_03.json [📂 agent_core/tasks/task_01/checklist_01/mission_03.json]
 │   ├── validation/
 │   │   ├── __init__.py [📂 agent_core/validation/__init__.py]
-├── agent_debug.log [📂 agent_debug.log] -> [General File (2 lines)]
+├── agent_debug.log [📂 agent_debug.log] -> [General File (3 lines)]
 ├── agent_plan.md [📂 agent_plan.md] -> [General File (1101 lines)]
 ├── extraction_target_project/
 │   ├── .gitignore [📂 extraction_target_project/.gitignore] -> [General File (4 lines)]
@@ -123,7 +130,7 @@ project_root/
 │   │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   │   ├── 🔑 key "requires" [L5]
 │   │   │   ├── 🔑 key "packages" [L6]
-│   │   │   │   ├── 📞 [CALLS]: node_modules/array.prototype.tosorted, bin/babel-parser.js, node_modules/socket.io, node_modules/object.values, node_modules/reflect.getprototypeof, node_modules/sanitize.css, node_modules/object.fromentries, bin/react-scripts.js, node_modules/fraction.js, bin/webpack-dev-server.js, node_modules/object.hasown, ipaddr.js, node_modules/object.assign, node_modules/object.groupby, node_modules/hpack.js, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/lodash.sortby, decimal.js, node_modules/object.entries, dist/cli.cjs, node_modules/array.prototype.findlast, node_modules/string.prototype.trimend, node_modules/big.js, node_modules/iterator.prototype, bin/cli.js, bin/esparse.js, node_modules/lodash.uniq, fixtures/cli.js, bin/semver.js, cli.js, bin/cmd.js, fraction.js, node_modules/regexp.prototype.flags, bin/webpack.js, bin/bin.js, node_modules/css.escape, node_modules/resolve.exports, hpack.js, node_modules/array.prototype.flatmap, node_modules/string.prototype.trim, node_modules/string.prototype.trimstart, lib/cli.js, node_modules/string.prototype.matchall, node_modules/arraybuffer.prototype.slice, node_modules/array.prototype.toreversed, bin/js-yaml.js, big.js, dist/esm/bin.mjs, node_modules/fs.realpath, bin/nanoid.cjs, bin/nopt.js, bin.js, bin/escodegen.js, node_modules/decimal.js, bin/jest.js, node_modules/function.prototype.name, bin/esvalidate.js, bin/jiti.js, bin/eslint.js, node_modules/lodash.debounce, node_modules/object.getownpropertydescriptors, node_modules/array.prototype.flat, node_modules/array.prototype.findlastindex, node_modules/util.promisify, node_modules/lodash.memoize, node_modules/array.prototype.reduce, node_modules/lodash.merge, bin/esgenerate.js, node_modules/ipaddr.js, node_modules/engine.io
+│   │   │   │   ├── 📞 [CALLS]: node_modules/util.promisify, node_modules/array.prototype.flat, bin/eslint.js, bin/bin.js, node_modules/object.hasown, bin/esparse.js, bin/js-yaml.js, decimal.js, node_modules/hpack.js, node_modules/sanitize.css, bin/jiti.js, node_modules/object.assign, node_modules/object.values, node_modules/socket.io, node_modules/string.prototype.trim, bin/escodegen.js, node_modules/array.prototype.findlast, bin/semver.js, node_modules/fraction.js, node_modules/lodash.sortby, bin/nanoid.cjs, node_modules/array.prototype.tosorted, dist/cli.cjs, bin/jest.js, node_modules/lodash.debounce, node_modules/object.fromentries, node_modules/string.prototype.trimstart, node_modules/engine.io, node_modules/array.prototype.reduce, fraction.js, node_modules/array.prototype.flatmap, node_modules/arraybuffer.prototype.slice, bin/esvalidate.js, node_modules/ipaddr.js, node_modules/lodash.merge, hpack.js, cli.js, bin/webpack.js, node_modules/proxy-addr/node_modules/ipaddr.js, bin/esgenerate.js, node_modules/lodash.memoize, node_modules/resolve.exports, bin.js, node_modules/function.prototype.name, bin/babel-parser.js, bin/cmd.js, node_modules/reflect.getprototypeof, bin/webpack-dev-server.js, node_modules/fs.realpath, lib/cli.js, bin/nopt.js, fixtures/cli.js, bin/react-scripts.js, node_modules/regexp.prototype.flags, node_modules/string.prototype.matchall, dist/esm/bin.mjs, node_modules/big.js, node_modules/array.prototype.findlastindex, ipaddr.js, node_modules/object.groupby, node_modules/array.prototype.toreversed, node_modules/iterator.prototype, node_modules/css.escape, node_modules/decimal.js, big.js, node_modules/object.entries, node_modules/object.getownpropertydescriptors, node_modules/string.prototype.trimend, bin/cli.js, node_modules/lodash.uniq
 │   │   ├── package.json [📂 extraction_target_project/client/package.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "private" [bool] | 🔑 "dependencies" [dict] | 🔑 "scripts" [dict] | ...외 2개]
 │   │   │   ├── 🔑 key "name" [L2]
 │   │   │   ├── 🔑 key "version" [L3]
@@ -154,25 +161,25 @@ project_root/
 │   │   │   ├── App.test.js [📂 extraction_target_project/client/src/App.test.js] -> [💡 📦 imp: ./App, @testing-library/react]
 │   │   │   ├── Button.js [📂 extraction_target_project/client/src/Button.js] -> [💡 📦 imp: react | 🎯 def Button({ value, name, buttonFunction }) [L4~L24]]
 │   │   │   │   ├── 🎯 def Button() [L4-L24]
-│   │   │   ├── Canvas.js [📂 extraction_target_project/client/src/Canvas.js] -> [💡 📦 imp: ./Button, ./UploadFile, ./hooks/useWebRTC, ./socket, react, react-hot-toast, react-icons/ai, react-icons/fa6, react-router-dom | 🎯 def RemoteAudio({ stream }) [L24~L54] | 🎯 def playAudio() [L32~L47] | 🎯 def handleUserInteraction() [L38~L43] | 🎯 def Canvas(props) [L56~L481] | 🎯 def changeColour(event) [L83~L86] | 🎯 def lineWidth(event) [L88~L94] | 🎯 def handleImageUploadSuccess(imageUrl) [L96~L104] | 🎯 def init() [L107~L155] | 🎯 def handleError(err) [L118~L122] | 🎯 def handleDraw(e) [L187~L203] | 🎯 def handleMoveDraw(e) [L205~L224] | 🎯 def handleNotDraw() [L226~L239] | 🎯 def undo() [L241~L254] | 🎯 def redrawCanvas(context, history = linesHistory) [L256~L278] | 🎯 def handleCanvasChange() [L284~L289] | 🎯 def clearCanvas() [L298~L305] | 🎯 def copyBoardId() [L307~L310] | 🎯 def leaveBoard() [L312~L314]]
+│   │   │   ├── Canvas.js [📂 extraction_target_project/client/src/Canvas.js] -> [💡 📦 imp: ./Button, ./UploadFile, ./hooks/useWebRTC, ./socket, react, react-hot-toast, react-icons/ai, react-icons/fa6, react-router-dom | 🎯 def RemoteAudio({ stream }) [L24~L54] | 🎯 def playAudio() [L32~L47] | 🎯 def handleUserInteraction() [L38~L43] | 🎯 def Canvas(props) [L56~L486] | 🎯 def changeColour(e) [L83~L89] | 🎯 def lineWidth(event) [L91~L97] | 🎯 def handleImageUploadSuccess(imageUrl) [L99~L107] | 🎯 def init() [L110~L158] | 🎯 def handleError(err) [L121~L125] | 🎯 def handleDraw(e) [L190~L206] | 🎯 def handleMoveDraw(e) [L208~L227] | 🎯 def handleNotDraw() [L229~L242] | 🎯 def undo() [L244~L257] | 🎯 def redrawCanvas(context, history = linesHistory) [L259~L281] | 🎯 def handleCanvasChange() [L287~L292] | 🎯 def clearCanvas() [L301~L308] | 🎯 def copyBoardId() [L310~L313] | 🎯 def leaveBoard() [L315~L317]]
 │   │   │   │   ├── 🎯 def RemoteAudio() [L24-L54]
 │   │   │   │   ├── 🎯 def playAudio() [L32-L47]
 │   │   │   │   ├── 🎯 def handleUserInteraction() [L38-L43]
-│   │   │   │   ├── 🎯 def Canvas() [L56-L481]
-│   │   │   │   ├── 🎯 def changeColour() [L83-L86]
-│   │   │   │   ├── 🎯 def lineWidth() [L88-L94]
-│   │   │   │   ├── 🎯 def handleImageUploadSuccess() [L96-L104]
-│   │   │   │   ├── 🎯 def init() [L107-L155]
-│   │   │   │   ├── 🎯 def handleError() [L118-L122]
-│   │   │   │   ├── 🎯 def handleDraw() [L187-L203]
-│   │   │   │   ├── 🎯 def handleMoveDraw() [L205-L224]
-│   │   │   │   ├── 🎯 def handleNotDraw() [L226-L239]
-│   │   │   │   ├── 🎯 def undo() [L241-L254]
-│   │   │   │   ├── 🎯 def redrawCanvas() [L256-L278]
-│   │   │   │   ├── 🎯 def handleCanvasChange() [L284-L289]
-│   │   │   │   ├── 🎯 def clearCanvas() [L298-L305]
-│   │   │   │   ├── 🎯 def copyBoardId() [L307-L310]
-│   │   │   │   ├── 🎯 def leaveBoard() [L312-L314]
+│   │   │   │   ├── 🎯 def Canvas() [L56-L486]
+│   │   │   │   ├── 🎯 def changeColour() [L83-L89]
+│   │   │   │   ├── 🎯 def lineWidth() [L91-L97]
+│   │   │   │   ├── 🎯 def handleImageUploadSuccess() [L99-L107]
+│   │   │   │   ├── 🎯 def init() [L110-L158]
+│   │   │   │   ├── 🎯 def handleError() [L121-L125]
+│   │   │   │   ├── 🎯 def handleDraw() [L190-L206]
+│   │   │   │   ├── 🎯 def handleMoveDraw() [L208-L227]
+│   │   │   │   ├── 🎯 def handleNotDraw() [L229-L242]
+│   │   │   │   ├── 🎯 def undo() [L244-L257]
+│   │   │   │   ├── 🎯 def redrawCanvas() [L259-L281]
+│   │   │   │   ├── 🎯 def handleCanvasChange() [L287-L292]
+│   │   │   │   ├── 🎯 def clearCanvas() [L301-L308]
+│   │   │   │   ├── 🎯 def copyBoardId() [L310-L313]
+│   │   │   │   ├── 🎯 def leaveBoard() [L315-L317]
 │   │   │   ├── Home.js [📂 extraction_target_project/client/src/Home.js] -> [💡 📦 imp: react, react-hot-toast, react-router-dom, uuid | 🎯 def Home() [L8~L63] | 🎯 def writeId(event) [L14~L18] | 🎯 def writeUserName(event) [L20~L22] | 🎯 def generateUniqueId(event) [L24~L29] | 🎯 def joinBoard() [L31~L39]]
 │   │   │   │   ├── 🎯 def Home() [L8-L63]
 │   │   │   │   ├── 🎯 def writeId() [L14-L18]
@@ -205,7 +212,7 @@ project_root/
 │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   ├── 🔑 key "requires" [L5]
 │   │   ├── 🔑 key "packages" [L6]
-│   │   │   ├── 📞 [CALLS]: node_modules/socket.io, node_modules/pstree.remy, bin/nodetouch.js, cli.js, bin/nodemon.js, bin/semver.js, ipaddr.js, node_modules/ipaddr.js, node_modules/engine.io
+│   │   │   ├── 📞 [CALLS]: ipaddr.js, bin/nodemon.js, node_modules/pstree.remy, node_modules/engine.io, node_modules/socket.io, node_modules/ipaddr.js, bin/nodetouch.js, cli.js, bin/semver.js
 │   ├── package.json [📂 extraction_target_project/package.json] -> [💡 📦 json_keys: 8개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "type" [str] | 🔑 "description" [str] | 🔑 "main" [str] | ...외 3개]
 │   │   ├── 🔑 key "name" [L2]
 │   │   ├── 🔑 key "version" [L3]
@@ -226,15 +233,15 @@ project_root/
 │   ├── agent_plan3.md [📂 oldplan/agent_plan3.md] -> [General File (980 lines)]
 ├── prompt.md [📂 prompt.md] -> [General File (113 lines)]
 ├── README.md [📂 README.md] -> [General File (220 lines)]
-├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, re, sys, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner | 🎯 def build_log_regex_pattern(template_msg) [L17-23] | 🎯 def load_mission_file(mission_rel_path) [L25-40] | 🎯 def clean_json_response(raw_response) [L42-48] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L53-367] | 🎯 def main() [L372-381]]
-│   ├── 🎯 def build_log_regex_pattern() [L17-L23]
-│   ├── 🎯 def load_mission_file() [L25-L40]
+├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, re, sys, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.browser_tester, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner | 🎯 def build_log_regex_pattern(template_msg) [L18-24] | 🎯 def load_mission_file(mission_rel_path) [L26-41] | 🎯 def clean_json_response(raw_response) [L43-49] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L54-484] | 🎯 def main() [L489-498]]
+│   ├── 🎯 def build_log_regex_pattern() [L18-L24]
+│   ├── 🎯 def load_mission_file() [L26-L41]
 │   │   ├── 🔗 [USED BY]: ::run_step_worker_pipeline
-│   ├── 🎯 def clean_json_response() [L42-L48]
-│   ├── 🎯 def run_step_worker_pipeline() [L53-L367]
-│   │   ├── 📞 [CALLS]: safe_execute_step, build_log_regex_pattern, load_mission_file, clean_json_response
+│   ├── 🎯 def clean_json_response() [L43-L49]
+│   ├── 🎯 def run_step_worker_pipeline() [L54-L484]
+│   │   ├── 📞 [CALLS]: load_mission_file, safe_execute_step, clean_json_response, build_log_regex_pattern
 │   │   ├── 🔗 [USED BY]: ::main
-│   ├── 🎯 def main() [L372-L381]
+│   ├── 🎯 def main() [L489-L498]
 │   │   ├── 📞 [CALLS]: run_step_worker_pipeline
 ├── scan_debug.txt [📂 scan_debug.txt] -> [General File (296 lines)]
 ├── setup_architecture.bat [📂 setup_architecture.bat] -> [General File (104 lines)]
@@ -269,24 +276,32 @@ project_root/
 │   │   │   ├── 🎯 def generate_custom_map() [L183-L251]
 │   │   │   ├── 🎯 def extract_targeted_ai_map() [L254-L260]
 │   │   │   │   ├── 📞 [CALLS]: AgentMapExtractor
-│   │   ├── agent_session.py [📂 tools/multi_agent_system/agent_session.py] -> [💡 📦 imp: agent_core.plan.gemini_client, google, google.genai, os, pathlib, time, tools.multi_agent_system.agent_code_extractor, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.code_patcher, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing | 🧬 class KeyManager [L20-93] |     └─ def __init__(env_path) [L22-80] |     └─ def get_current_key() [L82-85] |     └─ def rotate_key() [L87-93] | 🧬 class AgentSessionFactory [L95-288] |     └─ def __init__(root_dir) [L97-111] |     └─ def prepare_step1_map(max_shallow_depth) [L113-135] |     └─ def execute_worker_step(prompt, system_instruction, response_mime_type, max_retries) [L138-187] |     └─ def _build_tools() [L189-220] |     └─ def create_chat_session(model_name, shallow_depth) [L222-288]]
+│   │   ├── agent_session.py [📂 tools/multi_agent_system/agent_session.py] -> [💡 📦 imp: agent_core.llm.gemini_client, google, google.genai, os, pathlib, time, tools.multi_agent_system.agent_code_extractor, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.code_patcher, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing | 🧬 class KeyManager [L20-93] |     └─ def __init__(env_path) [L22-80] |     └─ def get_current_key() [L82-85] |     └─ def rotate_key() [L87-93] | 🧬 class AgentSessionFactory [L97-296] |     └─ def __init__(root_dir) [L99-113] |     └─ def switch_to_next_key(last_error_msg) [L115-119] |     └─ def prepare_step1_map(max_shallow_depth) [L121-143] |     └─ def execute_worker_step(prompt, system_instruction, response_mime_type, max_retries) [L146-195] |     └─ def _build_tools() [L197-228] |     └─ def create_chat_session(model_name, shallow_depth) [L230-296]]
 │   │   │     ├── 🔑 [REGISTRY]: "AgentSessionFactory"
 │   │   │   ├── 🧬 class KeyManager [L20-L93]
 │   │   │   │   ├── 🔗 [USED BY]: ::__init__
 │   │   │   ├── 🎯 def __init__() [L22-L80]
 │   │   │   ├── 🎯 def get_current_key() [L82-L85]
 │   │   │   ├── 🎯 def rotate_key() [L87-L93]
-│   │   │   ├── 🧬 class AgentSessionFactory [L95-L288]
-│   │   │   ├── 🎯 def __init__() [L97-L111]
+│   │   │   ├── 🧬 class AgentSessionFactory [L97-L296]
+│   │   │   ├── 🎯 def __init__() [L99-L113]
 │   │   │   │   ├── 📞 [CALLS]: KeyManager
-│   │   │   ├── 🎯 def prepare_step1_map() [L113-L135]
-│   │   │   ├── 🎯 def execute_worker_step() [L138-L187]
-│   │   │   ├── 🎯 def _build_tools() [L189-L220]
-│   │   │   ├── 🎯 def create_chat_session() [L222-L288]
-│   │   ├── code_patcher.py [📂 tools/multi_agent_system/code_patcher.py] -> [💡 📦 imp: pathlib | 🧬 class CodePatcher [L9-69] |     └─ def __init__(root_dir) [L10-11] |     └─ def apply_patch(rel_path, existing_code, replacement_code) [L13-69]]
-│   │   │   ├── 🧬 class CodePatcher [L9-L69]
+│   │   │   ├── 🎯 def switch_to_next_key() [L115-L119]
+│   │   │   ├── 🎯 def prepare_step1_map() [L121-L143]
+│   │   │   ├── 🎯 def execute_worker_step() [L146-L195]
+│   │   │   ├── 🎯 def _build_tools() [L197-L228]
+│   │   │   ├── 🎯 def create_chat_session() [L230-L296]
+│   │   ├── browser_tester.py [📂 tools/multi_agent_system/browser_tester.py] -> [💡 📦 imp: pathlib, playwright.sync_api, re, subprocess, sys, time, typing | 🎯 def ensure_playwright() [L12-27] | 🧬 class BrowserTester [L29-149] |     └─ def __init__(headless, default_timeout) [L30-32] |     └─ def run_browser_verification(target_url, actions, expected_patterns, wait_for_selector) [L34-149]]
+│   │   │   ├── 🎯 def ensure_playwright() [L12-L27]
+│   │   │   │   ├── 🔗 [USED BY]: ::run_browser_verification
+│   │   │   ├── 🧬 class BrowserTester [L29-L149]
+│   │   │   ├── 🎯 def __init__() [L30-L32]
+│   │   │   ├── 🎯 def run_browser_verification() [L34-L149]
+│   │   │   │   ├── 📞 [CALLS]: ensure_playwright
+│   │   ├── code_patcher.py [📂 tools/multi_agent_system/code_patcher.py] -> [💡 📦 imp: pathlib | 🧬 class CodePatcher [L9-81] |     └─ def __init__(root_dir) [L10-11] |     └─ def apply_patch(rel_path, existing_code, replacement_code) [L13-81]]
+│   │   │   ├── 🧬 class CodePatcher [L9-L81]
 │   │   │   ├── 🎯 def __init__() [L10-L11]
-│   │   │   ├── 🎯 def apply_patch() [L13-L69]
+│   │   │   ├── 🎯 def apply_patch() [L13-L81]
 │   │   ├── project_scale_detector.py [📂 tools/multi_agent_system/project_scale_detector.py] -> [💡 📦 imp: mimetypes, os, pathlib, tools.universal_indexer.core_parsers.gitignore_parser, typing | 🧬 class ProjectScaleDetector [L31-178] |     └─ def __init__(project_root, max_files, max_total_lines, max_estimated_tokens, max_file_size_bytes, sample_line_limit) [L32-47] |     └─ def _is_binary_file(file_path) [L49-66] |     └─ def analyze_project_scale(target_dir) [L68-138] |     └─ def generate_shallow_structure_map(max_depth, target_dir) [L140-178]]
 │   │   │   ├── 🧬 class ProjectScaleDetector [L31-L178]
 │   │   │   ├── 🎯 def __init__() [L32-L47]
@@ -294,8 +309,8 @@ project_root/
 │   │   │   ├── 🎯 def analyze_project_scale() [L68-L138]
 │   │   │   ├── 🎯 def generate_shallow_structure_map() [L140-L178]
 │   │   │   │   ├── 📞 [CALLS]: _build_tree
-│   │   ├── terminal_runner.py [📂 tools/multi_agent_system/terminal_runner.py] -> [💡 📦 imp: pathlib, subprocess | 🎯 def run_terminal_command(command, cwd, timeout) [L12-57]]
-│   │   │   ├── 🎯 def run_terminal_command() [L12-L57]
+│   │   ├── terminal_runner.py [📂 tools/multi_agent_system/terminal_runner.py] -> [💡 📦 imp: pathlib, subprocess | 🎯 def run_terminal_command(command, cwd, timeout, env) [L12-59]]
+│   │   │   ├── 🎯 def run_terminal_command() [L12-L59]
 │   ├── universal_indexer/
 │   │   ├── agent_navigator.py [📂 tools/universal_indexer/agent_navigator.py] -> [💡 📦 imp: json, pathlib, re, switch, sys, tkinter, traceback | 🧬 class CodeExtractor [L18-281] |     └─ def __init__(root_dir) [L23-46] |     └─ def _load_database() [L48-55] |     └─ def resolve_file_path(raw_path_str) [L57-85] |     └─ def extract_multi_slices(raw_prompt) [L87-237] |     └─ def format_as_markdown(extracted_slices) [L239-256] |     └─ def process(raw_prompt, auto_save, output_path) [L258-281] | 🧬 class JjapCursorNavigatorGUI [L288-384] |     └─ def __init__(root, project_root) [L289-339] |     └─ def execute_slicing_pipeline() [L341-366] |     └─ def manual_export_file() [L368-384]]
 │   │   │     ├── 🔑 [REGISTRY]: "JjapCursorNavigatorGUI"
@@ -331,7 +346,7 @@ project_root/
 │   │   │   │   ├── 🎯 def _find_matching_curly_brace() [L15-L37]
 │   │   │   │   │   ├── 🔗 [USED BY]: ::extract_symbols
 │   │   │   │   ├── 🎯 def extract_symbols() [L39-L194]
-│   │   │   │   │   ├── 📞 [CALLS]: log, _find_matching_curly_brace
+│   │   │   │   │   ├── 📞 [CALLS]: _find_matching_curly_brace, log
 │   │   │   ├── js_parser.py [📂 tools/universal_indexer/core_parsers/js_parser.py] -> [💡 📦 imp: hashlib, pathlib, re, sys | 🎯 def debug_log(message) [L12-14] | 🎯 def find_end_line_by_braces(lines, start_line_idx, max_search_range) [L17-47] | 🎯 def extract_symbols(file_path, project_root) [L50-171]]
 │   │   │   │   ├── 🎯 def debug_log() [L12-L14]
 │   │   │   │   ├── 🎯 def find_end_line_by_braces() [L17-L47]
@@ -360,7 +375,7 @@ project_root/
 │   │   │   ├── 🎯 def load_all_symbols() [L163-L184]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def main() [L187-L318]
-│   │   │   │   ├── 📞 [CALLS]: load_jjap_context, load_all_symbols, collect_target_files, parse_protocols_and_registries
+│   │   │   │   ├── 📞 [CALLS]: load_all_symbols, collect_target_files, parse_protocols_and_registries, load_jjap_context
 │   │   │   ├── 🎯 def generate_ai_optimized_map() [L321-L322]
 │   │   │   │   ├── 📞 [CALLS]: main
 │   │   ├── indexer.py [📂 tools/universal_indexer/indexer.py] -> [💡 📦 imp: collections, config, hashlib, importlib.util, json, os, pathlib, typing | 🎯 def log(message) [L22-24] | 🧬 class AdvancedIndexerV2 [L26-217] |     └─ def __init__(project_root) [L31-41] |     └─ def _auto_load_parsers() [L43-74] |     └─ def scan_project() [L78-152] |     └─ def index_file(file_path, ext) [L154-194] |     └─ def save_index_data() [L196-217]]
@@ -404,7 +419,7 @@ project_root/
 │   │   │   ├── 🎯 def dispatch() [L86-L126]
 │   │   │   │   ├── 📞 [CALLS]: run_pipeline
 │   │   │   ├── 🎯 def main() [L128-L154]
-│   │   │   │   ├── 📞 [CALLS]: CodeChangeHandler, run_pipeline
+│   │   │   │   ├── 📞 [CALLS]: run_pipeline, CodeChangeHandler
 │   │   ├── map_formatter.py [📂 tools/universal_indexer/map_formatter.py] -> [💡 📦 imp: pathlib, typing | 🎯 def get_file_symbols_summary(file_meta) [L4-8] | 🎯 def format_symbol_node(sym, symbol_by_id, current_posix_path, indent) [L10-73]]
 │   │   │   ├── 🎯 def get_file_symbols_summary() [L4-L8]
 │   │   │   ├── 🎯 def format_symbol_node() [L10-L73]

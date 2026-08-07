@@ -9,7 +9,7 @@ from pathlib import Path
 # 보안상 실행 차단할 위험 명령어
 FORBIDDEN_COMMANDS = ["rm -rf", "rd /s", "format", "mkfs", "dd"]
 
-def run_terminal_command(command: str, cwd: str = None, timeout: int = 30) -> str:
+def run_terminal_command(command: str, cwd: str = None, timeout: int = 30, env: dict = None) -> str:
     """
     터미널 명령어를 실행하고 stdout 및 stderr 결과를 반환합니다.
     
@@ -17,6 +17,7 @@ def run_terminal_command(command: str, cwd: str = None, timeout: int = 30) -> st
         command: 실행할 명령어 (예: "python run_test.py", "pytest", "npm test")
         cwd: 명령어를 실행할 작업 디렉토리 경로 (기본값: 프로젝트 루트)
         timeout: 최대 실행 대기 시간(초)
+        env: 실행 환경변수 딕셔너리
     """
     for forbidden in FORBIDDEN_COMMANDS:
         if forbidden in command.lower():
@@ -36,7 +37,8 @@ def run_terminal_command(command: str, cwd: str = None, timeout: int = 30) -> st
             encoding="utf-8",
             errors="replace",
             cwd=work_dir,
-            timeout=timeout
+            timeout=timeout,
+            env=env
         )
 
         output = []

@@ -80,9 +80,10 @@ function Canvas(props) {
     toggleMute,
   } = useWebRTC(socketRef, boardId, userName);
 
-  function changeColour(event) {
-    let color = event.target.value;
-    setShapeColor(color);
+  function changeColour(e) {
+    const newColor = e.target ? e.target.value : e;
+    setShapeColor(newColor);
+    console.log(`[DEBUG_LOG] Step=COLOR_CHANGE | SelectedColor='${newColor}'`);
   }
 
   function lineWidth(event) {
@@ -365,11 +366,13 @@ function Canvas(props) {
         </div>
         <div className="toolbar-divider" />
         <div className="toolbar-section colors-grid">
-          <Button value="#000000" name="Black" buttonFunction={changeColour} />
-          <Button value="#0000FF" name="Blue" buttonFunction={changeColour} />
-          <Button value="#FF0000" name="Red" buttonFunction={changeColour} />
-          <Button value="#FFC0CB" name="Pink" buttonFunction={changeColour} />
-          <Button value="#00FF00" name="Green" buttonFunction={changeColour} />
+          <input
+            type="color"
+            id="colorPicker"
+            value={shapeColor}
+            onChange={changeColour}
+            style={{ width: '40px', height: '40px', border: 'none', cursor: 'pointer', padding: 0, background: 'none' }}
+          />
         </div>
         <div className="toolbar-divider" />
         <div className="toolbar-section stroke-controls">
