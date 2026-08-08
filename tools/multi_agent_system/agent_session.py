@@ -265,13 +265,13 @@ class AgentSessionFactory:
         system_instruction = """
 당신은 최소 토큰으로 브라우저 UI 요소 리스트를 분석하여 목표 액션을 결정하는 자율 에이전트입니다.
 반드시 지정된 JSON 액션 형식으로만 응답하십시오:
-{"action": "click" | "fill" | "finish", "selector": "CSS_SELECTOR", "value": "VALUE_IF_ANY"}
+{"action": "click" | "fill" | "press" | "wait" | "finish", "selector": "CSS_SELECTOR", "value": "VALUE_IF_ANY"}
 """
         chat = self.client.chats.create(
             model=target_model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                temperature=0.1,
+                temperature=0.0,  # 👈 0.0 강제 적용으로 무작위 추측 및 환각 차단
                 response_mime_type="application/json"
             )
         )

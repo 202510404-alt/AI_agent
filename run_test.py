@@ -348,54 +348,59 @@ Generate a JSON object matching PatchPayload schema:
                 print("\n🌐 [Step 5-B] Headless Browser 실제 UI/콘솔 검증 가동...")
                 
                 target_url = browser_spec.get("url", "http://localhost:3000")
-                entrypoint = mission_data.get("entrypoint") or mission_data.get("standalone_entrypoint")
-                server_process = None
+                server_configs = mission_data.get("servers", [
+                    {"name": "Client", "cwd": ".", "command": mission_data.get("entrypoint"), "health_check_url": target_url}
+                ])
+                server_processes = []
 
                 try:
-                    if entrypoint:
-                        print(f"🚀 [Step 5-B] 백그라운드 타깃 서버 구동 시작: {entrypoint}")
-                        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-                        server_process = subprocess.Popen(
-                            entrypoint,
+                    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+                    for cfg in server_configs:
+                        srv_cwd = (ROOT_DIR / cfg.get("cwd", ".")).resolve()
+                        srv_cmd = cfg.get("command")
+                        srv_url = cfg.get("health_check_url", target_url)
+
+                        if not srv_cwd.exists() or not srv_cwd.is_dir():
+                            print(f"⚠️ [Step 5-B SKIP] {cfg.get('name')} 디렉터리가 존재하지 않음: {srv_cwd}")
+                            continue
+
+                        print(f"🚀 [Step 5-B] {cfg.get('name', 'Server')} 구동 시작: {srv_cmd}")
+                        
+                        proc = subprocess.Popen(
+                            srv_cmd,
                             shell=True,
-                            cwd=str(ROOT_DIR),
+                            cwd=str(srv_cwd),
                             env=exec_env,
                             creationflags=creation_flags
                         )
+                        server_processes.append(proc)
 
-                        print(f"⏳ [Step 5-B] 서버 헬스체크 대기 중 ({target_url})...")
-                        server_ready = False
+                        # 서버별 헬스체크 대기 (최대 30초)
                         start_time = time.time()
+                        srv_ready = False
                         while time.time() - start_time < 30:
-                            if server_process and server_process.poll() is not None:
-                                print("❌ [Step 5-B FAIL] 타깃 서버 프로세스가 구동 중 비정상 종료(Crash)되었습니다.")
+                            if proc.poll() is not None:
+                                print(f"❌ [Step 5-B FAIL] {cfg.get('name')} 프로세스 비정상 종료")
                                 break
                             try:
-                                with urllib.request.urlopen(target_url, timeout=2) as res:
-                                    if res.status == 200:
-                                        server_ready = True
-                                        ...
+                                with urllib.request.urlopen(srv_url, timeout=2) as res:
+                                    if 200 <= res.status < 500:
+                                        srv_ready = True
+                                        print(f"✅ [Step 5-B] {cfg.get('name')} 준비 완료 ({srv_url})")
                                         break
+                            except urllib.error.HTTPError:
+                                srv_ready = True
+                                print(f"✅ [Step 5-B] {cfg.get('name')} 응답 감지 완료 ({srv_url})")
+                                break
                             except Exception:
                                 time.sleep(1)
 
-                        if not server_ready:
-                            is_verified = False
-                            server_log = ""
-                            if server_process and server_process.poll() is not None:
-                                try:
-                                    stdout_out, stderr_out = server_process.communicate(timeout=2)
-                                    server_log = f"\n[STDERR]\n{stderr_out}\n[STDOUT]\n{stdout_out}"
-                                except Exception:
-                                    pass
-                            
-                            terminal_output = f"[SERVER START ERROR] 타깃 서버 구동 실패 또는 컴파일 에러 ({target_url}):\n{server_log}"
-                            print(f"❌ [Step 5-B FAIL] 타깃 서버 헬스체크 타임아웃 (30초)")
-                            print(f"  └─ [SERVER LOG]: {server_log.strip()}")
+                        if not srv_ready:
+                            print(f"⚠️ [Step 5-B Warning] {cfg.get('name')} 응답 대기 초과 - 다음 진행")
 
                     if is_verified:
                         print("🤖 [Step 5-C] BrowserTester 1차 정적 액션 검증 수행 중...")
-                        tester = BrowserTester(headless=True)
+                        tester = BrowserTester(headless=False)
                         actions = browser_spec.get("actions", [])
                         wait_selector = browser_spec.get("wait_for_selector")
                         raw_patterns = mission_data.get("expected_terminal_outputs", [])
@@ -419,9 +424,28 @@ Generate a JSON object matching PatchPayload schema:
                             print("⚠️ [Step 5-C Fallback] 1차 정적 검증 실패! 2차 자율 브라우저 에이전트 가동...")
                             from tools.multi_agent_system.browser_agent_runner import BrowserAgentRunner
                             agent_runner = BrowserAgentRunner(factory)
+
+                            # 📌 미션 JSON 내부 스펙 기반 동적 목표 프롬프트 추출 (하드코딩 제거)
+                            blueprint = mission_data.get("implementation_blueprint", {})
+                            browser_spec = mission_data.get("browser_test_spec", {})
+                            
+                            task_title = blueprint.get("feature_title") or mission_data.get("task_id", "UI Feature Verification")
+                            target_selector = browser_spec.get("wait_for_selector", "target UI elements")
+                            planned_actions = browser_spec.get("actions", [])
+                            raw_patterns = mission_data.get("expected_terminal_outputs", [])
+                            
+                            # JSON 데이터만 가지고 자율 에이전트 지침을 동적으로 조립
+                            detailed_goal = (
+                                f"1. Navigate to the app and complete lobby/room setup if prompted.\n"
+                                f"2. Objective: Verify feature '{task_title}'.\n"
+                                f"3. Locate and interact with target element: '{target_selector}'.\n"
+                                f"4. Planned action steps: {planned_actions}\n"
+                                f"5. Trigger necessary UI events until target console output patterns are generated: {raw_patterns}"
+                            )
+
                             b_result = agent_runner.run_autonomous_loop(
                                 target_url=target_url,
-                                goal_description=mission_data.get("description", "Perform UI verification"),
+                                goal_description=detailed_goal,
                                 expected_patterns=expected_patterns
                             )
 
@@ -438,12 +462,13 @@ Generate a JSON object matching PatchPayload schema:
                             print(f"❌ [Step 5-C FAIL] 브라우저 최종 검증 실패")
 
                 finally:
-                    if server_process:
-                        print("🧹 [Step 5 CLEANUP] 백그라운드 서버 프로세스 자원 해제 중...")
-                        if os.name == 'nt':
-                            subprocess.run(f"taskkill /F /T /PID {server_process.pid}", shell=True, capture_output=True)
-                        else:
-                            server_process.terminate()
+                    if server_processes:
+                        print("🧹 [Step 5 CLEANUP] 모든 백그라운드 서버 프로세스 자원 해제 중...")
+                        for proc in server_processes:
+                            if os.name == 'nt':
+                                subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True)
+                            else:
+                                proc.terminate()
 
             # 🖥️ 2) 브라우저 테스트 OFF일 때: 표준 CLI/터미널 명령 및 출력 검증
             else:

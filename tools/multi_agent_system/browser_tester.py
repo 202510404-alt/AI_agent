@@ -27,22 +27,40 @@ def ensure_playwright():
             return None, None
 
 class BrowserTester:
-    def __init__(self, headless: bool = True, default_timeout: int = 5000):
+    def __init__(self, headless: bool = False, default_timeout: int = 5000):
         self.headless = headless
         self.default_timeout = default_timeout
 
     def extract_interactive_elements(self, page) -> List[Dict[str, str]]:
         """
-        페이지 내 클릭/입력 가능한 대화형 요소(Accessibility Elements)를 경량화하여 추출 (토큰 다이어트)
+        페이지 내 대화형 요소를 추출하고, 환각 예방을 위한 유일한 선택자(Unique Selector)를 정밀 생성합니다.
         """
         js_script = """
         () => {
             const elements = Array.from(document.querySelectorAll('button, a, input, select, textarea, [role="button"]'));
             return elements.map((el, idx) => {
-                let idStr = el.id ? `#${el.id}` : '';
-                let nameStr = el.name ? `[name="${el.name}"]` : '';
                 let text = (el.innerText || el.value || el.placeholder || '').trim().replace(/\\s+/g, ' ');
-                let selector = idStr || nameStr || (el.className ? `${el.tagName.toLowerCase()}.${el.className.trim().replace(/\s+/g, '.')}` : `${el.tagName.toLowerCase()}`);
+                
+                // 유일성 매핑 (ID -> placeholder -> name -> 부모 기준 nth-of-type 순 번)
+                let selector = '';
+                if (el.id) {
+                    selector = `#${el.id}`;
+                } else if (el.getAttribute('placeholder')) {
+                    selector = `${el.tagName.toLowerCase()}[placeholder="${el.getAttribute('placeholder')}"]`;
+                } else if (el.name) {
+                    selector = `${el.tagName.toLowerCase()}[name="${el.name}"]`;
+                } else {
+                    const parent = el.parentElement;
+                    if (parent) {
+                        const siblings = Array.from(parent.querySelectorAll(el.tagName.toLowerCase()));
+                        const index = siblings.indexOf(el) + 1;
+                        const classStr = el.className ? '.' + el.className.trim().replace(/\\s+/g, '.') : '';
+                        selector = `${el.tagName.toLowerCase()}${classStr}:nth-of-type(${index})`;
+                    } else {
+                        selector = el.tagName.toLowerCase();
+                    }
+                }
+
                 return {
                     tag: el.tagName.toLowerCase(),
                     selector: selector,

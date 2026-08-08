@@ -83,7 +83,7 @@ function Canvas(props) {
   function changeColour(e) {
     const newColor = e.target ? e.target.value : e;
     setShapeColor(newColor);
-    if (process.env.DEBUG_CANVAS_COLOR || true) {
+    if (process.env.DEBUG_CANVAS_COLOR === 'true' || localStorage.getItem('DEBUG_CANVAS_COLOR') === 'true' || window.DEBUG_CANVAS_COLOR === 'true' || true) {
       console.log(`[DEBUG_LOG] Step=COLOR_CHANGE | SelectedColor='${newColor}'`);
     }
   }
