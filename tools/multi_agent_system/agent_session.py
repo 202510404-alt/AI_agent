@@ -143,9 +143,16 @@ class AgentSessionFactory:
             return full_map, False
 
 
-    def execute_worker_step(self, prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_retries: int = 5) -> str:
+    def execute_worker_step(
+        self, 
+        prompt: str, 
+        system_instruction: str = "", 
+        image_bytes: Optional[bytes] = None,  # 👈 image_bytes 매개변수 추가
+        response_mime_type: str = "application/json", 
+        max_retries: int = 5
+    ) -> str:
         """
-        [Step 3 인터페이스] 단발성 LLM 요청을 수행합니다. (429 Quota 초과 시 API Key 자동 Rotate 처리)
+        [Step 3 인터페이스] 단발성 LLM 요청을 수행합니다. (이미지 멀티모달 지원 추가)
         """
         import time
         time.sleep(0.8)  # ⏱️ 연속 호출 폭주 방지용 최소 완충 딜레이
@@ -164,14 +171,27 @@ class AgentSessionFactory:
                 self.client = genai.Client(api_key=current_api_key)
                 target_model = resolve_best_gemini_model(self.client)
 
+                # 💡 image_bytes가 들어올 경우 Gemini 멀티모달 Part 구성
+                contents = [prompt]
+                if image_bytes:
+                    contents.append(
+                    types.Part.from_bytes(
+                        data=image_bytes,
+                        mime_type="image/jpeg"  # JPEG 규격 매칭
+                    )
+                )
+
+                config_args = {
+                    "temperature": 0.0,  # 온도를 0.0으로 설정하여 무작위성 제거
+                    "response_mime_type": response_mime_type
+                }
+                if system_instruction:
+                    config_args["system_instruction"] = system_instruction
+
                 response = self.client.models.generate_content(
                     model=target_model,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                        response_mime_type=response_mime_type,
-                        temperature=0.1
-                    )
+                    contents=contents,
+                    config=types.GenerateContentConfig(**config_args)
                 )
                 return response.text
 
@@ -230,6 +250,33 @@ class AgentSessionFactory:
 
         return [extract_code_slice, safe_run_terminal_command, patch_code_slice, get_targeted_codebase_map]
 
+    def create_browser_agent_session(self, preferred_lite_model: str = "gemini-2.5-flash-lite"):
+        """브라우저 자율 탐색 전용 Lite 모델 세션 생성 (토큰 절감 및 쿼터 회전 지원)"""
+        current_api_key = self.key_manager.get_current_key()
+
+        if not HAS_GENAI or not current_api_key:
+            raise RuntimeError("Google GenAI 패키지 미설치 또는 .env에 등록된 GEMINI_API_KEY가 없습니다.")
+
+        self.client = genai.Client(api_key=current_api_key)
+        target_model = preferred_lite_model
+
+        print(f"⚡ [BROWSER LITE SESSION] 브라우저 에이전트 가동 모델: {target_model}")
+
+        system_instruction = """
+당신은 최소 토큰으로 브라우저 UI 요소 리스트를 분석하여 목표 액션을 결정하는 자율 에이전트입니다.
+반드시 지정된 JSON 액션 형식으로만 응답하십시오:
+{"action": "click" | "fill" | "finish", "selector": "CSS_SELECTOR", "value": "VALUE_IF_ANY"}
+"""
+        chat = self.client.chats.create(
+            model=target_model,
+            config=types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=0.1,
+                response_mime_type="application/json"
+            )
+        )
+        return chat
+
     def create_chat_session(self, model_name: Optional[str] = None, shallow_depth: int = 3):
         """동적으로 사용 가능한 모델을 선별하여 지형도와 도구가 준비된 Gemini Chat 세션을 생성합니다."""
         current_api_key = self.key_manager.get_current_key()
@@ -248,7 +295,8 @@ class AgentSessionFactory:
         self.current_model = target_model  # 💡 디버깅용 모델 저장
         print(f"🤖 [SESSION MODEL] Chat 세션 가동 모델: {target_model}")
 
-        codebase_map, is_oversized = self._prepare_codebase_map(max_shallow_depth=shallow_depth)
+        # 💡 [FIX 1] 존재하지 않는 메서드인 _prepare_codebase_map 대신 prepare_step1_map 호출
+        codebase_map, is_oversized = self.prepare_step1_map(max_shallow_depth=shallow_depth)
         tools = self._build_tools()
 
         oversized_guideline = """
@@ -258,8 +306,6 @@ class AgentSessionFactory:
 반드시 `get_targeted_codebase_map(target_paths=["상세경로"])` 도구를 호출하여 
 필요한 구역의 정밀 세부 맵을 확보한 후 작업을 수행하십시오.
 """ if is_oversized else ""
-
-        # tools/multi_agent_system/agent_session.py 수정 구간
 
         system_instruction = f"""
 당신은 현재 프로젝트의 코드베이스 구조를 파악하고, 터미널 명령어로 디버깅하며 코드를 정밀 수정하는 AI 에이전트입니다.
@@ -279,13 +325,13 @@ class AgentSessionFactory:
 2. 파일 전체 수정 요구 시, 함부로 통째로 덮어쓰지 말고 `extract_code_slice` 및 `patch_code_slice`를 조합하여 작업을 수행하십시오.
 """
 
-        # Tool call 설정을 필요에 맞춰 AUTO 또는 사용자 지정 조건으로 변경
         tool_config_dict = {
             "function_calling_config": {
-                "mode": "AUTO"  # 필요 시 도구를 선택적으로 호출할 수 있도록 AUTO로 변경
+                "mode": "AUTO"
             }
         }
 
+        # 💡 [FIX 2] Function Calling(tools) 사용 시 API 충돌 및 에러를 유발하는 response_mime_type 옵션 제거
         chat = self.client.chats.create(
             model=target_model,
             config=types.GenerateContentConfig(

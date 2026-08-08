@@ -31,6 +31,42 @@ class BrowserTester:
         self.headless = headless
         self.default_timeout = default_timeout
 
+    def extract_interactive_elements(self, page) -> List[Dict[str, str]]:
+        """
+        페이지 내 클릭/입력 가능한 대화형 요소(Accessibility Elements)를 경량화하여 추출 (토큰 다이어트)
+        """
+        js_script = """
+        () => {
+            const elements = Array.from(document.querySelectorAll('button, a, input, select, textarea, [role="button"]'));
+            return elements.map((el, idx) => {
+                let idStr = el.id ? `#${el.id}` : '';
+                let nameStr = el.name ? `[name="${el.name}"]` : '';
+                let text = (el.innerText || el.value || el.placeholder || '').trim().replace(/\\s+/g, ' ');
+                let selector = idStr || nameStr || (el.className ? `${el.tagName.toLowerCase()}.${el.className.trim().replace(/\s+/g, '.')}` : `${el.tagName.toLowerCase()}`);
+                return {
+                    tag: el.tagName.toLowerCase(),
+                    selector: selector,
+                    text: text.slice(0, 50),
+                    type: el.type || ''
+                };
+            });
+        }
+        """
+        try:
+            return page.evaluate(js_script)
+        except Exception:
+            return []
+
+    def capture_compressed_screenshot(self, page) -> bytes:
+        """
+        이미지 토큰 절감을 위해 뷰포트를 제한하고 JPEG 포맷으로 압축 캡처
+        """
+        try:
+            page.set_viewport_size({"width": 800, "height": 600})
+            return page.screenshot(type="jpeg", quality=50)
+        except Exception:
+            return b""
+
     def run_browser_verification(
         self, 
         target_url: str, 
@@ -87,13 +123,22 @@ class BrowserTester:
 
                     if act_type == "click":
                         page.click(selector)
-                    elif act_type == "fill":
+                    elif act_type in ["fill", "type"]:
                         page.fill(selector, str(value))
+                    elif act_type == "press":
+                        page.press(selector, str(value or "Enter"))
+                    elif act_type == "wait":
+                        page.wait_for_selector(selector, timeout=self.default_timeout)
                     elif act_type == "change_color_input":
                         # HTML5 Color Picker (<input type='color'>) 값 변경 이벤트 강제 트리거
                         page.eval_on_selector(
                             selector,
-                            f"(el) => {{ el.value = '{value}'; el.dispatchEvent(new Event('input', {{ bubbles: true }})); el.dispatchEvent(new Event('change', {{ bubbles: true }})); }}"
+                            """(el, val) => { 
+                                el.value = val; 
+                                el.dispatchEvent(new Event('input', { bubbles: true })); 
+                                el.dispatchEvent(new Event('change', { bubbles: true })); 
+                            }""",
+                            arg=str(value)
                         )
 
                     page.wait_for_timeout(300)  # 브라우저 이벤트 처리 대기

@@ -83,7 +83,9 @@ function Canvas(props) {
   function changeColour(e) {
     const newColor = e.target ? e.target.value : e;
     setShapeColor(newColor);
-    console.log(`[DEBUG_LOG] Step=COLOR_CHANGE | SelectedColor='${newColor}'`);
+    if (process.env.DEBUG_CANVAS_COLOR || true) {
+      console.log(`[DEBUG_LOG] Step=COLOR_CHANGE | SelectedColor='${newColor}'`);
+    }
   }
 
   function lineWidth(event) {

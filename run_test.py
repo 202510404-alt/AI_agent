@@ -2,7 +2,12 @@ import os
 import sys
 import json
 import re
+import time
+import subprocess
+import urllib.request
 from pathlib import Path
+from pydantic import BaseModel
+from typing import List
 
 # 1. ROOT_DIR 초기화 및 경로 설정
 ROOT_DIR = Path(__file__).parent.resolve()
@@ -15,11 +20,21 @@ from tools.multi_agent_system.agent_map_extractor import extract_targeted_ai_map
 from tools.multi_agent_system.terminal_runner import run_terminal_command
 from tools.multi_agent_system.browser_tester import BrowserTester
 
+# 패치 스니펫 출력 구조 완전 강제화
+class PatchItem(BaseModel):
+    file_path: str
+    existing_code: str
+    replacement_code: str
+
+class PatchPayload(BaseModel):
+    patches: List[PatchItem]
+
 def build_log_regex_pattern(template_msg: str) -> str:
-    """미션의 디버그 로그 메시지 내 변수 표기({x}, {str} 등)를 Regex 유연 패턴으로 자동 변환"""
+    """미션의 디버그 로그 메시지 내 변수 표기({x}, {hex_code} 등)를 Regex 유연 패턴으로 자동 변환"""
     escaped = re.escape(template_msg)
     escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
     escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)  # Hex Color 지원 추가
     escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
     return escaped
 
@@ -205,7 +220,7 @@ Current Codebase Map:
 1. 'file_path': Strictly '{target_file_path}'.
 2. 'existing_code': Exact raw string to replace. Keep context minimal to reduce token size.
 3. 'replacement_code': Minimum modified code only.
-4. OUTPUT: Raw JSON array ONLY. No markdown, no explanations.
+4. OUTPUT: Raw JSON Object matching PatchPayload schema ONLY. No markdown, no explanations.
 5. NO hardcoded env vars (e.g., os.environ). Rely on runtime env."""
 
     user_prompt = f"""<MISSION_SPEC>
@@ -219,14 +234,16 @@ Mission Details:
 </READ_ONLY_CONTEXT>
 
 <OUTPUT_INSTRUCTIONS>
-Generate a JSON array of patch objects to execute the mission:
-[
-  {{
-    "file_path": "{target_file_path}",
-    "existing_code": "exact_raw_string_to_be_replaced",
-    "replacement_code": "exact_new_code_to_apply"
-  }}
-]
+Generate a JSON object matching PatchPayload schema:
+{{
+  "patches": [
+    {{
+      "file_path": "{target_file_path}",
+      "existing_code": "exact_raw_string_to_be_replaced",
+      "replacement_code": "exact_new_code_to_apply"
+    }}
+  ]
+}}
 </OUTPUT_INSTRUCTIONS>"""
 
     raw_response = safe_execute_step(
@@ -245,122 +262,226 @@ Generate a JSON array of patch objects to execute the mission:
         print(f"\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 {retry_count + 1}/{max_retries + 1})...")
         patch_success = False
         try:
-            cleaned_json_text = clean_json_response(raw_response)
-            patch_data = json.loads(cleaned_json_text, strict=False)
-
-            # 단일 객체 대응 및 배열 정규화
-            if isinstance(patch_data, dict):
-                patch_list = [patch_data]
-            elif isinstance(patch_data, list):
-                patch_list = patch_data
-            else:
-                patch_list = []
+            # Pydantic 파싱으로 스키마 틀에 박힌 정확한 객체 검증
+            payload = PatchPayload.model_validate_json(clean_json_response(raw_response))
+            patch_list = [p.model_dump() for p in payload.patches]
 
             if patch_list:
                 all_patches_ok = True
                 for idx, item in enumerate(patch_list, 1):
-                    file_path = item.get("file_path")
-                    existing_code = item.get("existing_code")
-                    replacement_code = item.get("replacement_code")
+                    file_path = item["file_path"]
+                    existing_code = item["existing_code"]
+                    replacement_code = item["replacement_code"]
 
-                    if file_path is not None and existing_code is not None and replacement_code is not None:
-                        patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
-                        print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
-                        print(f"   ├─ [BEFORE]: {existing_code.strip()[:60]}...")
-                        print(f"   └─ [AFTER] : {replacement_code.strip()[:60]}...")
-                        if not patch_result.get("success", False):
-                            all_patches_ok = False
-                    else:
-                        print(f"⚠️ [PATCH FAIL {idx}/{len(patch_list)}] 필수 키 누락: {item}")
+                    patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
+                    print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
+                    print(f"   ├─ [BEFORE]: {existing_code.strip()[:60]}...")
+                    print(f"   └─ [AFTER] : {replacement_code.strip()[:60]}...")
+                    if not patch_result.get("success", False):
                         all_patches_ok = False
                 patch_success = all_patches_ok
             else:
-                print(f"⚠️ [PATCH FAIL] JSON 응답 데이터 형식이 올바르지 않거나 비어 있습니다: {type(patch_data)}")
+                print("⚠️ [PATCH FAIL] 패치 항목(patches)이 비어 있습니다.")
 
         except Exception as e:
-            print(f"❌ [STEP 4 ERROR] 패치 응답 해석 또는 적용 중 오류 발생: {e}")
+            print(f"❌ [STEP 4 ERROR] Pydantic 스키마 검증 실패 또는 패치 적용 오류: {e}")
 
         # -------------------------------------------------------------
         # 💻 [Step 5] Terminal Runner & Browser Tester 이중 검증
         # -------------------------------------------------------------
         print("\n💻 [Step 5] 실행 및 실체 검증 가동...")
-        
-        # 브라우저 테스트 사용 여부 및 스펙 확인 (use_browser_test 토글 또는 test_type="browser")
-        use_browser = mission_data.get("use_browser_test", False) or (mission_data.get("test_type") == "browser")
-        browser_spec = mission_data.get("browser_test_spec")
-
-        exec_env = os.environ.copy()
-        toggle_key = mission_data.get("implementation_blueprint", {}).get("debug_toggle_key")
-        if not toggle_key and "debug_log_spec" in mission_data:
-            toggle_key = mission_data["debug_log_spec"].get("toggle_key")
-
-        if toggle_key:
-            exec_env[toggle_key] = "true"
 
         is_verified = True
         terminal_output = ""
+        fast_check_failed = False
 
-        # 🌐 1) 브라우저 테스트 ON 조건 충족 시: BrowserTester 실행
-        if use_browser and browser_spec:
-            print("\n🌐 [Step 5-B] Headless Browser 실제 UI/콘솔 검증 가동...")
-            tester = BrowserTester(headless=True)
-            
-            target_url = browser_spec.get("url", "http://localhost:3000")
-            actions = browser_spec.get("actions", [])
-            wait_selector = browser_spec.get("wait_for_selector")
-            expected_patterns = [
-                build_log_regex_pattern(p) for p in mission_data.get("expected_terminal_outputs", [])
-            ]
+        # 💡 [Step 5-A] 패치 직후 Fast-Check (0.1초 정적 문법 검사)
+        print("🔍 [Step 5-A] 정적 문법 검사(Fast-Check) 진행 중...")
+        if patch_success and target_file_path.endswith(('.js', '.jsx', '.ts', '.tsx')):
+            # npx 무한 대기 방지를 위한 --yes 추가, 비동기 대기 방지용 input=b'' 및 timeout 10초 설정
+            fast_check_cmd = f"npx --yes esbuild \"{ROOT_DIR / target_file_path}\" --loader:.js=jsx"
+            try:
+                fast_res = subprocess.run(
+                    fast_check_cmd,
+                    shell=True,
+                    capture_output=True,
+                    text=True,
+                    input="",  # 입력 대기 무한 멈춤 방지
+                    timeout=10, # 10초 내 응답 없으면 타임아웃
+                    cwd=str(ROOT_DIR)
+                )
+                if fast_res.returncode != 0:
+                    print("❌ [FAST-CHECK FAIL] 정적 문법 검증 실패 -> 서버 구동 스킵 및 즉시 재시도 진입")
+                    print(f"  └─ [ERROR DETAIL]:\n{fast_res.stderr.strip()}")
+                    patch_success = False
+                    is_verified = False
+                    fast_check_failed = True
+                    terminal_output = f"[FAST-CHECK SYNTAX ERROR] 패치 코드 문법 오류:\n{fast_res.stderr}"
+                else:
+                    print("✅ [Step 5-A] Fast-Check 문법 검사 통과")
+            except subprocess.TimeoutExpired:
+                print("⚠️ [FAST-CHECK TIMEOUT] 문법 검사 시간 초과(10초) -> Fast-Check 스킵 후 다음 단계 진행")
+            except Exception as e:
+                print(f"⚠️ [FAST-CHECK EXCEPTION] 문법 검사 실행 실패({e}) -> 다음 단계 진행")
+        else:
+            print("⏩ [Step 5-A] Fast-Check 대상 아님 또는 패치 실패로 스킵")
 
-            b_result = tester.run_browser_verification(
-                target_url=target_url,
-                actions=actions,
-                expected_patterns=expected_patterns,
-                wait_for_selector=wait_selector
+        # Fast-Check 성공 시에만 서버 구동 및 브라우저/터미널 테스트 진행
+        if patch_success and not fast_check_failed:
+            use_browser = mission_data.get("use_browser_test", False) or (mission_data.get("test_type") == "browser")
+            browser_spec = mission_data.get("browser_test_spec")
+
+            exec_env = os.environ.copy()
+            exec_env["BROWSER"] = "none"  # npm start 등 서버 실행 시 기본 브라우저(Edge) 자동 오픈 방지
+
+            toggle_key = (
+                mission_data.get("debug_log_spec", {}).get("toggle_key") or 
+                mission_data.get("implementation_blueprint", {}).get("debug_toggle_key")
             )
 
-            print(f"📌 [BROWSER RESULT] {b_result['message']}")
-            print("📄 [BROWSER CONSOLE LOGS]:")
-            for log in b_result["console_logs"]:
-                print(f"   {log}")
+            if toggle_key:
+                exec_env[toggle_key] = "true"
+                print(f"🔧 [Step 5 ENV] 디버그 토글 키 적용: {toggle_key}=true")
 
-            terminal_output = "\n".join(b_result["console_logs"])
+            # 🌐 1) 브라우저 테스트 ON 조건 충족 시: BrowserTester 실행
+            if use_browser and browser_spec:
+                print("\n🌐 [Step 5-B] Headless Browser 실제 UI/콘솔 검증 가동...")
+                
+                target_url = browser_spec.get("url", "http://localhost:3000")
+                entrypoint = mission_data.get("entrypoint") or mission_data.get("standalone_entrypoint")
+                server_process = None
 
-            if not b_result["success"]:
-                is_verified = False
-                terminal_output += f"\n[BROWSER VERIFY ERROR] {b_result['message']}\n" + "\n".join(b_result["page_errors"])
+                try:
+                    if entrypoint:
+                        print(f"🚀 [Step 5-B] 백그라운드 타깃 서버 구동 시작: {entrypoint}")
+                        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+                        server_process = subprocess.Popen(
+                            entrypoint,
+                            shell=True,
+                            cwd=str(ROOT_DIR),
+                            env=exec_env,
+                            creationflags=creation_flags
+                        )
 
-        # 🖥️ 2) 브라우저 테스트 OFF일 때: 표준 CLI/터미널 명령 및 출력 검증
-        else:
-            entrypoint = mission_data.get("entrypoint", mission_data.get("standalone_entrypoint", f"python3 {target_file_path}"))
-            terminal_output = run_terminal_command(entrypoint, cwd=str(ROOT_DIR), env=exec_env)
-            print(f"📄 [TERMINAL OUTPUT]\n{terminal_output}")
+                        print(f"⏳ [Step 5-B] 서버 헬스체크 대기 중 ({target_url})...")
+                        server_ready = False
+                        start_time = time.time()
+                        while time.time() - start_time < 30:
+                            if server_process and server_process.poll() is not None:
+                                print("❌ [Step 5-B FAIL] 타깃 서버 프로세스가 구동 중 비정상 종료(Crash)되었습니다.")
+                                break
+                            try:
+                                with urllib.request.urlopen(target_url, timeout=2) as res:
+                                    if res.status == 200:
+                                        server_ready = True
+                                        ...
+                                        break
+                            except Exception:
+                                time.sleep(1)
 
-            patterns = mission_data.get("expected_terminal_outputs", mission_data.get("predicted_output_pattern", []))
-            if isinstance(patterns, str):
-                patterns = [patterns]
+                        if not server_ready:
+                            is_verified = False
+                            server_log = ""
+                            if server_process and server_process.poll() is not None:
+                                try:
+                                    stdout_out, stderr_out = server_process.communicate(timeout=2)
+                                    server_log = f"\n[STDERR]\n{stderr_out}\n[STDOUT]\n{stdout_out}"
+                                except Exception:
+                                    pass
+                            
+                            terminal_output = f"[SERVER START ERROR] 타깃 서버 구동 실패 또는 컴파일 에러 ({target_url}):\n{server_log}"
+                            print(f"❌ [Step 5-B FAIL] 타깃 서버 헬스체크 타임아웃 (30초)")
+                            print(f"  └─ [SERVER LOG]: {server_log.strip()}")
 
-            if patterns:
-                for pattern in patterns:
-                    regex_pattern = build_log_regex_pattern(pattern)
-                    if not re.search(regex_pattern, terminal_output):
-                        print(f"⚠️ [LOG VERIFY FAIL] 정규식 패턴 미일치: '{pattern}'")
-                        is_verified = False
-                        break
+                    if is_verified:
+                        print("🤖 [Step 5-C] BrowserTester 1차 정적 액션 검증 수행 중...")
+                        tester = BrowserTester(headless=True)
+                        actions = browser_spec.get("actions", [])
+                        wait_selector = browser_spec.get("wait_for_selector")
+                        raw_patterns = mission_data.get("expected_terminal_outputs", [])
+                        if not raw_patterns and "debug_log_spec" in mission_data:
+                            spec_pattern = mission_data["debug_log_spec"].get("log_pattern")
+                            if spec_pattern:
+                                raw_patterns = [spec_pattern]
+
+                        expected_patterns = [
+                            build_log_regex_pattern(p) for p in raw_patterns
+                        ]
+                        b_result = tester.run_browser_verification(
+                            target_url=target_url,
+                            actions=actions,
+                            expected_patterns=expected_patterns,
+                            wait_for_selector=wait_selector
+                        )
+
+                        # 💡 1차 정적 시도 실패 시 2차 자율 에이전트 구원 투수 가동 (하이브리드 전략)
+                        if not b_result["success"]:
+                            print("⚠️ [Step 5-C Fallback] 1차 정적 검증 실패! 2차 자율 브라우저 에이전트 가동...")
+                            from tools.multi_agent_system.browser_agent_runner import BrowserAgentRunner
+                            agent_runner = BrowserAgentRunner(factory)
+                            b_result = agent_runner.run_autonomous_loop(
+                                target_url=target_url,
+                                goal_description=mission_data.get("description", "Perform UI verification"),
+                                expected_patterns=expected_patterns
+                            )
+
+                        print(f"📌 [BROWSER RESULT] {b_result['message']}")
+                        print("📄 [BROWSER CONSOLE LOGS]:")
+                        for log in b_result["console_logs"]:
+                            print(f"   {log}")
+
+                        terminal_output = "\n".join(b_result["console_logs"])
+
+                        if not b_result["success"]:
+                            is_verified = False
+                            terminal_output += f"\n[BROWSER VERIFY ERROR] {b_result['message']}\n" + "\n".join(b_result["page_errors"])
+                            print(f"❌ [Step 5-C FAIL] 브라우저 최종 검증 실패")
+
+                finally:
+                    if server_process:
+                        print("🧹 [Step 5 CLEANUP] 백그라운드 서버 프로세스 자원 해제 중...")
+                        if os.name == 'nt':
+                            subprocess.run(f"taskkill /F /T /PID {server_process.pid}", shell=True, capture_output=True)
+                        else:
+                            server_process.terminate()
+
+            # 🖥️ 2) 브라우저 테스트 OFF일 때: 표준 CLI/터미널 명령 및 출력 검증
             else:
-                print("⚠️ [VERIFY FAIL] 검증할 expected_terminal_outputs 패턴이 존재하지 않거나 비어 있습니다.")
-                is_verified = False
+                print("🖥️ [Step 5-B] CLI/터미널 단독 검증 가동...")
+                entrypoint = mission_data.get("entrypoint", mission_data.get("standalone_entrypoint", f"python3 {target_file_path}"))
+                terminal_output = run_terminal_command(entrypoint, cwd=str(ROOT_DIR), env=exec_env)
+                print(f"📄 [TERMINAL OUTPUT]\n{terminal_output}")
 
-        # 범용 터미널/런타임 실패 키워드 감지
-        failure_keywords = [
-            "Traceback (most recent call last):",
-            "FAIL ",
-            "npm ERR!",
-            "Command failed"
-        ]
-        if is_verified and any(keyword in terminal_output for keyword in failure_keywords):
-            print("⚠️ [VERIFY FAIL] 터미널 실행 출력에서 에러/실패 키워드가 감지되었습니다.")
-            is_verified = False
+                patterns = mission_data.get("expected_terminal_outputs", mission_data.get("predicted_output_pattern", []))
+                if isinstance(patterns, str):
+                    patterns = [patterns]
+
+                if patterns:
+                    print(f"🔍 [Step 5-C] 출력 패턴 일치 검사 중... (대상 패턴 {len(patterns)}개)")
+                    for pattern in patterns:
+                        regex_pattern = build_log_regex_pattern(pattern)
+                        if not re.search(regex_pattern, terminal_output):
+                            print(f"⚠️ [LOG VERIFY FAIL] 정규식 패턴 미일치: '{pattern}'")
+                            is_verified = False
+                            break
+                    if is_verified:
+                        print("✅ [Step 5-C] 모든 패턴 검증 통과")
+                else:
+                    print("⚠️ [VERIFY FAIL] 검증할 expected_terminal_outputs 패턴이 존재하지 않거나 비어 있습니다.")
+                    is_verified = False
+
+            # 범용 터미널/런타임 실패 키워드 감지
+            failure_keywords = [
+                "Traceback (most recent call last):",
+                "FAIL ",
+                "npm ERR!",
+                "Command failed"
+            ]
+            if is_verified and any(keyword in terminal_output for keyword in failure_keywords):
+                print("⚠️ [VERIFY FAIL] 터미널 실행 출력에서 에러/실패 키워드가 감지되었습니다.")
+                is_verified = False
+        else:
+            print("⏩ [Step 5 SKIP] Fast-Check 실패로 인해 서버 구동 및 UI 테스트를 건너뜁니다.")
 
         if patch_success and is_verified:
             # 🧹 임시 생성된 검증용 테스트 파일 자동 청소 (Clean-up)
@@ -420,10 +541,12 @@ Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanatio
             fix_user_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-Generate corrected JSON patch array:
-[
-  {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
-]"""
+Generate corrected JSON patch object matching PatchPayload schema:
+{{
+  "patches": [
+    {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
+  ]
+}}"""
             raw_response = safe_execute_step(
                 prompt=fix_user_prompt,
                 system_instruction=system_prompt,
@@ -473,10 +596,12 @@ Output JSON string array matching: ["path/1", "path/2"]"""
             retry_fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-Generate corrected JSON patch array:
-[
-  {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
-]"""
+Generate corrected JSON patch object matching PatchPayload schema:
+{{
+  "patches": [
+    {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
+  ]
+}}"""
             raw_response = safe_execute_step(
                 prompt=retry_fix_prompt,
                 system_instruction=system_prompt,

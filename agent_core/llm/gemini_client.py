@@ -8,6 +8,7 @@ import re
 import time
 import json
 from pathlib import Path
+from pydantic import BaseModel
 from typing import Optional, Dict, Any, Tuple, List
 from agent_core.plan.schemas import DEBUG_MODE, LOG_FILE_PATH
 
@@ -95,6 +96,13 @@ def resolve_best_gemini_model(client=None, blocked_models: set = None) -> str:
             return model
     return HARDCODED_GEMINI_MODELS[0]
 
+class PlanTask(BaseModel):
+    task_id: str
+    description: str
+
+class PlanResponse(BaseModel):
+    status: str
+    tasks: List[PlanTask]
 
 class DynamicKeyModelManager:
     """
@@ -187,13 +195,15 @@ class GeminiPlannerClient:
                     contents=prompt,
                     config=types.GenerateContentConfig(
                         response_mime_type="application/json",
-                        temperature=0.2,
+                        response_schema=PlanResponse,  # 스키마 강제 주입
+                        temperature=0.0,                # 자율성 0%
                     ),
                     request_options={
                         "retry": None  # SDK 내부 대기 차단 (0초 Fail-Fast)
                     }
                 )
-                return json.loads(response.text)
+                # 마크다운/JSON 파싱 과정 없이 strict 검증 후 직접 변환
+                return PlanResponse.model_validate_json(response.text).model_dump()
 
             except Exception as e:
                 err_msg = str(e)
