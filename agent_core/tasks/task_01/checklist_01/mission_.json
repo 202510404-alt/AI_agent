@@ -1,0 +1,44 @@
+{
+  "task_id": "TASK-UNIQUE-ID-001",
+  "test_type": "browser | cli_test | python_test | unit_test",
+  "use_browser_test": false,
+  
+  "target_file": "relative/path/to/target_file.ext",
+  "entrypoint": "command to run or start main task",
+  "standalone_entrypoint": "command to run standalone test (optional)",
+
+  "debug_log_spec": {
+    "toggle_key": "ENVIRONMENT_VARIABLE_KEY",
+    "log_pattern": "[DEBUG_LOG] Step=... | Pattern=..."
+  },
+
+  "implementation_blueprint": {
+    "feature_title": "기능 구현 요약 및 목표",
+    "target_component": "TargetComponentOrFile",
+    "debug_toggle_key": "ENVIRONMENT_VARIABLE_KEY",
+    "variable_bindings": {
+      "key_variable_1": "Description or internal state name",
+      "key_variable_2": "Method or handler name"
+    },
+    "step_by_step_recipe": [
+      "1. 코드 수정 또는 구현 단계 1",
+      "2. 코드 수정 또는 구현 단계 2",
+      "3. 디버그 로그 출력 구문 삽입 위치 및 조건"
+    ]
+  },
+
+  "servers": [
+    {
+      "name": "Server Name (e.g., Backend, Client)",
+      "cwd": "relative/path/to/cwd",
+      "command": "start command",
+      "health_check_url": "http://localhost:PORT"
+    }
+  ],
+
+  "browser_test_spec": null,
+
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=... | Pattern={variable}"
+  ]
+}

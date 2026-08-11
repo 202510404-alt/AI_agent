@@ -1,0 +1,61 @@
+{
+  "task_id": "TASK-WHITEBOARD-COLORWHEEL-001",
+  "target_file": "extraction_target_project/client/src/Canvas.js",
+  "entrypoint": "cd extraction_target_project/client && npm start",
+  "standalone_entrypoint": "cd extraction_target_project/client && npm test -- --watchAll=false",
+  "servers": [
+    {
+      "name": "Backend Socket Server",
+      "cwd": "extraction_target_project",
+      "command": "node index.js",
+      "health_check_url": "http://localhost:7605"
+    },
+    {
+      "name": "React Client",
+      "cwd": "extraction_target_project/client",
+      "command": "npm start",
+      "health_check_url": "http://localhost:3000"
+    }
+  ],
+  
+  "test_type": "browser",
+  "use_browser_test": true,
+
+  "debug_log_spec": {
+    "toggle_key": "DEBUG_CANVAS_COLOR",
+    "log_pattern": "[DEBUG_LOG] Step=COLOR_CHANGE | SelectedColor='{hex_code}'"
+  },
+
+  "implementation_blueprint": {
+    "feature_title": "화이트보드 팔레트를 팔레트 고정색(5종)에서 사용자 정의 HTML5 Color Picker(원판/커스텀)로 확장",
+    "target_component": "Canvas.js",
+    "debug_toggle_key": "DEBUG_CANVAS_COLOR",
+    "variable_bindings": {
+      "selected_color_state": "color (React State)",
+      "color_change_handler": "changeColour(e)",
+      "color_input_element": "<input type='color' id='colorPicker' value={color} onChange={changeColour} />"
+    },
+    "step_by_step_recipe": [
+      "1. Canvas.js 내 기존 상수로 하드코딩된 5가지 버튼 색상 패널 영역을 찾는다.",
+      "2. 색상 선택부 UI에 HTML5 Native Color Picker (<input type='color' id='colorPicker'>)를 추가한다.",
+      "3. changeColour 함수가 event 객체로부터 Hex 색상을 전달받아 state를 업데이트하도록 수정한다.",
+      "4. DEBUG_CANVAS_COLOR 활성화 시 console.log(`[DEBUG_LOG] Step=COLOR_CHANGE | SelectedColor='${newColor}'`)를 출력한다."
+    ]
+  },
+
+  "browser_test_spec": {
+    "url": "http://localhost:3000",
+    "wait_for_selector": "#colorPicker",
+    "actions": [
+      {
+        "type": "change_color_input",
+        "selector": "#colorPicker",
+        "value": "#ff0000"
+      }
+    ]
+  },
+
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=COLOR_CHANGE | SelectedColor='{hex_code}'"
+  ]
+}

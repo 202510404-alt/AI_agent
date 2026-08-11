@@ -1,0 +1,22 @@
+{
+  "name": "real-time-collaborative",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Real-time collaborative",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "dev:client": "npm start --prefix client",
+    "install:all": "npm install && npm install --prefix client",
+    "build": "cd client && npm install && npm run build",
+    "build:start": "npm run build && npm start"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "dateuuidv2": "^1.0.1",
+    "express": "^4.19.2",
+    "nodemon": "^3.1.0",
+    "socket.io": "^4.7.5"
+  }
+}

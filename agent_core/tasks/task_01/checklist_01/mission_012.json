@@ -1,0 +1,29 @@
+{
+  "task_id": "TASK-PYTHON-CHESS-001",
+  "target_file": "extraction_target_project/chess_game.py",
+  "entrypoint": "python extraction_target_project/chess_game.py",
+  
+  "test_type": "python_test",
+  "use_browser_test": false,
+
+  "implementation_blueprint": {
+    "feature_title": "파이썬 CLI 기반 체스 게임의 나이트(Knight) 이동 검증 로직 및 보드 상태 업데이트 구현",
+    "target_component": "chess_game.py",
+    "debug_toggle_key": "DEBUG_CHESS_LOG",
+    "variable_bindings": {
+      "board_state": "ChessBoard.board (8x8 2D List)",
+      "move_validator_method": "ChessBoard.is_valid_knight_move(start_pos, end_pos)",
+      "move_executor_method": "ChessBoard.move_piece(start_pos, end_pos)"
+    },
+    "step_by_step_recipe": [
+      "1. extraction_target_project/chess_game.py 내 ChessBoard 클래스의 보드 상태 구조를 확인한다.",
+      "2. is_valid_knight_move 메소드를 작성하여 나이트의 L자 이동 규칙(|dx|*|dy| = 2) 및 목적지의 아군 기물 존재 여부를 검증한다.",
+      "3. move_piece 메소드에서 유효성 검증을 통과한 경우 8x8 배열 내 기물 위치를 변경하고 기존 위치를 빈 칸으로 갱신한다.",
+      "4. DEBUG_CHESS_LOG 활성화 시 print(f\"[DEBUG_LOG] Step=MOVE_PIECE | Piece=Knight | From={start_pos} | To={end_pos}\")를 출력한다."
+    ]
+  },
+
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=MOVE_PIECE | Piece=Knight | From={start_pos} | To={end_pos}"
+  ]
+}

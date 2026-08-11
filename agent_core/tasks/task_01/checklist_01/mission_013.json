@@ -1,0 +1,34 @@
+{
+  "task_id": "mission_013",
+  "test_type": "cli_test",
+  "use_browser_test": false,
+  "target_file": "extraction_target_project/AGENT_TEST/chess_gui.py",
+  "entrypoint": "python extraction_target_project/AGENT_TEST/chess_gui.py",
+  "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_gui.py",
+  "debug_log_spec": {
+    "toggle_key": "CHESS_GUI_DEBUG",
+    "log_pattern": "[DEBUG_LOG] Step=GUI_INIT | BoardState={board_state}"
+  },
+  "implementation_blueprint": {
+    "feature_title": "Tkinter/Pygame 기반 체스 GUI 실행기 구축 및 AI 연동",
+    "target_component": "ChessGUI",
+    "debug_toggle_key": "CHESS_GUI_DEBUG",
+    "variable_bindings": {
+      "selected_sq": "사용자가 클릭 선택한 체스판 좌표",
+      "engine_thread": "chess_ai 비동기 탐색을 처리하는 Thread 객체"
+    },
+    "step_by_step_recipe": [
+      "1. 8x8 체스판 그리드 UI, 기물 표시, 선택 칸 및 이동 가능한 위치 하이라이트 렌더링 구현",
+      "2. 마우스 클릭 기반 턴 진행 및 python-chess 연동 수의 합법성(Legal Move) 검증 로직 구현",
+      "3. AI 연산 시 GUI 프레임이 멈추지 않도록 threading.Thread 기반 비동기 chess_ai.py 호출 파이프라인 구성",
+      "4. 체크/체크메이트/스테일메이트 감지, 기물 점수 및 수 기록(Move Log) 디스플레이 구현",
+      "5. 구동 및 초기화 완료 시 [DEBUG_LOG] Step=GUI_INIT 및 [DEBUG_LOG] Step=GUI_READY 디버그 로그 출력"
+    ]
+  },
+  "servers": [],
+  "browser_test_spec": null,
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=GUI_INIT | BoardState={board_state}",
+    "[DEBUG_LOG] Step=GUI_READY | Engine={engine_status}"
+  ]
+}

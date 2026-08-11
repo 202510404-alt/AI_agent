@@ -1,0 +1,35 @@
+{
+  "task_id": "mission_014",
+  "test_type": "cli_test",
+  "use_browser_test": false,
+  "target_file": "extraction_target_project/AGENT_TEST/chess_ai.py",
+  "entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "debug_log_spec": {
+    "toggle_key": "CHESS_AI_DEBUG",
+    "log_pattern": "[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}"
+  },
+  "implementation_blueprint": {
+    "feature_title": "ApexChessEngine 평가·탐색·비트보드·DB·SMP 5대 핵심 고도화",
+    "target_component": "ApexChessEngine",
+    "debug_toggle_key": "CHESS_AI_DEBUG",
+    "variable_bindings": {
+      "eval_score": "King Safety, Pawn Structure, NNUE가 포함된 정적 평가 점수",
+      "nps_count": "초당 탐색 노드 수 (Nodes Per Second)"
+    },
+    "step_by_step_recipe": [
+      "1. 평가 함수(Evaluation) 고도화: King Safety(Pawn Shield, Open File), Pawn Structure(Passed/Isolated/Doubled/Backward), Piece Pair 가산점 및 NNUE 얕은 신경망 파이프라인 연동",
+      "2. 탐색(Search) & 가지치기(Pruning) 극대화: LMR(math.log(depth) * math.log(moves)), Futility Pruning, Razoring, ProbCut, Counter-move 및 Continuation History 기반 Move Ordering 적용",
+      "3. 메모리 & 비트보드(Bitboard) 전환: 64비트 uint64 비트 연산 구조 도입 및 Incremental Zobrist Hashing 캐싱 구현",
+      "4. DB 연동: Polyglot (.bin) 오프닝 북 및 Syzygy Endgame Tablebases 연동",
+      "5. 실행 언어 & 병렬 처리: Lazy SMP 공유 Transposition Table 기반 탐색 및 C-Extension/Cython/PyPy 연동 구조 작성",
+      "6. 벤치마크 수행 시 [DEBUG_LOG] Step=EVAL_ENGINE 및 [DEBUG_LOG] Step=SEARCH_BENCHMARK 디버그 로그 출력"
+    ]
+  },
+  "servers": [],
+  "browser_test_spec": null,
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}",
+    "[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps_count}"
+  ]
+}
