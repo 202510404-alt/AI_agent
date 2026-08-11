@@ -147,8 +147,9 @@ class AgentSessionFactory:
         self, 
         prompt: str, 
         system_instruction: str = "", 
-        image_bytes: Optional[bytes] = None,  # 👈 image_bytes 매개변수 추가
+        image_bytes: Optional[bytes] = None,
         response_mime_type: str = "application/json", 
+        temperature: float = 0.0,
         max_retries: int = 5
     ) -> str:
         """
@@ -182,7 +183,7 @@ class AgentSessionFactory:
                 )
 
                 config_args = {
-                    "temperature": 0.0,  # 온도를 0.0으로 설정하여 무작위성 제거
+                    "temperature": temperature,
                     "response_mime_type": response_mime_type
                 }
                 if system_instruction:
@@ -345,7 +346,7 @@ class AgentSessionFactory:
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 tools=tools,
-                temperature=0.2,
+                temperature=0.0,
                 tool_config=tool_config_dict
             )
         )

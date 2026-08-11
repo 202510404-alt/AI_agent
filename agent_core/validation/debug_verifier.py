@@ -1,3 +1,18 @@
+"""
+agent_core/validation/debug_verifier.py
+고도화 자율 디버깅 로그 검증기 (Autonomous Debug Verifier Pipeline v2.0)
+-------------------------------------------------------------------------
+[설계 제약조건 & 원칙]
+1. 토큰 절약 (Token Optimization): 최소 페이로드(Minimal Spec) 및 필요 텍스트만 슬라이싱하여 LLM에 전달.
+2. 무상태(Stateless) & 0-Temperature JSON 스키마 강제: 기억력 미의존, 0도 온도, application/json 타입 응답 강제.
+3. 체계화된 파이프라인 구조 (Pipeline Architecture):
+   Stage 1: Fast-Check (0.1초 정적 문법 검사)
+   Stage 2: 환경변수 이중 주입 (1 및 true 호환성 보장)
+   Stage 3: CLI 대화형 자동 입력 주입 & 터미널/브라우저 이중 트랙 실행
+   Stage 4: 다중 패턴 정규식 자동 대조 & 예외 트레이스 감지
+   Stage 5: 파이프라인 구조화 결과 리포팅 (run_test.py 연동)
+"""
+
 import os
 import re
 import sys
@@ -5,18 +20,30 @@ import time
 import subprocess
 import urllib.request
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
+from pydantic import BaseModel, Field
 
 from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
 from tools.multi_agent_system.browser_tester import BrowserTester
 
 
+class VerificationDecisionSchema(BaseModel):
+    """LLM 대화형 입력 결정 시 사용하는 Pydantic 스키마 (Temperature 0.0)"""
+    is_verified: bool = Field(description="디버그 로그 패턴이 정상 출력되었는지 여부")
+    suggested_stdin_input: Optional[str] = Field(default=None, description="대화형 CLI에 주입할 다음 입력 (예: 'go', 'quit')")
+    reason: str = Field(description="판단 사유 요약")
+
+
 def build_log_regex_pattern(template_msg: str) -> str:
-    """미션 디버그 로그 메시지의 변수 표기({x}, {hex_code} 등)를 Regex 패턴으로 자동 변환"""
+    """미션 디버그 로그 메시지의 변수 표기({x}, {val}, {eval_score} 등)를 Regex 유연 패턴으로 자동 변환"""
     escaped = re.escape(template_msg)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
+    # 수치형 변수 (정수, 실수, 음수)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}|\\\{eval_score\\\}|\\\{nps_count\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
+    # 불리언형 변수 (true/false, 1/0)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false|1|0)', escaped)
+    # Hex/Color 변수
     escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)
+    # 기타 일반 변수
     escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
     return escaped
 
@@ -35,6 +62,9 @@ def extract_minimal_mission_payload(mission_data: Dict[str, Any]) -> Dict[str, A
     if not raw_patterns and debug_spec.get("log_pattern"):
         raw_patterns = [debug_spec["log_pattern"]]
 
+    # 대화형 CLI 입력을 위한 기본 트리거 키워드 수집 (예: ["go", "quit"])
+    interactive_inputs = mission_data.get("interactive_inputs", ["go", "quit"])
+
     return {
         "task_id": mission_data.get("task_id", ""),
         "test_type": mission_data.get("test_type", ""),
@@ -46,6 +76,7 @@ def extract_minimal_mission_payload(mission_data: Dict[str, Any]) -> Dict[str, A
             "log_pattern": debug_spec.get("log_pattern", "")
         },
         "expected_terminal_outputs": raw_patterns,
+        "interactive_inputs": interactive_inputs,
         "feature_title": blueprint.get("feature_title", ""),
         "browser_test_spec": browser_spec if use_browser else {}
     }
@@ -53,11 +84,12 @@ def extract_minimal_mission_payload(mission_data: Dict[str, Any]) -> Dict[str, A
 
 class DebugVerifier:
     """
-    터미널 및 브라우저 검증 통합 모듈 (Debug Verifier)
+    고도화 자율 디버깅 로그 검증 오케스트레이터 (Debug Verifier v2.0)
     - 0.1초 Fast-Check 정적 문법 검사
-    - 미션 데이터 경량화 추출을 통한 프롬프트 토큰 절감
-    - CLI/터미널 실행(TerminalAgentRunner) 및 조건 충족 시 브라우저 러너(BrowserTester/BrowserAgentRunner) 호출
-    - 정규식 패턴 matching 및 런타임 에러 자동 진단
+    - 환경변수 이중 주입 ("1" 및 "true" 완전 호환)
+    - CLI 대화형 자동 입력 주입 & 터미널/브라우저 이중 트랙 검증
+    - 정규식 패턴 matching & 예외 트레이스 자동 감지
+    - 무상태 0-Temperature JSON 스키마 강제
     """
     def __init__(self, root_dir: Path, factory: Any = None):
         self.root_dir = Path(root_dir).resolve()
@@ -69,34 +101,70 @@ class DebugVerifier:
         target_file_path: str,
         target_code: str = ""
     ) -> Dict[str, Any]:
-        """검증 통합 엔트리포인트"""
+        """
+        통합 파이프라인 검증 진입점 (추적 로그 및 명확한 failure_type 포함)
+        """
+        execution_steps = []
         minimal_spec = extract_minimal_mission_payload(mission_data)
+        execution_steps.append(f"[STAGE 0] Minimal Spec 페이로드 정제 완료 (Task ID: {minimal_spec['task_id']})")
 
-        # Step 1: Fast-Check (0.1초 정적 문법 검사)
+        # -------------------------------------------------------------
+        # Stage 1: Fast-Check (0.1초 정적 문법 검사)
+        # -------------------------------------------------------------
+        execution_steps.append(f"[STAGE 1] Fast-Check 문법 검사 수행 중: {target_file_path}")
         fast_check_res = self._run_fast_check(target_file_path)
         if not fast_check_res["success"]:
+            execution_steps.append(f"[STAGE 1 FAIL] 문법 검사 실패: {fast_check_res['failure_type']}")
             return {
                 "verified": False,
+                "failure_type": fast_check_res.get("failure_type", "FAST_CHECK_ERROR"),
                 "output": fast_check_res["output"],
-                "message": fast_check_res["message"]
+                "message": fast_check_res["message"],
+                "execution_steps": execution_steps,
+                "matched_patterns": [],
+                "missing_patterns": minimal_spec["expected_terminal_outputs"]
             }
+        execution_steps.append("[STAGE 1 PASSED] 문법 검사 성공")
 
-        # Step 2: 실행 환경변수 구성 (디버그 토글 키 자동 주입)
+        # -------------------------------------------------------------
+        # Stage 2: 환경변수 구성 (1 및 true 이중 호환 주입)
+        # -------------------------------------------------------------
         exec_env = os.environ.copy()
         exec_env["BROWSER"] = "none"
+        exec_env["PYTHONUNBUFFERED"] = "1"
+        exec_env["PYTHONIOENCODING"] = "utf-8"
+
         toggle_key = minimal_spec["debug_log_spec"]["toggle_key"]
         if toggle_key:
-            exec_env[toggle_key] = "true"
-
-        # Step 3: 브라우저 테스트 vs 터미널 테스트 실행 분기
-        if minimal_spec["use_browser_test"]:
-            return self._run_browser_verification(minimal_spec, exec_env, mission_data)
+            exec_env[toggle_key] = "1"
+            exec_env[f"{toggle_key}_ENABLE"] = "true"
+            execution_steps.append(f"[STAGE 2] 디버그 환경변수 이중 주입 완료 ({toggle_key}=1, {toggle_key}_ENABLE=true)")
         else:
-            return self._run_terminal_verification(minimal_spec, target_code, exec_env)
+            execution_steps.append("[STAGE 2] 디버그 토글 키 없음, 기본 환경변수로 진행")
+
+        # -------------------------------------------------------------
+        # Stage 3 & 4: 브라우저 테스트 vs 터미널 테스트 파이프라인 실행
+        # -------------------------------------------------------------
+        if minimal_spec["use_browser_test"]:
+            execution_steps.append("[STAGE 3] 브라우저 E2E 검증 트랙진입")
+            result = self._run_browser_verification(minimal_spec, exec_env, mission_data)
+        else:
+            execution_steps.append("[STAGE 3] 터미널 CLI 검증 트랙 진입")
+            result = self._run_terminal_verification(minimal_spec, target_code, exec_env)
+
+        result["execution_steps"] = execution_steps
+        return result
 
     def _run_fast_check(self, target_file_path: str) -> Dict[str, Any]:
-        """패치 직후 문법 오류 빠른 포착"""
+        """Stage 1: 패치 직후 문법 오류 빠른 포착"""
         full_target = self.root_dir / target_file_path
+        if not full_target.exists():
+            return {
+                "success": False,
+                "output": f"[FILE NOT FOUND] 대상 파일을 찾을 수 없습니다: {target_file_path}",
+                "message": "대상 파일 부재"
+            }
+
         if target_file_path.endswith(('.js', '.jsx', '.ts', '.tsx')):
             fast_cmd = f"npx --yes esbuild \"{full_target}\" --loader:.js=jsx"
             try:
@@ -111,7 +179,82 @@ class DebugVerifier:
                     }
             except Exception:
                 pass
+        elif target_file_path.endswith('.py'):
+            import py_compile
+            try:
+                py_compile.compile(str(full_target), doraise=True)
+            except py_compile.PyCompileError as e:
+                return {
+                    "success": False,
+                    "output": f"[PYTHON SYNTAX ERROR]\n{e}",
+                    "message": "파이썬 문법 검사(py_compile) 실패"
+                }
+
         return {"success": True, "output": "", "message": "Fast-Check 통과"}
+
+    def _run_terminal_verification(
+        self,
+        minimal_spec: Dict[str, Any],
+        target_code: str,
+        exec_env: Dict[str, str]
+    ) -> Dict[str, Any]:
+        """
+        Stage 3 & 4: CLI 터미널 자율 대화형 제어 및 디버그 로그 정규식 대조 (구조화된 failure_type 구분)
+        """
+        entrypoint = minimal_spec["entrypoint"] or f"python {minimal_spec['target_file']}"
+        runner = TerminalAgentRunner(factory=self.factory, default_timeout=30)
+
+        # 1. 터미널 명령 실행
+        res = runner.execute(
+            command=entrypoint,
+            goal_context=minimal_spec["task_id"],
+            cwd=str(self.root_dir),
+            env=exec_env,
+            mission_data=minimal_spec,
+            code_context=target_code
+        )
+
+        terminal_output = res.get("clean_output", "") or res.get("raw_output", "")
+        patterns = minimal_spec["expected_terminal_outputs"]
+
+        matched_patterns: List[str] = []
+        missing_patterns: List[str] = []
+
+        # 2. 정규식 패턴 대조
+        if patterns:
+            for p in patterns:
+                regex_pat = build_log_regex_pattern(p)
+                if re.search(regex_pat, terminal_output, re.MULTILINE):
+                    matched_patterns.append(p)
+                else:
+                    missing_patterns.append(p)
+
+        is_verified = (len(patterns) > 0 and len(missing_patterns) == 0)
+
+        # 3. 치명적 예외 키워드 감지
+        failure_keywords = ["Traceback (most recent call last):", "SyntaxError:", "ImportError:", "ModuleNotFoundError:", "npm ERR!"]
+        has_runtime_error = any(kw in terminal_output for kw in failure_keywords)
+
+        # 4. 세부 원인 구별 (failure_type 세분화)
+        if has_runtime_error:
+            is_verified = False
+            failure_type = "RUNTIME_ERROR"
+            msg = "❌ 런타임 예외 발생 (Traceback/Error 포착)"
+        elif not is_verified:
+            failure_type = "LOG_PATTERN_MISMATCH"
+            msg = f"⚠️ 로직은 실행되었으나 디버그 로그 패턴 불일치 (미감지: {missing_patterns})"
+        else:
+            failure_type = "NONE"
+            msg = f"✅ 디버그 로그 및 실행 검증 통과 ({len(matched_patterns)}/{len(patterns)} 매칭)"
+
+        return {
+            "verified": is_verified,
+            "failure_type": failure_type,
+            "output": terminal_output,
+            "message": msg,
+            "matched_patterns": matched_patterns,
+            "missing_patterns": missing_patterns
+        }
 
     def _run_browser_verification(
         self,
@@ -119,7 +262,7 @@ class DebugVerifier:
         exec_env: Dict[str, str],
         full_mission_data: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """브라우저 러너 및 자율 에이전트 연동 검증"""
+        """Stage 3 & 4: 웹 브라우저 E2E 및 자율 에이전트 연동 검증"""
         browser_spec = minimal_spec.get("browser_test_spec", {})
         target_url = browser_spec.get("url", "http://localhost:3000")
         
@@ -155,7 +298,6 @@ class DebugVerifier:
                     except Exception:
                         time.sleep(1)
 
-            # 1차 정적 브라우저 테스트 (BrowserTester)
             tester = BrowserTester(headless=False)
             actions = browser_spec.get("actions", [])
             wait_selector = browser_spec.get("wait_for_selector")
@@ -191,10 +333,21 @@ class DebugVerifier:
             if not b_result["success"]:
                 logs += f"\n[BROWSER ERROR] {b_result.get('message', '')}\n" + "\n".join(b_result.get("page_errors", []))
 
+            matched_patterns = []
+            missing_patterns = []
+            for p in raw_patterns:
+                reg = build_log_regex_pattern(p)
+                if re.search(reg, logs):
+                    matched_patterns.append(p)
+                else:
+                    missing_patterns.append(p)
+
             return {
                 "verified": b_result["success"],
                 "output": logs,
-                "message": b_result.get("message", "")
+                "message": b_result.get("message", ""),
+                "matched_patterns": matched_patterns,
+                "missing_patterns": missing_patterns
             }
 
         finally:
@@ -203,46 +356,3 @@ class DebugVerifier:
                     subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True)
                 else:
                     proc.terminate()
-
-    def _run_terminal_verification(
-        self,
-        minimal_spec: Dict[str, Any],
-        target_code: str,
-        exec_env: Dict[str, str]
-    ) -> Dict[str, Any]:
-        """터미널 러너(TerminalAgentRunner) 기반 CLI 검증"""
-        entrypoint = minimal_spec["entrypoint"] or f"python3 {minimal_spec['target_file']}"
-        runner = TerminalAgentRunner(factory=self.factory, default_timeout=30)
-
-        # 토큰 절감을 위해 미션 파일 전체 대신 경량화된 minimal_spec 전달
-        res = runner.execute(
-            command=entrypoint,
-            goal_context=minimal_spec["task_id"],
-            cwd=str(self.root_dir),
-            env=exec_env,
-            mission_data=minimal_spec,
-            code_context=target_code
-        )
-        terminal_output = res["clean_output"]
-        patterns = minimal_spec["expected_terminal_outputs"]
-
-        is_verified = True
-        if patterns:
-            for p in patterns:
-                regex_pat = build_log_regex_pattern(p)
-                if not re.search(regex_pat, terminal_output):
-                    is_verified = False
-                    break
-        else:
-            is_verified = False
-
-        # 치명적 예외 키워드 감지
-        failure_keywords = ["Traceback (most recent call last):", "FAIL ", "npm ERR!", "Command failed"]
-        if is_verified and any(kw in terminal_output for kw in failure_keywords):
-            is_verified = False
-
-        return {
-            "verified": is_verified,
-            "output": terminal_output,
-            "message": "로그 패턴 및 실행 검증 성공" if is_verified else "터미널 출력 패턴 불일치 또는 런타임 오류"
-        }

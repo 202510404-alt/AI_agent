@@ -78,13 +78,14 @@ def run_step_worker_pipeline(mission_rel_path: str):
     factory = AgentSessionFactory(ROOT_DIR)
 
     # 🛡️ 파이프라인 상단 단일 통합 정의 (0초 Fail-Fast 포착 및 로테이션)
-    def safe_execute_step(prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 10) -> str:
+    def safe_execute_step(prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 10, temperature: float = 0.0) -> str:
         for attempt in range(1, max_attempts + 1):
             try:
                 return factory.execute_worker_step(
                     prompt=prompt,
                     system_instruction=system_instruction,
-                    response_mime_type=response_mime_type
+                    response_mime_type=response_mime_type,
+                    temperature=temperature
                 )
             except Exception as e:
                 err_str = str(e)

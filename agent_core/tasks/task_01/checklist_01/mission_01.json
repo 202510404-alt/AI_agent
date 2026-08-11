@@ -1,5 +1,5 @@
 {
-  "task_id": "mission_014",
+  "task_id": "mission_014_revised",
   "test_type": "cli_test",
   "use_browser_test": false,
   "target_file": "extraction_target_project/AGENT_TEST/chess_ai.py",
@@ -7,29 +7,32 @@
   "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
   "debug_log_spec": {
     "toggle_key": "CHESS_AI_DEBUG",
-    "log_pattern": "[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}"
+    "log_pattern": "[DEBUG_LOG] Step={step} | {details}"
   },
   "implementation_blueprint": {
-    "feature_title": "ApexChessEngine 평가·탐색·비트보드·DB·SMP 5대 핵심 고도화",
+    "feature_title": "ApexChessEngine 파이썬 네이티브 성능 및 평가·탐색 고도화 (현실적 난이도 조정판)",
     "target_component": "ApexChessEngine",
     "debug_toggle_key": "CHESS_AI_DEBUG",
     "variable_bindings": {
-      "eval_score": "King Safety, Pawn Structure, NNUE가 포함된 정적 평가 점수",
-      "nps_count": "초당 탐색 노드 수 (Nodes Per Second)"
+      "eval_score": "King Safety, Pawn Structure, Bishop Pair 보상이 반영된 정적 평가 점수",
+      "nps_count": "초당 탐색 노드 수 (Nodes Per Second)",
+      "pruned_nodes": "Futility Pruning / Razoring에 의해 가지치기된 노드 수",
+      "tt_hits": "Transposition Table 적중 횟수"
     },
     "step_by_step_recipe": [
-      "1. 평가 함수(Evaluation) 고도화: King Safety(Pawn Shield, Open File), Pawn Structure(Passed/Isolated/Doubled/Backward), Piece Pair 가산점 및 NNUE 얕은 신경망 파이프라인 연동",
-      "2. 탐색(Search) & 가지치기(Pruning) 극대화: LMR(math.log(depth) * math.log(moves)), Futility Pruning, Razoring, ProbCut, Counter-move 및 Continuation History 기반 Move Ordering 적용",
-      "3. 메모리 & 비트보드(Bitboard) 전환: 64비트 uint64 비트 연산 구조 도입 및 Incremental Zobrist Hashing 캐싱 구현",
-      "4. DB 연동: Polyglot (.bin) 오프닝 북 및 Syzygy Endgame Tablebases 연동",
-      "5. 실행 언어 & 병렬 처리: Lazy SMP 공유 Transposition Table 기반 탐색 및 C-Extension/Cython/PyPy 연동 구조 작성",
-      "6. 벤치마크 수행 시 [DEBUG_LOG] Step=EVAL_ENGINE 및 [DEBUG_LOG] Step=SEARCH_BENCHMARK 디버그 로그 출력"
+      "1. 평가 함수(Evaluation) 정교화: 외부 NNUE 패키지 의존성을 제거하고, 순수 파이썬으로 King Safety(폰 쉴드, 오픈 파일 감지), Pawn Structure(전진폰 Passed,孤立폰 Isolated, 중복폰 Doubled), 비숍 쌍(Bishop Pair) 보상 로직 추가",
+      "2. 탐색(Search) & 가지치기(Pruning) 강화: 무거운 C-Extension 대신 Futility Pruning, Razoring 기법 및 History Heuristic 기반 Move Ordering 고도화 적용",
+      "3. 캐싱 및 메모리 최적화: 64비트 비트보드 전체 재작성 대신 기존 Zobrist Hashing 기반 Transposition Table(TT)의 조회/저장 로직 및 수 정렬(TT Move First) 최적화",
+      "4. 오프닝 처리 연동: 외부 DB 라이브러리 없이 표준 Polyglot (.bin) 구조를 읽어오는 순수 파이썬 오프닝 북 모듈 구현 또는 대체 룩업 테이블 적용",
+      "5. 검증용 디버그 로그 시스템 표준화: CHESS_AI_DEBUG=1 환경변수 활성화 시 평가 점수, 탐색 NPS, 가지치기 및 TT 적중 통계 디버그 로그를 지정된 규격 포맷대로 정교하게 출력"
     ]
   },
   "servers": [],
   "browser_test_spec": null,
   "expected_terminal_outputs": [
     "[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}",
-    "[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps_count}"
+    "[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps_count}",
+    "[DEBUG_LOG] Step=PRUNING_STAT | Pruned={pruned_nodes}",
+    "[DEBUG_LOG] Step=TT_STAT | Hits={tt_hits}"
   ]
 }

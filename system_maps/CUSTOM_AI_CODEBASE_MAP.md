@@ -31,10 +31,13 @@ project_root/
 │   │   ├── 🔑 key "java.configuration.updateBuildConfiguration" [L27]
 │   │   ├── 🔑 key "python-envs.defaultEnvManager" [L28]
 ├── a [📂 a] -> [General File (533 lines)]
+├── agent.md [📂 agent.md]
 ├── agent_core/
 │   ├── __init__.py [📂 agent_core/__init__.py]
 │   ├── execution/
 │   │   ├── __init__.py [📂 agent_core/execution/__init__.py]
+│   │   ├── file_lock.py [📂 agent_core/execution/file_lock.py]
+│   │   ├── standalone_runner.py [📂 agent_core/execution/standalone_runner.py]
 │   │   ├── step_worker.py [📂 agent_core/execution/step_worker.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, re, sys, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing | 🧬 class ExecutionResult [L20-34] |     └─ def __init__(success, message, logs, patch_applied) [L22-26] |     └─ def to_dict() [L28-34] | 🧬 class StepExecutionWorker [L37-413] |     └─ def __init__(project_root) [L43-46] |     └─ def build_log_regex_pattern(template_msg) [L52-58] |     └─ def clean_json_response(raw_response) [L61-67] |     └─ def load_mission(mission_input) [L69-86] |     └─ def _safe_execute_step(prompt, system_instruction, response_mime_type, max_attempts) [L88-101] |     └─ def execute(mission_input) [L106-413]]
 │   │   │   ├── 🧬 class ExecutionResult [L20-L34]
 │   │   │   ├── 🎯 def __init__() [L22-L26]
@@ -180,6 +183,7 @@ project_root/
 │   │   │   │   ├── 📞 [CALLS]: build_log_regex_pattern
 │   │   │   ├── 🎯 def _run_terminal_verification() [L207-L248]
 │   │   │   │   ├── 📞 [CALLS]: build_log_regex_pattern
+│   │   ├── validator.py [📂 agent_core/validation/validator.py]
 ├── agent_debug.log [📂 agent_debug.log] -> [General File (3 lines)]
 ├── agent_plan.md [📂 agent_plan.md] -> [General File (1101 lines)]
 ├── extraction_target_project/
@@ -339,6 +343,9 @@ project_root/
 │   ├── 🎯 def main() [L82-L201]
 │   │   ├── 📞 [CALLS]: auto_install_dependencies
 ├── System Prompt.md [📂 System Prompt.md] -> [General File (29 lines)]
+├── tests/
+│   ├── test_file_lock.py [📂 tests/test_file_lock.py]
+│   ├── test_validator_standalone.py [📂 tests/test_validator_standalone.py]
 ├── tools/
 │   ├── multi_agent_system/
 │   │   ├── __init__.py [📂 tools/multi_agent_system/__init__.py]

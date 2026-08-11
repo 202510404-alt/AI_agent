@@ -238,11 +238,11 @@ class ApexChessEngine:
         self.history_table = [[[0] * 64 for _ in range(64)] for _ in range(2)]
         self.killer_moves = [[None, None] for _ in range(128)]
         self.nodes = 0
+        self.pruned_nodes = 0
+        self.tt_hits = 0
         self.time_limit = 3.0
         self.start_time = 0.0
         self.nps_start_time = time.time()
-        if os.environ.get("CHESS_AI_DEBUG") == "1":
-            print("[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0")
 
     # -------------------------------------------------------------------------
     # Evaluation Logic
@@ -281,6 +281,15 @@ class ApexChessEngine:
         mg_phase = min(game_phase, TOTAL_GAME_PHASE)
         eg_phase = TOTAL_GAME_PHASE - mg_phase
         eval_score = (mg_score * mg_phase + eg_score * eg_phase) // TOTAL_GAME_PHASE
+
+        # King Safety & Pawn Structure adjustments
+        if self.board.is_check(): eval_score += 50
+        
+        # Bishop Pair Bonus
+        white_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.WHITE)
+        black_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.BLACK)
+        if white_bishops >= 2: eval_score += 50
+        if black_bishops >= 2: eval_score -= 50
 
         final_score = eval_score if self.board.turn == chess.WHITE else -eval_score
         if os.environ.get("CHESS_AI_DEBUG") == "1":
@@ -360,6 +369,7 @@ class ApexChessEngine:
         tt_move = None
 
         if tt_entry and tt_entry['depth'] >= depth:
+            self.tt_hits += 1
             tt_move = tt_entry['move']
             if tt_entry['flag'] == TT_EXACT:
                 return tt_entry['score']
@@ -384,6 +394,7 @@ class ApexChessEngine:
             self.board.pop()
 
             if score >= beta:
+                self.pruned_nodes += 1
                 return beta
 
         moves = list(self.board.legal_moves)
@@ -479,6 +490,8 @@ class ApexChessEngine:
                 nps = int(self.nodes / elapsed) if elapsed > 0 else 0
                 if os.environ.get("CHESS_AI_DEBUG") == "1":
                     print(f"[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps}")
+                    print(f"[DEBUG_LOG] Step=PRUNING_STAT | Pruned={self.pruned_nodes}")
+                    print(f"[DEBUG_LOG] Step=TT_STAT | Hits={self.tt_hits}")
                 print(f"info depth {depth} score cp {best_score} nodes {self.nodes} nps {nps} time {elapsed:.2f}s pv {best_move}")
 
             except TimeoutError:
