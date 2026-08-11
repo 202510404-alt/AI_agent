@@ -25,8 +25,7 @@ from agent_core.plan.schemas import LOG_FILE_PATH, DEBUG_MODE
 from tools.multi_agent_system.agent_session import AgentSessionFactory
 from tools.multi_agent_system.project_scale_detector import ProjectScaleDetector
 from tools.multi_agent_system.agent_map_extractor import extract_targeted_ai_map
-from tools.multi_agent_system.terminal_runner import run_terminal_command
-from tools.multi_agent_system.browser_tester import BrowserTester
+from agent_core.validation.debug_verifier import DebugVerifier
 
 # 패치 스니펫 출력 구조 완전 강제화
 class PatchItem(BaseModel):
@@ -295,237 +294,24 @@ Generate a JSON object matching PatchPayload schema:
             print(f"❌ [STEP 4 ERROR] Pydantic 스키마 검증 실패 또는 패치 적용 오류: {e}")
 
         # -------------------------------------------------------------
-        # 💻 [Step 5] Terminal Runner & Browser Tester 이중 검증
+        # 💻 [Step 5] DebugVerifier 기반 검증 모듈 실행 (통합 검증)
         # -------------------------------------------------------------
-        print("\n💻 [Step 5] 실행 및 실체 검증 가동...")
+        print("\n💻 [Step 5] DebugVerifier 통합 실행 및 실체 검증 가동...")
 
-        is_verified = True
-        terminal_output = ""
-        fast_check_failed = False
-
-        # 💡 [Step 5-A] 패치 직후 Fast-Check (0.1초 정적 문법 검사)
-        print("🔍 [Step 5-A] 정적 문법 검사(Fast-Check) 진행 중...")
-        if patch_success and target_file_path.endswith(('.js', '.jsx', '.ts', '.tsx')):
-            # npx 무한 대기 방지를 위한 --yes 추가, 비동기 대기 방지용 input=b'' 및 timeout 10초 설정
-            fast_check_cmd = f"npx --yes esbuild \"{ROOT_DIR / target_file_path}\" --loader:.js=jsx"
-            try:
-                fast_res = subprocess.run(
-                    fast_check_cmd,
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    input="",  # 입력 대기 무한 멈춤 방지
-                    timeout=10, # 10초 내 응답 없으면 타임아웃
-                    cwd=str(ROOT_DIR)
-                )
-                if fast_res.returncode != 0:
-                    print("❌ [FAST-CHECK FAIL] 정적 문법 검증 실패 -> 서버 구동 스킵 및 즉시 재시도 진입")
-                    print(f"  └─ [ERROR DETAIL]:\n{fast_res.stderr.strip()}")
-                    patch_success = False
-                    is_verified = False
-                    fast_check_failed = True
-                    terminal_output = f"[FAST-CHECK SYNTAX ERROR] 패치 코드 문법 오류:\n{fast_res.stderr}"
-                else:
-                    print("✅ [Step 5-A] Fast-Check 문법 검사 통과")
-            except subprocess.TimeoutExpired:
-                print("⚠️ [FAST-CHECK TIMEOUT] 문법 검사 시간 초과(10초) -> Fast-Check 스킵 후 다음 단계 진행")
-            except Exception as e:
-                print(f"⚠️ [FAST-CHECK EXCEPTION] 문법 검사 실행 실패({e}) -> 다음 단계 진행")
-        else:
-            print("⏩ [Step 5-A] Fast-Check 대상 아님 또는 패치 실패로 스킵")
-
-        # Fast-Check 성공 시에만 서버 구동 및 브라우저/터미널 테스트 진행
-        if patch_success and not fast_check_failed:
-            use_browser = mission_data.get("use_browser_test", False) or (mission_data.get("test_type") == "browser")
-            browser_spec = mission_data.get("browser_test_spec")
-
-            exec_env = os.environ.copy()
-            exec_env["BROWSER"] = "none"  # npm start 등 서버 실행 시 기본 브라우저(Edge) 자동 오픈 방지
-
-            toggle_key = (
-                mission_data.get("debug_log_spec", {}).get("toggle_key") or 
-                mission_data.get("implementation_blueprint", {}).get("debug_toggle_key")
+        if patch_success:
+            verifier = DebugVerifier(root_dir=ROOT_DIR, factory=factory)
+            verifier_res = verifier.verify(
+                mission_data=mission_data,
+                target_file_path=target_file_path,
+                target_code=target_code
             )
-
-            if toggle_key:
-                exec_env[toggle_key] = "true"
-                print(f"🔧 [Step 5 ENV] 디버그 토글 키 적용: {toggle_key}=true")
-
-            # 🌐 1) 브라우저 테스트 ON 조건 충족 시: BrowserTester 실행
-            if use_browser and browser_spec:
-                print("\n🌐 [Step 5-B] Headless Browser 실제 UI/콘솔 검증 가동...")
-                
-                target_url = browser_spec.get("url", "http://localhost:3000")
-                server_configs = mission_data.get("servers", [
-                    {"name": "Client", "cwd": ".", "command": mission_data.get("entrypoint"), "health_check_url": target_url}
-                ])
-                server_processes = []
-
-                try:
-                    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-                    for cfg in server_configs:
-                        srv_cwd = (ROOT_DIR / cfg.get("cwd", ".")).resolve()
-                        srv_cmd = cfg.get("command")
-                        srv_url = cfg.get("health_check_url", target_url)
-
-                        if not srv_cwd.exists() or not srv_cwd.is_dir():
-                            print(f"⚠️ [Step 5-B SKIP] {cfg.get('name')} 디렉터리가 존재하지 않음: {srv_cwd}")
-                            continue
-
-                        print(f"🚀 [Step 5-B] {cfg.get('name', 'Server')} 구동 시작: {srv_cmd}")
-                        
-                        proc = subprocess.Popen(
-                            srv_cmd,
-                            shell=True,
-                            cwd=str(srv_cwd),
-                            env=exec_env,
-                            creationflags=creation_flags
-                        )
-                        server_processes.append(proc)
-
-                        # 서버별 헬스체크 대기 (최대 30초)
-                        start_time = time.time()
-                        srv_ready = False
-                        while time.time() - start_time < 30:
-                            if proc.poll() is not None:
-                                print(f"❌ [Step 5-B FAIL] {cfg.get('name')} 프로세스 비정상 종료")
-                                break
-                            try:
-                                with urllib.request.urlopen(srv_url, timeout=2) as res:
-                                    if 200 <= res.status < 500:
-                                        srv_ready = True
-                                        print(f"✅ [Step 5-B] {cfg.get('name')} 준비 완료 ({srv_url})")
-                                        break
-                            except urllib.error.HTTPError:
-                                srv_ready = True
-                                print(f"✅ [Step 5-B] {cfg.get('name')} 응답 감지 완료 ({srv_url})")
-                                break
-                            except Exception:
-                                time.sleep(1)
-
-                        if not srv_ready:
-                            print(f"⚠️ [Step 5-B Warning] {cfg.get('name')} 응답 대기 초과 - 다음 진행")
-
-                    if is_verified:
-                        print("🤖 [Step 5-C] BrowserTester 1차 정적 액션 검증 수행 중...")
-                        tester = BrowserTester(headless=False)
-                        actions = browser_spec.get("actions", [])
-                        wait_selector = browser_spec.get("wait_for_selector")
-                        raw_patterns = mission_data.get("expected_terminal_outputs", [])
-                        if not raw_patterns and "debug_log_spec" in mission_data:
-                            spec_pattern = mission_data["debug_log_spec"].get("log_pattern")
-                            if spec_pattern:
-                                raw_patterns = [spec_pattern]
-
-                        expected_patterns = [
-                            build_log_regex_pattern(p) for p in raw_patterns
-                        ]
-                        b_result = tester.run_browser_verification(
-                            target_url=target_url,
-                            actions=actions,
-                            expected_patterns=expected_patterns,
-                            wait_for_selector=wait_selector
-                        )
-
-                        # 💡 1차 정적 시도 실패 시 2차 자율 에이전트 구원 투수 가동 (하이브리드 전략)
-                        if not b_result["success"]:
-                            print("⚠️ [Step 5-C Fallback] 1차 정적 검증 실패! 2차 자율 브라우저 에이전트 가동...")
-                            from tools.multi_agent_system.browser_agent_runner import BrowserAgentRunner
-                            agent_runner = BrowserAgentRunner(factory)
-
-                            # 📌 미션 JSON 내부 스펙 기반 동적 목표 프롬프트 추출 (하드코딩 제거)
-                            blueprint = mission_data.get("implementation_blueprint", {})
-                            browser_spec = mission_data.get("browser_test_spec", {})
-                            
-                            task_title = blueprint.get("feature_title") or mission_data.get("task_id", "UI Feature Verification")
-                            target_selector = browser_spec.get("wait_for_selector", "target UI elements")
-                            planned_actions = browser_spec.get("actions", [])
-                            raw_patterns = mission_data.get("expected_terminal_outputs", [])
-                            
-                            # JSON 데이터만 가지고 자율 에이전트 지침을 동적으로 조립
-                            detailed_goal = (
-                                f"1. Navigate to the app and complete lobby/room setup if prompted.\n"
-                                f"2. Objective: Verify feature '{task_title}'.\n"
-                                f"3. Locate and interact with target element: '{target_selector}'.\n"
-                                f"4. Planned action steps: {planned_actions}\n"
-                                f"5. Trigger necessary UI events until target console output patterns are generated: {raw_patterns}"
-                            )
-
-                            b_result = agent_runner.run_autonomous_loop(
-                                target_url=target_url,
-                                goal_description=detailed_goal,
-                                expected_patterns=expected_patterns
-                            )
-
-                        print(f"📌 [BROWSER RESULT] {b_result['message']}")
-                        print("📄 [BROWSER CONSOLE LOGS]:")
-                        for log in b_result["console_logs"]:
-                            print(f"   {log}")
-
-                        terminal_output = "\n".join(b_result["console_logs"])
-
-                        if not b_result["success"]:
-                            is_verified = False
-                            terminal_output += f"\n[BROWSER VERIFY ERROR] {b_result['message']}\n" + "\n".join(b_result["page_errors"])
-                            print(f"❌ [Step 5-C FAIL] 브라우저 최종 검증 실패")
-
-                finally:
-                    if server_processes:
-                        print("🧹 [Step 5 CLEANUP] 모든 백그라운드 서버 프로세스 자원 해제 중...")
-                        for proc in server_processes:
-                            if os.name == 'nt':
-                                subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True)
-                            else:
-                                proc.terminate()
-
-            # 🖥️ 2) 브라우저 테스트 OFF일 때: TerminalAgentRunner 대화형/배치 검증 가동
-            else:
-                print("🖥️ [Step 5-B] CLI/터미널 동적 제어 검증 가동...")
-                entrypoint = mission_data.get("entrypoint", mission_data.get("standalone_entrypoint", f"python3 {target_file_path}"))
-                
-                from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
-                runner = TerminalAgentRunner(factory=factory, default_timeout=30)
-                res = runner.execute(
-                    command=entrypoint,
-                    goal_context=mission_data.get("task_id", ""),
-                    cwd=str(ROOT_DIR),
-                    env=exec_env,
-                    mission_data=mission_data,
-                    code_context=target_code
-                )
-                terminal_output = res["clean_output"]
-                print(f"📄 [TERMINAL OUTPUT]\n{terminal_output}")
-
-                patterns = mission_data.get("expected_terminal_outputs", mission_data.get("predicted_output_pattern", []))
-                if isinstance(patterns, str):
-                    patterns = [patterns]
-
-                if patterns:
-                    print(f"🔍 [Step 5-C] 출력 패턴 일치 검사 중... (대상 패턴 {len(patterns)}개)")
-                    for pattern in patterns:
-                        regex_pattern = build_log_regex_pattern(pattern)
-                        if not re.search(regex_pattern, terminal_output):
-                            print(f"⚠️ [LOG VERIFY FAIL] 정규식 패턴 미일치: '{pattern}'")
-                            is_verified = False
-                            break
-                    if is_verified:
-                        print("✅ [Step 5-C] 모든 패턴 검증 통과")
-                else:
-                    print("⚠️ [VERIFY FAIL] 검증할 expected_terminal_outputs 패턴이 존재하지 않거나 비어 있습니다.")
-                    is_verified = False
-
-            # 범용 터미널/런타임 실패 키워드 감지
-            failure_keywords = [
-                "Traceback (most recent call last):",
-                "FAIL ",
-                "npm ERR!",
-                "Command failed"
-            ]
-            if is_verified and any(keyword in terminal_output for keyword in failure_keywords):
-                print("⚠️ [VERIFY FAIL] 터미널 실행 출력에서 에러/실패 키워드가 감지되었습니다.")
-                is_verified = False
+            is_verified = verifier_res["verified"]
+            terminal_output = verifier_res["output"]
+            print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
+            print(f"📌 [VERIFICATION RESULT] {verifier_res['message']}")
         else:
-            print("⏩ [Step 5 SKIP] Fast-Check 실패로 인해 서버 구동 및 UI 테스트를 건너뜁니다.")
+            is_verified = False
+            terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 검증을 스킵합니다."
 
         if patch_success and is_verified:
             # 🧹 임시 생성된 검증용 테스트 파일 자동 청소 (Clean-up)

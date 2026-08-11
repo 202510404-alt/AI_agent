@@ -6,7 +6,7 @@
 ```markdown
 project_root/
 ├── .env [📂 .env] -> [General File (6 lines)]
-├── .gitignore [📂 .gitignore] -> [General File (23 lines)]
+├── .gitignore [📂 .gitignore] -> [General File (22 lines)]
 ├── .idea/
 │   ├── .gitignore [📂 .idea/.gitignore] -> [General File (10 lines)]
 │   ├── AI_agent.iml [📂 .idea/AI_agent.iml] -> [General File (9 lines)]
@@ -14,7 +14,6 @@ project_root/
 │   ├── misc.xml [📂 .idea/misc.xml] -> [General File (7 lines)]
 │   ├── modules.xml [📂 .idea/modules.xml] -> [General File (8 lines)]
 │   ├── vcs.xml [📂 .idea/vcs.xml] -> [General File (6 lines)]
-│   ├── workspace.xml [📂 .idea/workspace.xml] -> [General File (185 lines)]
 ├── .vscode/
 │   ├── settings.json [📂 .vscode/settings.json] -> [💡 📦 json_keys: 19개 포착 | 🔑 "terminal.integrated.sendKeybindingsToShell" [bool] | 🔑 "accessibility.verbosity.terminal" [bool] | 🔑 "git.autofetch" [bool] | 🔑 "explorer.confirmDelete" [bool] | 🔑 "git.openRepositoryInParentFolders" [str] | ...외 14개]
 │   │   ├── 🔑 key "terminal.integrated.sendKeybindingsToShell" [L2]
@@ -134,13 +133,13 @@ project_root/
 │   │   │   │   ├── mission_012.json [📂 agent_core/tasks/task_01/checklist_01/mission_012.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "task_id" [str] | 🔑 "target_file" [str] | 🔑 "entrypoint" [str] | 🔑 "test_type" [str] | 🔑 "use_browser_test" [bool] | ...외 2개]
 │   │   │   │   │   ├── 🔑 key "task_id" [L2]
 │   │   │   │   │   ├── 🔑 key "target_file" [L3]
-│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/chess_game.py, chess_game.py
+│   │   │   │   │   │   ├── 📞 [CALLS]: chess_game.py, extraction_target_project/chess_game.py
 │   │   │   │   │   ├── 🔑 key "entrypoint" [L4]
-│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/chess_game.py, chess_game.py
+│   │   │   │   │   │   ├── 📞 [CALLS]: chess_game.py, extraction_target_project/chess_game.py
 │   │   │   │   │   ├── 🔑 key "test_type" [L6]
 │   │   │   │   │   ├── 🔑 key "use_browser_test" [L7]
 │   │   │   │   │   ├── 🔑 key "implementation_blueprint" [L9]
-│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/chess_game.py, chess_game.py
+│   │   │   │   │   │   ├── 📞 [CALLS]: chess_game.py, extraction_target_project/chess_game.py
 │   │   │   │   │   ├── 🔑 key "expected_terminal_outputs" [L26]
 │   │   │   │   ├── mission_013.json [📂 agent_core/tasks/task_01/checklist_01/mission_013.json] -> [💡 📦 json_keys: 11개 포착 | 🔑 "task_id" [str] | 🔑 "test_type" [str] | 🔑 "use_browser_test" [bool] | 🔑 "target_file" [str] | 🔑 "entrypoint" [str] | ...외 6개]
 │   │   │   │   │   ├── 🔑 key "task_id" [L2]
@@ -160,7 +159,7 @@ project_root/
 │   │   │   │   ├── mission_end.json [📂 agent_core/tasks/task_01/checklist_01/mission_end.json] -> [💡 📦 json_keys: 11개 포착 | 🔑 "task_id" [str] | 🔑 "target_file" [str] | 🔑 "entrypoint" [str] | 🔑 "standalone_entrypoint" [str] | 🔑 "servers" [list] | ...외 6개]
 │   │   │   │   │   ├── 🔑 key "task_id" [L2]
 │   │   │   │   │   ├── 🔑 key "target_file" [L3]
-│   │   │   │   │   │   ├── 📞 [CALLS]: Canvas.js, extraction_target_project/client/src/Canvas.js
+│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/client/src/Canvas.js, Canvas.js
 │   │   │   │   │   ├── 🔑 key "entrypoint" [L4]
 │   │   │   │   │   ├── 🔑 key "standalone_entrypoint" [L5]
 │   │   │   │   │   ├── 🔑 key "servers" [L6]
@@ -173,33 +172,46 @@ project_root/
 │   │   │   │   │   ├── 🔑 key "expected_terminal_outputs" [L58]
 │   ├── validation/
 │   │   ├── __init__.py [📂 agent_core/validation/__init__.py]
+│   │   ├── debug_verifier.py [📂 agent_core/validation/debug_verifier.py] -> [💡 📦 imp: os, pathlib, re, subprocess, sys, time, tools.multi_agent_system.browser_agent_runner, tools.multi_agent_system.browser_tester, tools.multi_agent_system.terminal_runner, typing, urllib.request | 🎯 def build_log_regex_pattern(template_msg) [L14-21] | 🎯 def extract_minimal_mission_payload(mission_data) [L24-51] | 🧬 class DebugVerifier [L54-248] |     └─ def __init__(root_dir, factory) [L62-64] |     └─ def verify(mission_data, target_file_path, target_code) [L66-95] |     └─ def _run_fast_check(target_file_path) [L97-114] |     └─ def _run_browser_verification(minimal_spec, exec_env, full_mission_data) [L116-205] |     └─ def _run_terminal_verification(minimal_spec, target_code, exec_env) [L207-248]]
+│   │   │   ├── 🎯 def build_log_regex_pattern() [L14-L21]
+│   │   │   ├── 🎯 def extract_minimal_mission_payload() [L24-L51]
+│   │   │   │   ├── 🔗 [USED BY]: ::verify
+│   │   │   ├── 🧬 class DebugVerifier [L54-L248]
+│   │   │   ├── 🎯 def __init__() [L62-L64]
+│   │   │   ├── 🎯 def verify() [L66-L95]
+│   │   │   │   ├── 📞 [CALLS]: extract_minimal_mission_payload
+│   │   │   ├── 🎯 def _run_fast_check() [L97-L114]
+│   │   │   ├── 🎯 def _run_browser_verification() [L116-L205]
+│   │   │   │   ├── 📞 [CALLS]: build_log_regex_pattern
+│   │   │   ├── 🎯 def _run_terminal_verification() [L207-L248]
+│   │   │   │   ├── 📞 [CALLS]: build_log_regex_pattern
 ├── agent_debug.log [📂 agent_debug.log] -> [General File (3 lines)]
 ├── agent_plan.md [📂 agent_plan.md] -> [General File (1101 lines)]
 ├── extraction_target_project/
 │   ├── .gitignore [📂 extraction_target_project/.gitignore] -> [General File (4 lines)]
 │   ├── AGENT_TEST/
-│   │   ├── chess_ai.py [📂 extraction_target_project/AGENT_TEST/chess_ai.py] -> [💡 📦 imp: math, os, sys, time | 🧬 class MockChess [L7-32] |     └─ def square_mirror(sq) [L11-11] | 🧬 class TranspositionTable [L211-232] |     └─ def __init__(size_mb) [L212-218] |     └─ def _get_index(key) [L220-221] |     └─ def store(key, depth, score, flag, best_move) [L223-226] |     └─ def probe(key) [L228-229] |     └─ def clear() [L231-232] | 🧬 class ApexChessEngine [L238-495] |     └─ def __init__(board) [L239-249] |     └─ def evaluate() [L254-295] |     └─ def get_mvv_lva_score(move) [L300-305] |     └─ def score_move(move, depth, tt_move) [L307-322] |     └─ def order_moves(moves, depth, tt_move) [L324-325] |     └─ def quiescence(alpha, beta, ply) [L330-352] |     └─ def pvs(depth, alpha, beta, ply, allow_null) [L357-450] |     └─ def search(time_limit, max_depth) [L455-495] | 🎯 def main() [L502-559]]
-│   │   │   ├── 🧬 class MockChess [L7-L32]
-│   │   │   ├── 🎯 def square_mirror() [L11]
-│   │   │   ├── 🧬 class TranspositionTable [L211-L232]
+│   │   ├── chess_ai.py [📂 extraction_target_project/AGENT_TEST/chess_ai.py] -> [💡 📦 imp: math, os, random, sys, time | 🧬 class MockChess [L8-33] |     └─ def square_mirror(sq) [L12-12] | 🧬 class TranspositionTable [L212-228] |     └─ def __init__(size_mb) [L213-216] |     └─ def _get_index(key) [L218-219] |     └─ def store(key, depth, score, flag, best_move) [L221-222] |     └─ def probe(key) [L224-225] |     └─ def clear() [L227-228] | 🧬 class ApexChessEngine [L234-491] |     └─ def __init__(board) [L235-245] |     └─ def evaluate() [L250-291] |     └─ def get_mvv_lva_score(move) [L296-301] |     └─ def score_move(move, depth, tt_move) [L303-318] |     └─ def order_moves(moves, depth, tt_move) [L320-321] |     └─ def quiescence(alpha, beta, ply) [L326-348] |     └─ def pvs(depth, alpha, beta, ply, allow_null) [L353-446] |     └─ def search(time_limit, max_depth) [L451-491] | 🎯 def main() [L498-555]]
+│   │   │   ├── 🧬 class MockChess [L8-L33]
+│   │   │   ├── 🎯 def square_mirror() [L12]
+│   │   │   ├── 🧬 class TranspositionTable [L212-L228]
 │   │   │   │   ├── 🔗 [USED BY]: ::__init__
-│   │   │   ├── 🎯 def __init__() [L212-L218]
-│   │   │   ├── 🎯 def _get_index() [L220-L221]
-│   │   │   ├── 🎯 def store() [L223-L226]
-│   │   │   ├── 🎯 def probe() [L228-L229]
-│   │   │   ├── 🎯 def clear() [L231-L232]
-│   │   │   ├── 🧬 class ApexChessEngine [L238-L495]
+│   │   │   ├── 🎯 def __init__() [L213-L216]
+│   │   │   ├── 🎯 def _get_index() [L218-L219]
+│   │   │   ├── 🎯 def store() [L221-L222]
+│   │   │   ├── 🎯 def probe() [L224-L225]
+│   │   │   ├── 🎯 def clear() [L227-L228]
+│   │   │   ├── 🧬 class ApexChessEngine [L234-L491]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
-│   │   │   ├── 🎯 def __init__() [L239-L249]
+│   │   │   ├── 🎯 def __init__() [L235-L245]
 │   │   │   │   ├── 📞 [CALLS]: TranspositionTable
-│   │   │   ├── 🎯 def evaluate() [L254-L295]
-│   │   │   ├── 🎯 def get_mvv_lva_score() [L300-L305]
-│   │   │   ├── 🎯 def score_move() [L307-L322]
-│   │   │   ├── 🎯 def order_moves() [L324-L325]
-│   │   │   ├── 🎯 def quiescence() [L330-L352]
-│   │   │   ├── 🎯 def pvs() [L357-L450]
-│   │   │   ├── 🎯 def search() [L455-L495]
-│   │   │   ├── 🎯 def main() [L502-L559]
+│   │   │   ├── 🎯 def evaluate() [L250-L291]
+│   │   │   ├── 🎯 def get_mvv_lva_score() [L296-L301]
+│   │   │   ├── 🎯 def score_move() [L303-L318]
+│   │   │   ├── 🎯 def order_moves() [L320-L321]
+│   │   │   ├── 🎯 def quiescence() [L326-L348]
+│   │   │   ├── 🎯 def pvs() [L353-L446]
+│   │   │   ├── 🎯 def search() [L451-L491]
+│   │   │   ├── 🎯 def main() [L498-L555]
 │   │   │   │   ├── 📞 [CALLS]: ApexChessEngine
 │   ├── AI_agent.code-workspace [📂 extraction_target_project/AI_agent.code-workspace] -> [General File (26 lines)]
 │   ├── client/
@@ -211,7 +223,7 @@ project_root/
 │   │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   │   ├── 🔑 key "requires" [L5]
 │   │   │   ├── 🔑 key "packages" [L6]
-│   │   │   │   ├── 📞 [CALLS]: node_modules/function.prototype.name, node_modules/lodash.debounce, node_modules/proxy-addr/node_modules/ipaddr.js, bin/webpack-dev-server.js, bin/esparse.js, node_modules/big.js, bin/esgenerate.js, node_modules/object.entries, bin/cli.js, node_modules/hpack.js, bin.js, node_modules/object.getownpropertydescriptors, node_modules/reflect.getprototypeof, fixtures/cli.js, node_modules/fraction.js, node_modules/object.hasown, node_modules/array.prototype.flatmap, node_modules/socket.io, bin/escodegen.js, node_modules/object.fromentries, node_modules/lodash.sortby, node_modules/regexp.prototype.flags, node_modules/array.prototype.findlastindex, ipaddr.js, bin/js-yaml.js, node_modules/array.prototype.toreversed, node_modules/lodash.memoize, bin/react-scripts.js, node_modules/string.prototype.trim, node_modules/array.prototype.reduce, bin/jiti.js, node_modules/object.groupby, node_modules/css.escape, node_modules/array.prototype.tosorted, fraction.js, bin/bin.js, node_modules/iterator.prototype, bin/nanoid.cjs, node_modules/object.values, node_modules/lodash.merge, node_modules/string.prototype.trimstart, node_modules/util.promisify, decimal.js, big.js, bin/webpack.js, dist/cli.cjs, node_modules/decimal.js, cli.js, node_modules/resolve.exports, bin/eslint.js, node_modules/lodash.uniq, node_modules/string.prototype.trimend, node_modules/fs.realpath, lib/cli.js, bin/semver.js, dist/esm/bin.mjs, bin/jest.js, node_modules/object.assign, node_modules/string.prototype.matchall, bin/cmd.js, bin/babel-parser.js, bin/nopt.js, node_modules/arraybuffer.prototype.slice, hpack.js, node_modules/array.prototype.flat, node_modules/engine.io, node_modules/sanitize.css, bin/esvalidate.js, node_modules/array.prototype.findlast, node_modules/ipaddr.js
+│   │   │   │   ├── 📞 [CALLS]: node_modules/lodash.uniq, node_modules/array.prototype.toreversed, node_modules/string.prototype.trimstart, dist/cli.cjs, node_modules/ipaddr.js, bin/react-scripts.js, node_modules/function.prototype.name, bin/cmd.js, node_modules/string.prototype.trim, node_modules/iterator.prototype, bin/esgenerate.js, bin/esvalidate.js, node_modules/object.entries, bin/escodegen.js, node_modules/hpack.js, node_modules/sanitize.css, bin/webpack.js, node_modules/string.prototype.matchall, bin/jest.js, dist/esm/bin.mjs, node_modules/fs.realpath, fixtures/cli.js, node_modules/array.prototype.findlast, node_modules/string.prototype.trimend, node_modules/big.js, node_modules/lodash.sortby, node_modules/reflect.getprototypeof, node_modules/engine.io, node_modules/socket.io, bin/nanoid.cjs, node_modules/object.assign, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/object.values, bin/js-yaml.js, node_modules/lodash.merge, node_modules/array.prototype.findlastindex, bin/bin.js, node_modules/resolve.exports, node_modules/fraction.js, bin/nopt.js, bin/esparse.js, node_modules/util.promisify, bin.js, fraction.js, hpack.js, node_modules/lodash.memoize, node_modules/array.prototype.flat, big.js, node_modules/lodash.debounce, bin/jiti.js, node_modules/regexp.prototype.flags, node_modules/css.escape, bin/babel-parser.js, bin/cli.js, node_modules/object.fromentries, node_modules/object.getownpropertydescriptors, node_modules/decimal.js, node_modules/object.hasown, cli.js, ipaddr.js, bin/webpack-dev-server.js, node_modules/object.groupby, decimal.js, bin/semver.js, node_modules/array.prototype.reduce, node_modules/array.prototype.tosorted, lib/cli.js, bin/eslint.js, node_modules/array.prototype.flatmap, node_modules/arraybuffer.prototype.slice
 │   │   ├── package.json [📂 extraction_target_project/client/package.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "private" [bool] | 🔑 "dependencies" [dict] | 🔑 "scripts" [dict] | ...외 2개]
 │   │   │   ├── 🔑 key "name" [L2]
 │   │   │   ├── 🔑 key "version" [L3]
@@ -293,7 +305,7 @@ project_root/
 │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   ├── 🔑 key "requires" [L5]
 │   │   ├── 🔑 key "packages" [L6]
-│   │   │   ├── 📞 [CALLS]: bin/nodetouch.js, node_modules/socket.io, node_modules/pstree.remy, ipaddr.js, bin/nodemon.js, cli.js, node_modules/engine.io, node_modules/ipaddr.js, bin/semver.js
+│   │   │   ├── 📞 [CALLS]: ipaddr.js, node_modules/ipaddr.js, node_modules/pstree.remy, node_modules/engine.io, cli.js, node_modules/socket.io, bin/nodetouch.js, bin/semver.js, bin/nodemon.js
 │   ├── package.json [📂 extraction_target_project/package.json] -> [💡 📦 json_keys: 8개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "type" [str] | 🔑 "description" [str] | 🔑 "main" [str] | ...외 3개]
 │   │   ├── 🔑 key "name" [L2]
 │   │   ├── 🔑 key "version" [L3]
@@ -314,17 +326,17 @@ project_root/
 │   ├── agent_plan3.md [📂 oldplan/agent_plan3.md] -> [General File (980 lines)]
 ├── prompt.md [📂 prompt.md] -> [General File (113 lines)]
 ├── README.md [📂 README.md] -> [General File (220 lines)]
-├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, pydantic, re, subprocess, sys, time, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.browser_agent_runner, tools.multi_agent_system.browser_tester, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing, urllib.request | 🧬 class PatchItem [L32-35] | 🧬 class PatchPayload [L37-38] | 🎯 def build_log_regex_pattern(template_msg) [L40-47] | 🎯 def load_mission_file(mission_rel_path) [L49-64] | 🎯 def clean_json_response(raw_response) [L66-72] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L77-653] | 🎯 def main() [L658-667]]
+├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, pydantic, re, subprocess, sys, time, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.browser_tester, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing, urllib.request | 🧬 class PatchItem [L32-35] | 🧬 class PatchPayload [L37-38] | 🎯 def build_log_regex_pattern(template_msg) [L40-47] | 🎯 def load_mission_file(mission_rel_path) [L49-64] | 🎯 def clean_json_response(raw_response) [L66-72] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L77-440] | 🎯 def main() [L445-454]]
 │   ├── 🧬 class PatchItem [L32-L35]
 │   ├── 🧬 class PatchPayload [L37-L38]
 │   ├── 🎯 def build_log_regex_pattern() [L40-L47]
 │   ├── 🎯 def load_mission_file() [L49-L64]
 │   │   ├── 🔗 [USED BY]: ::run_step_worker_pipeline
 │   ├── 🎯 def clean_json_response() [L66-L72]
-│   ├── 🎯 def run_step_worker_pipeline() [L77-L653]
-│   │   ├── 📞 [CALLS]: safe_execute_step, load_mission_file, clean_json_response, build_log_regex_pattern
+│   ├── 🎯 def run_step_worker_pipeline() [L77-L440]
+│   │   ├── 📞 [CALLS]: safe_execute_step, clean_json_response, load_mission_file
 │   │   ├── 🔗 [USED BY]: ::main
-│   ├── 🎯 def main() [L658-L667]
+│   ├── 🎯 def main() [L445-L454]
 │   │   ├── 📞 [CALLS]: run_step_worker_pipeline
 ├── scan_debug.txt [📂 scan_debug.txt] -> [General File (296 lines)]
 ├── setup_architecture.bat [📂 setup_architecture.bat] -> [General File (104 lines)]
@@ -509,12 +521,12 @@ project_root/
 │   │   │   ├── 🎯 def load_protocols() [L100-L117]
 │   │   │   │   ├── 🔗 [USED BY]: ::parse_protocols_and_registries
 │   │   │   ├── 🎯 def parse_protocols_and_registries() [L120-L159]
-│   │   │   │   ├── 📞 [CALLS]: load_registry, load_protocols
+│   │   │   │   ├── 📞 [CALLS]: load_protocols, load_registry
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def load_all_symbols() [L163-L184]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def main() [L187-L318]
-│   │   │   │   ├── 📞 [CALLS]: collect_target_files, load_jjap_context, load_all_symbols, parse_protocols_and_registries
+│   │   │   │   ├── 📞 [CALLS]: load_all_symbols, collect_target_files, load_jjap_context, parse_protocols_and_registries
 │   │   │   ├── 🎯 def generate_ai_optimized_map() [L321-L322]
 │   │   │   │   ├── 📞 [CALLS]: main
 │   │   ├── indexer.py [📂 tools/universal_indexer/indexer.py] -> [💡 📦 imp: collections, config, hashlib, importlib.util, json, os, pathlib, typing | 🎯 def log(message) [L22-24] | 🧬 class AdvancedIndexerV2 [L26-217] |     └─ def __init__(project_root) [L31-41] |     └─ def _auto_load_parsers() [L43-74] |     └─ def scan_project() [L78-152] |     └─ def index_file(file_path, ext) [L154-194] |     └─ def save_index_data() [L196-217]]

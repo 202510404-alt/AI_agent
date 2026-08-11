@@ -2,6 +2,7 @@ import sys
 import time
 import math
 import os
+import random
 
 # Mocking python-chess dependency for environment compatibility
 class MockChess:
@@ -212,18 +213,13 @@ class TranspositionTable:
     def __init__(self, size_mb=64):
         self.size = (size_mb * 1024 * 1024) // 32
         self.table = {}
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
+        self.zobrist_table = [[random.getrandbits(64) for _ in range(64)] for _ in range(12)]
 
     def _get_index(self, key):
         return key % self.size
 
     def store(self, key, depth, score, flag, best_move):
-        entry = self.table.get(key)
-        if entry is None or entry['depth'] <= depth:
-            self.table[key] = {'depth': depth, 'score': score, 'flag': flag, 'move': best_move}
+        self.table[key] = {'depth': depth, 'score': score, 'flag': flag, 'move': best_move}
 
     def probe(self, key):
         return self.table.get(key, None)
@@ -260,9 +256,6 @@ class ApexChessEngine:
         mg_score = 0
         eg_score = 0
         game_phase = 0
-
-        if os.environ.get("CHESS_AI_DEBUG") == "1":
-            print("[DEBUG_LOG] Step=EVAL_ENGINE | Score=0")
 
         for sq in chess.SQUARES:
             piece = self.board.piece_at(sq)

@@ -9,7 +9,6 @@
 - `.idea/misc.xml`
 - `.idea/modules.xml`
 - `.idea/vcs.xml`
-- `.idea/workspace.xml`
 - `.vscode/settings.json`
 - `README.md`
 - `System Prompt.md`
@@ -30,6 +29,7 @@
 - `agent_core/tasks/task_01/checklist_01/mission_013.json`
 - `agent_core/tasks/task_01/checklist_01/mission_end.json`
 - `agent_core/validation/__init__.py`
+- `agent_core/validation/debug_verifier.py`
 - `agent_debug.log`
 - `agent_plan.md`
 - `extraction_target_project/AGENT_TEST/chess_ai.py`
@@ -132,11 +132,6 @@
 --------------------------------------------------
 
 ### 📄 .idea/vcs.xml
-*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
-
---------------------------------------------------
-
-### 📄 .idea/workspace.xml
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
@@ -1126,13 +1121,13 @@ def run_interactive_chat():
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `task_id` (Line: 2~2)
 - **[JSON_KEY]** `target_file` (Line: 3~3)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
 - **[JSON_KEY]** `entrypoint` (Line: 4~4)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
 - **[JSON_KEY]** `test_type` (Line: 6~6)
 - **[JSON_KEY]** `use_browser_test` (Line: 7~7)
 - **[JSON_KEY]** `implementation_blueprint` (Line: 9~9)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
 - **[JSON_KEY]** `expected_terminal_outputs` (Line: 26~26)
 
 #### 🧱 Code Skeleton:
@@ -1188,7 +1183,7 @@ def run_interactive_chat():
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `task_id` (Line: 2~2)
 - **[JSON_KEY]** `target_file` (Line: 3~3)
-  - 🔗 *Calls (호출하는 것)*: `Canvas.js, extraction_target_project/client/src/Canvas.js`
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/client/src/Canvas.js, Canvas.js`
 - **[JSON_KEY]** `entrypoint` (Line: 4~4)
 - **[JSON_KEY]** `standalone_entrypoint` (Line: 5~5)
 - **[JSON_KEY]** `servers` (Line: 6~6)
@@ -1220,6 +1215,246 @@ def run_interactive_chat():
 
 ### 📄 agent_core/validation/__init__.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/validation/debug_verifier.py
+#### 🧱 Code Skeleton:
+```python
+def build_log_regex_pattern(template_msg: str) -> str:
+    """미션 디버그 로그 메시지의 변수 표기({x}, {hex_code} 등)를 Regex 패턴으로 자동 변환"""
+    escaped = re.escape(template_msg)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)
+    escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
+    return escaped
+
+def extract_minimal_mission_payload(mission_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    LLM 및 Runner에 전달할 경량화 페이로드 추출 (토큰 절약)
+    미션 파일 전체를 들고 다니지 않고 디버깅 로그 스펙, 목표, 최소 스펙만 정제
+    """
+    blueprint = mission_data.get("implementation_blueprint", {})
+    debug_spec = mission_data.get("debug_log_spec", {})
+    browser_spec = mission_data.get("browser_test_spec", {})
+    
+    use_browser = mission_data.get("use_browser_test", False) or (mission_data.get("test_type") == "browser")
+    raw_patterns = mission_data.get("expected_terminal_outputs", [])
+    if not raw_patterns and debug_spec.get("log_pattern"):
+        raw_patterns = [debug_spec["log_pattern"]]
+
+    return {
+        "task_id": mission_data.get("task_id", ""),
+        "test_type": mission_data.get("test_type", ""),
+        "use_browser_test": use_browser,
+        "target_file": mission_data.get("target_file", ""),
+        "entrypoint": mission_data.get("entrypoint") or mission_data.get("standalone_entrypoint", ""),
+        "debug_log_spec": {
+            "toggle_key": debug_spec.get("toggle_key") or blueprint.get("debug_toggle_key", ""),
+            "log_pattern": debug_spec.get("log_pattern", "")
+        },
+        "expected_terminal_outputs": raw_patterns,
+        "feature_title": blueprint.get("feature_title", ""),
+        "browser_test_spec": browser_spec if use_browser else {}
+    }
+
+class DebugVerifier:
+    """
+    터미널 및 브라우저 검증 통합 모듈 (Debug Verifier)
+    - 0.1초 Fast-Check 정적 문법 검사
+    - 미션 데이터 경량화 추출을 통한 프롬프트 토큰 절감
+    - CLI/터미널 실행(TerminalAgentRunner) 및 조건 충족 시 브라우저 러너(BrowserTester/BrowserAgentRunner) 호출
+    - 정규식 패턴 matching 및 런타임 에러 자동 진단
+    """
+    def __init__(self, root_dir: Path, factory: Any = None):
+        self.root_dir = Path(root_dir).resolve()
+        self.factory = factory
+
+    def verify(
+        self,
+        mission_data: Dict[str, Any],
+        target_file_path: str,
+        target_code: str = ""
+    ) -> Dict[str, Any]:
+        """검증 통합 엔트리포인트"""
+        minimal_spec = extract_minimal_mission_payload(mission_data)
+
+        # Step 1: Fast-Check (0.1초 정적 문법 검사)
+        fast_check_res = self._run_fast_check(target_file_path)
+        if not fast_check_res["success"]:
+            return {
+                "verified": False,
+                "output": fast_check_res["output"],
+                "message": fast_check_res["message"]
+            }
+
+        # Step 2: 실행 환경변수 구성 (디버그 토글 키 자동 주입)
+        exec_env = os.environ.copy()
+        exec_env["BROWSER"] = "none"
+        toggle_key = minimal_spec["debug_log_spec"]["toggle_key"]
+        if toggle_key:
+            exec_env[toggle_key] = "true"
+
+        # Step 3: 브라우저 테스트 vs 터미널 테스트 실행 분기
+        if minimal_spec["use_browser_test"]:
+            return self._run_browser_verification(minimal_spec, exec_env, mission_data)
+        else:
+            return self._run_terminal_verification(minimal_spec, target_code, exec_env)
+
+    def _run_fast_check(self, target_file_path: str) -> Dict[str, Any]:
+        """패치 직후 문법 오류 빠른 포착"""
+        full_target = self.root_dir / target_file_path
+        if target_file_path.endswith(('.js', '.jsx', '.ts', '.tsx')):
+            fast_cmd = f"npx --yes esbuild \"{full_target}\" --loader:.js=jsx"
+            try:
+                res = subprocess.run(
+                    fast_cmd, shell=True, capture_output=True, text=True, input="", timeout=10, cwd=str(self.root_dir)
+                )
+                if res.returncode != 0:
+                    return {
+                        "success": False,
+                        "output": f"[FAST-CHECK SYNTAX ERROR]\n{res.stderr.strip()}",
+                        "message": "정적 문법 검사(Fast-Check) 실패"
+                    }
+            except Exception:
+                pass
+        return {"success": True, "output": "", "message": "Fast-Check 통과"}
+
+    def _run_browser_verification(
+        self,
+        minimal_spec: Dict[str, Any],
+        exec_env: Dict[str, str],
+        full_mission_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """브라우저 러너 및 자율 에이전트 연동 검증"""
+        browser_spec = minimal_spec.get("browser_test_spec", {})
+        target_url = browser_spec.get("url", "http://localhost:3000")
+        
+        servers = full_mission_data.get("servers", [
+            {"name": "Client", "cwd": ".", "command": minimal_spec["entrypoint"], "health_check_url": target_url}
+        ])
+        server_procs = []
+
+        try:
+            creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+            for cfg in servers:
+                srv_cwd = (self.root_dir / cfg.get("cwd", ".")).resolve()
+                srv_cmd = cfg.get("command")
+                srv_url = cfg.get("health_check_url", target_url)
+
+                if not srv_cwd.exists() or not srv_cmd:
+                    continue
+
+                proc = subprocess.Popen(
+                    srv_cmd, shell=True, cwd=str(srv_cwd), env=exec_env, creationflags=creation_flags
+                )
+                server_procs.append(proc)
+
+                # 서버 기동 헬스체크 (최대 30초)
+                start_time = time.time()
+                while time.time() - start_time < 30:
+                    if proc.poll() is not None:
+                        break
+                    try:
+                        with urllib.request.urlopen(srv_url, timeout=2) as res:
+                            if 200 <= res.status < 500:
+                                break
+                    except Exception:
+                        time.sleep(1)
+
+            # 1차 정적 브라우저 테스트 (BrowserTester)
+            tester = BrowserTester(headless=False)
+            actions = browser_spec.get("actions", [])
+            wait_selector = browser_spec.get("wait_for_selector")
+            raw_patterns = minimal_spec["expected_terminal_outputs"]
+            regex_patterns = [build_log_regex_pattern(p) for p in raw_patterns]
+
+            b_result = tester.run_browser_verification(
+                target_url=target_url,
+                actions=actions,
+                expected_patterns=regex_patterns,
+                wait_for_selector=wait_selector
+            )
+
+            # 2차 자율 브라우저 에이전트 Fallback (BrowserAgentRunner)
+            if not b_result["success"] and self.factory:
+                from tools.multi_agent_system.browser_agent_runner import BrowserAgentRunner
+                agent_runner = BrowserAgentRunner(self.factory)
+                
+                task_title = minimal_spec.get("feature_title") or minimal_spec["task_id"]
+                goal = (
+                    f"1. Navigate to {target_url}\n"
+                    f"2. Objective: Verify feature '{task_title}'.\n"
+                    f"3. Interact with target: '{wait_selector}' using actions: {actions}\n"
+                    f"4. Trigger log patterns: {raw_patterns}"
+                )
+                b_result = agent_runner.run_autonomous_loop(
+                    target_url=target_url,
+                    goal_description=goal,
+                    expected_patterns=regex_patterns
+                )
+
+            logs = "\n".join(b_result.get("console_logs", []))
+            if not b_result["success"]:
+                logs += f"\n[BROWSER ERROR] {b_result.get('message', '')}\n" + "\n".join(b_result.get("page_errors", []))
+
+            return {
+                "verified": b_result["success"],
+                "output": logs,
+                "message": b_result.get("message", "")
+            }
+
+        finally:
+            for proc in server_procs:
+                if os.name == 'nt':
+                    subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True)
+                else:
+                    proc.terminate()
+
+    def _run_terminal_verification(
+        self,
+        minimal_spec: Dict[str, Any],
+        target_code: str,
+        exec_env: Dict[str, str]
+    ) -> Dict[str, Any]:
+        """터미널 러너(TerminalAgentRunner) 기반 CLI 검증"""
+        entrypoint = minimal_spec["entrypoint"] or f"python3 {minimal_spec['target_file']}"
+        runner = TerminalAgentRunner(factory=self.factory, default_timeout=30)
+
+        # 토큰 절감을 위해 미션 파일 전체 대신 경량화된 minimal_spec 전달
+        res = runner.execute(
+            command=entrypoint,
+            goal_context=minimal_spec["task_id"],
+            cwd=str(self.root_dir),
+            env=exec_env,
+            mission_data=minimal_spec,
+            code_context=target_code
+        )
+        terminal_output = res["clean_output"]
+        patterns = minimal_spec["expected_terminal_outputs"]
+
+        is_verified = True
+        if patterns:
+            for p in patterns:
+                regex_pat = build_log_regex_pattern(p)
+                if not re.search(regex_pat, terminal_output):
+                    is_verified = False
+                    break
+        else:
+            is_verified = False
+
+        # 치명적 예외 키워드 감지
+        failure_keywords = ["Traceback (most recent call last):", "FAIL ", "npm ERR!", "Command failed"]
+        if is_verified and any(kw in terminal_output for kw in failure_keywords):
+            is_verified = False
+
+        return {
+            "verified": is_verified,
+            "output": terminal_output,
+            "message": "로그 패턴 및 실행 검증 성공" if is_verified else "터미널 출력 패턴 불일치 또는 런타임 오류"
+        }
+```
 
 --------------------------------------------------
 
@@ -1267,18 +1502,13 @@ class TranspositionTable:
     def __init__(self, size_mb=64):
         self.size = (size_mb * 1024 * 1024) // 32
         self.table = {}
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
-        self.zobrist_table = [[0] * 64 for _ in range(12)]
+        self.zobrist_table = [[random.getrandbits(64) for _ in range(64)] for _ in range(12)]
 
     def _get_index(self, key):
         return key % self.size
 
     def store(self, key, depth, score, flag, best_move):
-        entry = self.table.get(key)
-        if entry is None or entry['depth'] <= depth:
-            self.table[key] = {'depth': depth, 'score': score, 'flag': flag, 'move': best_move}
+        self.table[key] = {'depth': depth, 'score': score, 'flag': flag, 'move': best_move}
 
     def probe(self, key):
         return self.table.get(key, None)
@@ -1625,7 +1855,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/function.prototype.name, node_modules/lodash.debounce, node_modules/proxy-addr/node_modules/ipaddr.js, bin/webpack-dev-server.js, bin/esparse.js, node_modules/big.js, bin/esgenerate.js, node_modules/object.entries, bin/cli.js, node_modules/hpack.js, bin.js, node_modules/object.getownpropertydescriptors, node_modules/reflect.getprototypeof, fixtures/cli.js, node_modules/fraction.js, node_modules/object.hasown, node_modules/array.prototype.flatmap, node_modules/socket.io, bin/escodegen.js, node_modules/object.fromentries, node_modules/lodash.sortby, node_modules/regexp.prototype.flags, node_modules/array.prototype.findlastindex, ipaddr.js, bin/js-yaml.js, node_modules/array.prototype.toreversed, node_modules/lodash.memoize, bin/react-scripts.js, node_modules/string.prototype.trim, node_modules/array.prototype.reduce, bin/jiti.js, node_modules/object.groupby, node_modules/css.escape, node_modules/array.prototype.tosorted, fraction.js, bin/bin.js, node_modules/iterator.prototype, bin/nanoid.cjs, node_modules/object.values, node_modules/lodash.merge, node_modules/string.prototype.trimstart, node_modules/util.promisify, decimal.js, big.js, bin/webpack.js, dist/cli.cjs, node_modules/decimal.js, cli.js, node_modules/resolve.exports, bin/eslint.js, node_modules/lodash.uniq, node_modules/string.prototype.trimend, node_modules/fs.realpath, lib/cli.js, bin/semver.js, dist/esm/bin.mjs, bin/jest.js, node_modules/object.assign, node_modules/string.prototype.matchall, bin/cmd.js, bin/babel-parser.js, bin/nopt.js, node_modules/arraybuffer.prototype.slice, hpack.js, node_modules/array.prototype.flat, node_modules/engine.io, node_modules/sanitize.css, bin/esvalidate.js, node_modules/array.prototype.findlast, node_modules/ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/lodash.uniq, node_modules/array.prototype.toreversed, node_modules/string.prototype.trimstart, dist/cli.cjs, node_modules/ipaddr.js, bin/react-scripts.js, node_modules/function.prototype.name, bin/cmd.js, node_modules/string.prototype.trim, node_modules/iterator.prototype, bin/esgenerate.js, bin/esvalidate.js, node_modules/object.entries, bin/escodegen.js, node_modules/hpack.js, node_modules/sanitize.css, bin/webpack.js, node_modules/string.prototype.matchall, bin/jest.js, dist/esm/bin.mjs, node_modules/fs.realpath, fixtures/cli.js, node_modules/array.prototype.findlast, node_modules/string.prototype.trimend, node_modules/big.js, node_modules/lodash.sortby, node_modules/reflect.getprototypeof, node_modules/engine.io, node_modules/socket.io, bin/nanoid.cjs, node_modules/object.assign, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/object.values, bin/js-yaml.js, node_modules/lodash.merge, node_modules/array.prototype.findlastindex, bin/bin.js, node_modules/resolve.exports, node_modules/fraction.js, bin/nopt.js, bin/esparse.js, node_modules/util.promisify, bin.js, fraction.js, hpack.js, node_modules/lodash.memoize, node_modules/array.prototype.flat, big.js, node_modules/lodash.debounce, bin/jiti.js, node_modules/regexp.prototype.flags, node_modules/css.escape, bin/babel-parser.js, bin/cli.js, node_modules/object.fromentries, node_modules/object.getownpropertydescriptors, node_modules/decimal.js, node_modules/object.hasown, cli.js, ipaddr.js, bin/webpack-dev-server.js, node_modules/object.groupby, decimal.js, bin/semver.js, node_modules/array.prototype.reduce, node_modules/array.prototype.tosorted, lib/cli.js, bin/eslint.js, node_modules/array.prototype.flatmap, node_modules/arraybuffer.prototype.slice`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1879,7 +2109,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `bin/nodetouch.js, node_modules/socket.io, node_modules/pstree.remy, ipaddr.js, bin/nodemon.js, cli.js, node_modules/engine.io, node_modules/ipaddr.js, bin/semver.js`
+  - 🔗 *Calls (호출하는 것)*: `ipaddr.js, node_modules/ipaddr.js, node_modules/pstree.remy, node_modules/engine.io, cli.js, node_modules/socket.io, bin/nodetouch.js, bin/semver.js, bin/nodemon.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -2217,237 +2447,24 @@ Generate a JSON object matching PatchPayload schema:
             print(f"❌ [STEP 4 ERROR] Pydantic 스키마 검증 실패 또는 패치 적용 오류: {e}")
 
         # -------------------------------------------------------------
-        # 💻 [Step 5] Terminal Runner & Browser Tester 이중 검증
+        # 💻 [Step 5] DebugVerifier 기반 검증 모듈 실행 (통합 검증)
         # -------------------------------------------------------------
-        print("\n💻 [Step 5] 실행 및 실체 검증 가동...")
+        print("\n💻 [Step 5] DebugVerifier 통합 실행 및 실체 검증 가동...")
 
-        is_verified = True
-        terminal_output = ""
-        fast_check_failed = False
-
-        # 💡 [Step 5-A] 패치 직후 Fast-Check (0.1초 정적 문법 검사)
-        print("🔍 [Step 5-A] 정적 문법 검사(Fast-Check) 진행 중...")
-        if patch_success and target_file_path.endswith(('.js', '.jsx', '.ts', '.tsx')):
-            # npx 무한 대기 방지를 위한 --yes 추가, 비동기 대기 방지용 input=b'' 및 timeout 10초 설정
-            fast_check_cmd = f"npx --yes esbuild \"{ROOT_DIR / target_file_path}\" --loader:.js=jsx"
-            try:
-                fast_res = subprocess.run(
-                    fast_check_cmd,
-                    shell=True,
-                    capture_output=True,
-                    text=True,
-                    input="",  # 입력 대기 무한 멈춤 방지
-                    timeout=10, # 10초 내 응답 없으면 타임아웃
-                    cwd=str(ROOT_DIR)
-                )
-                if fast_res.returncode != 0:
-                    print("❌ [FAST-CHECK FAIL] 정적 문법 검증 실패 -> 서버 구동 스킵 및 즉시 재시도 진입")
-                    print(f"  └─ [ERROR DETAIL]:\n{fast_res.stderr.strip()}")
-                    patch_success = False
-                    is_verified = False
-                    fast_check_failed = True
-                    terminal_output = f"[FAST-CHECK SYNTAX ERROR] 패치 코드 문법 오류:\n{fast_res.stderr}"
-                else:
-                    print("✅ [Step 5-A] Fast-Check 문법 검사 통과")
-            except subprocess.TimeoutExpired:
-                print("⚠️ [FAST-CHECK TIMEOUT] 문법 검사 시간 초과(10초) -> Fast-Check 스킵 후 다음 단계 진행")
-            except Exception as e:
-                print(f"⚠️ [FAST-CHECK EXCEPTION] 문법 검사 실행 실패({e}) -> 다음 단계 진행")
-        else:
-            print("⏩ [Step 5-A] Fast-Check 대상 아님 또는 패치 실패로 스킵")
-
-        # Fast-Check 성공 시에만 서버 구동 및 브라우저/터미널 테스트 진행
-        if patch_success and not fast_check_failed:
-            use_browser = mission_data.get("use_browser_test", False) or (mission_data.get("test_type") == "browser")
-            browser_spec = mission_data.get("browser_test_spec")
-
-            exec_env = os.environ.copy()
-            exec_env["BROWSER"] = "none"  # npm start 등 서버 실행 시 기본 브라우저(Edge) 자동 오픈 방지
-
-            toggle_key = (
-                mission_data.get("debug_log_spec", {}).get("toggle_key") or 
-                mission_data.get("implementation_blueprint", {}).get("debug_toggle_key")
+        if patch_success:
+            verifier = DebugVerifier(root_dir=ROOT_DIR, factory=factory)
+            verifier_res = verifier.verify(
+                mission_data=mission_data,
+                target_file_path=target_file_path,
+                target_code=target_code
             )
-
-            if toggle_key:
-                exec_env[toggle_key] = "true"
-                print(f"🔧 [Step 5 ENV] 디버그 토글 키 적용: {toggle_key}=true")
-
-            # 🌐 1) 브라우저 테스트 ON 조건 충족 시: BrowserTester 실행
-            if use_browser and browser_spec:
-                print("\n🌐 [Step 5-B] Headless Browser 실제 UI/콘솔 검증 가동...")
-                
-                target_url = browser_spec.get("url", "http://localhost:3000")
-                server_configs = mission_data.get("servers", [
-                    {"name": "Client", "cwd": ".", "command": mission_data.get("entrypoint"), "health_check_url": target_url}
-                ])
-                server_processes = []
-
-                try:
-                    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-                    for cfg in server_configs:
-                        srv_cwd = (ROOT_DIR / cfg.get("cwd", ".")).resolve()
-                        srv_cmd = cfg.get("command")
-                        srv_url = cfg.get("health_check_url", target_url)
-
-                        if not srv_cwd.exists() or not srv_cwd.is_dir():
-                            print(f"⚠️ [Step 5-B SKIP] {cfg.get('name')} 디렉터리가 존재하지 않음: {srv_cwd}")
-                            continue
-
-                        print(f"🚀 [Step 5-B] {cfg.get('name', 'Server')} 구동 시작: {srv_cmd}")
-                        
-                        proc = subprocess.Popen(
-                            srv_cmd,
-                            shell=True,
-                            cwd=str(srv_cwd),
-                            env=exec_env,
-                            creationflags=creation_flags
-                        )
-                        server_processes.append(proc)
-
-                        # 서버별 헬스체크 대기 (최대 30초)
-                        start_time = time.time()
-                        srv_ready = False
-                        while time.time() - start_time < 30:
-                            if proc.poll() is not None:
-                                print(f"❌ [Step 5-B FAIL] {cfg.get('name')} 프로세스 비정상 종료")
-                                break
-                            try:
-                                with urllib.request.urlopen(srv_url, timeout=2) as res:
-                                    if 200 <= res.status < 500:
-                                        srv_ready = True
-                                        print(f"✅ [Step 5-B] {cfg.get('name')} 준비 완료 ({srv_url})")
-                                        break
-                            except urllib.error.HTTPError:
-                                srv_ready = True
-                                print(f"✅ [Step 5-B] {cfg.get('name')} 응답 감지 완료 ({srv_url})")
-                                break
-                            except Exception:
-                                time.sleep(1)
-
-                        if not srv_ready:
-                            print(f"⚠️ [Step 5-B Warning] {cfg.get('name')} 응답 대기 초과 - 다음 진행")
-
-                    if is_verified:
-                        print("🤖 [Step 5-C] BrowserTester 1차 정적 액션 검증 수행 중...")
-                        tester = BrowserTester(headless=False)
-                        actions = browser_spec.get("actions", [])
-                        wait_selector = browser_spec.get("wait_for_selector")
-                        raw_patterns = mission_data.get("expected_terminal_outputs", [])
-                        if not raw_patterns and "debug_log_spec" in mission_data:
-                            spec_pattern = mission_data["debug_log_spec"].get("log_pattern")
-                            if spec_pattern:
-                                raw_patterns = [spec_pattern]
-
-                        expected_patterns = [
-                            build_log_regex_pattern(p) for p in raw_patterns
-                        ]
-                        b_result = tester.run_browser_verification(
-                            target_url=target_url,
-                            actions=actions,
-                            expected_patterns=expected_patterns,
-                            wait_for_selector=wait_selector
-                        )
-
-                        # 💡 1차 정적 시도 실패 시 2차 자율 에이전트 구원 투수 가동 (하이브리드 전략)
-                        if not b_result["success"]:
-                            print("⚠️ [Step 5-C Fallback] 1차 정적 검증 실패! 2차 자율 브라우저 에이전트 가동...")
-                            from tools.multi_agent_system.browser_agent_runner import BrowserAgentRunner
-                            agent_runner = BrowserAgentRunner(factory)
-
-                            # 📌 미션 JSON 내부 스펙 기반 동적 목표 프롬프트 추출 (하드코딩 제거)
-                            blueprint = mission_data.get("implementation_blueprint", {})
-                            browser_spec = mission_data.get("browser_test_spec", {})
-                            
-                            task_title = blueprint.get("feature_title") or mission_data.get("task_id", "UI Feature Verification")
-                            target_selector = browser_spec.get("wait_for_selector", "target UI elements")
-                            planned_actions = browser_spec.get("actions", [])
-                            raw_patterns = mission_data.get("expected_terminal_outputs", [])
-                            
-                            # JSON 데이터만 가지고 자율 에이전트 지침을 동적으로 조립
-                            detailed_goal = (
-                                f"1. Navigate to the app and complete lobby/room setup if prompted.\n"
-                                f"2. Objective: Verify feature '{task_title}'.\n"
-                                f"3. Locate and interact with target element: '{target_selector}'.\n"
-                                f"4. Planned action steps: {planned_actions}\n"
-                                f"5. Trigger necessary UI events until target console output patterns are generated: {raw_patterns}"
-                            )
-
-                            b_result = agent_runner.run_autonomous_loop(
-                                target_url=target_url,
-                                goal_description=detailed_goal,
-                                expected_patterns=expected_patterns
-                            )
-
-                        print(f"📌 [BROWSER RESULT] {b_result['message']}")
-                        print("📄 [BROWSER CONSOLE LOGS]:")
-                        for log in b_result["console_logs"]:
-                            print(f"   {log}")
-
-                        terminal_output = "\n".join(b_result["console_logs"])
-
-                        if not b_result["success"]:
-                            is_verified = False
-                            terminal_output += f"\n[BROWSER VERIFY ERROR] {b_result['message']}\n" + "\n".join(b_result["page_errors"])
-                            print(f"❌ [Step 5-C FAIL] 브라우저 최종 검증 실패")
-
-                finally:
-                    if server_processes:
-                        print("🧹 [Step 5 CLEANUP] 모든 백그라운드 서버 프로세스 자원 해제 중...")
-                        for proc in server_processes:
-                            if os.name == 'nt':
-                                subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True)
-                            else:
-                                proc.terminate()
-
-            # 🖥️ 2) 브라우저 테스트 OFF일 때: TerminalAgentRunner 대화형/배치 검증 가동
-            else:
-                print("🖥️ [Step 5-B] CLI/터미널 동적 제어 검증 가동...")
-                entrypoint = mission_data.get("entrypoint", mission_data.get("standalone_entrypoint", f"python3 {target_file_path}"))
-                
-                from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
-                runner = TerminalAgentRunner(factory=factory, default_timeout=30)
-                res = runner.execute(
-                    command=entrypoint,
-                    goal_context=mission_data.get("task_id", ""),
-                    cwd=str(ROOT_DIR),
-                    env=exec_env,
-                    mission_data=mission_data,
-                    code_context=target_code
-                )
-                terminal_output = res["clean_output"]
-                print(f"📄 [TERMINAL OUTPUT]\n{terminal_output}")
-
-                patterns = mission_data.get("expected_terminal_outputs", mission_data.get("predicted_output_pattern", []))
-                if isinstance(patterns, str):
-                    patterns = [patterns]
-
-                if patterns:
-                    print(f"🔍 [Step 5-C] 출력 패턴 일치 검사 중... (대상 패턴 {len(patterns)}개)")
-                    for pattern in patterns:
-                        regex_pattern = build_log_regex_pattern(pattern)
-                        if not re.search(regex_pattern, terminal_output):
-                            print(f"⚠️ [LOG VERIFY FAIL] 정규식 패턴 미일치: '{pattern}'")
-                            is_verified = False
-                            break
-                    if is_verified:
-                        print("✅ [Step 5-C] 모든 패턴 검증 통과")
-                else:
-                    print("⚠️ [VERIFY FAIL] 검증할 expected_terminal_outputs 패턴이 존재하지 않거나 비어 있습니다.")
-                    is_verified = False
-
-            # 범용 터미널/런타임 실패 키워드 감지
-            failure_keywords = [
-                "Traceback (most recent call last):",
-                "FAIL ",
-                "npm ERR!",
-                "Command failed"
-            ]
-            if is_verified and any(keyword in terminal_output for keyword in failure_keywords):
-                print("⚠️ [VERIFY FAIL] 터미널 실행 출력에서 에러/실패 키워드가 감지되었습니다.")
-                is_verified = False
+            is_verified = verifier_res["verified"]
+            terminal_output = verifier_res["output"]
+            print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
+            print(f"📌 [VERIFICATION RESULT] {verifier_res['message']}")
         else:
-            print("⏩ [Step 5 SKIP] Fast-Check 실패로 인해 서버 구동 및 UI 테스트를 건너뜁니다.")
+            is_verified = False
+            terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 검증을 스킵합니다."
 
         if patch_success and is_verified:
             # 🧹 임시 생성된 검증용 테스트 파일 자동 청소 (Clean-up)
