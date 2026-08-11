@@ -242,11 +242,19 @@ class AgentSessionFactory:
             print(f"\n🗺️ [TOOL EXECUTION] AI가 특정 구간 타깃 맵을 요청함: {target_paths}")
             return extract_targeted_ai_map(target_paths=target_paths, save_to_file=False)
 
-        # terminal_runner 래핑
+        # TerminalAgentRunner 인스턴스를 활용한 안전 실행기 연동
+        from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
+
         def safe_run_terminal_command(command: str) -> str:
-            """터미널 명령어를 실행합니다."""
+            """터미널 명령어를 동적 모드 제어 방식으로 안전 실행합니다."""
             time.sleep(2)  # ⏱️ Rate Limit(RPM) 방어 딜레이
-            return run_terminal_command(command)
+            runner = TerminalAgentRunner(factory=self, default_timeout=30)
+            res = runner.execute(command=command, cwd=str(self.root_dir))
+            
+            if res["status"] in ["SUCCESS", "DAEMON_RUNNING"]:
+                return f"✅ 실행 성공\n\n{res['clean_output']}"
+            else:
+                return f"⚠️ 실행 상태 [{res['status']}]: {res['error_msg']}\n\n{res['clean_output']}"
 
         return [extract_code_slice, safe_run_terminal_command, patch_code_slice, get_targeted_codebase_map]
 

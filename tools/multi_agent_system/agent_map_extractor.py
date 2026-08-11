@@ -232,12 +232,74 @@ class AgentMapExtractor:
             if posix_rel_path in path_to_protocol:
                 for proto_name, fields in path_to_protocol[posix_rel_path]:
                     output_lines.append(f"{indent}│     ├── 📊 [PROTOCOL]: \"{proto_name}\"\n")
+                    if isinstance(fields, dict):
+                        field_items = [
+                            f"{k}({v.replace(' (기본값: ', ':').replace(')', '')})"
+                            for k, v in fields.items()
+                        ]
+                        chunks = [field_items[x:x + 4] for x in range(0, len(field_items), 4)]
+                        for chunk in chunks:
+                            output_lines.append(f"{indent}│     │     ├── {', '.join(chunk)}\n")
 
-            # 심볼 상세 트리 (L라인, CALLS, USED BY)
+            # 🎯 [알맹이 보강] 정밀 심볼 트리 (클래스/함수/인자/줄범위/🔑key/CALLS/USED_BY) 생성
             file_symbols = symbols_by_file.get(posix_rel_path, [])
             for sym in file_symbols:
-                formatted_lines = format_symbol_node(sym, symbol_by_id, posix_rel_path, indent)
-                output_lines.extend(formatted_lines)
+                sym_type = sym.get("type", "function")
+                sym_name = sym.get("name", "")
+                full_name = sym.get("full_name", sym_name)
+                if not sym_name:
+                    continue
+
+                # 1. 인자(Arguments) 복원
+                raw_args = sym.get("args")
+                if isinstance(raw_args, list):
+                    args_str = f"({', '.join(raw_args)})" if raw_args else ""
+                elif isinstance(raw_args, str) and raw_args:
+                    args_str = f"({raw_args})"
+                else:
+                    args_str = ""
+
+                # 2. 줄범위(Start Line - End Line) 계산
+                start_line = sym.get("start_line")
+                end_line = sym.get("end_line")
+                if start_line and end_line and start_line != end_line:
+                    line_str = f"[L{start_line}-L{end_line}]"
+                elif start_line:
+                    line_str = f"[L{start_line}]"
+                else:
+                    line_str = ""
+
+                # 3. 타입별 아이콘 및 표현 구분
+                if sym_type == "class":
+                    icon_str = f"🧬 class {sym_name}"
+                elif sym_type == "json_key":
+                    icon_str = f"🔑 key \"{sym_name}\""
+                else:
+                    icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
+
+                output_lines.append(f"{indent}│   ├── {icon_str} {line_str}\n".rstrip() + "\n")
+
+                # 4. 호출 관계 (CALLS)
+                calls = sym.get("calls", [])
+                if calls:
+                    output_lines.append(f"{indent}│   │   ├── 📞 [CALLS]: {', '.join(calls)}\n")
+
+                # 5. 역방향 참조 관계 (USED BY)
+                used_by_ids = sym.get("used_by", [])
+                if used_by_ids:
+                    used_by_info = []
+                    for u_id in used_by_ids:
+                        target = symbol_by_id.get(u_id)
+                        if target:
+                            u_file = target.get("file") or target.get("path", "")
+                            u_name = target.get("name", "")
+                            if u_file == posix_rel_path:
+                                used_by_info.append(f"::{u_name}")
+                            else:
+                                used_by_info.append(f"{u_file}::{u_name}")
+                        else:
+                            used_by_info.append(str(u_id))
+                    output_lines.append(f"{indent}│   │   ├── 🔗 [USED BY]: {', '.join(used_by_info)}\n")
 
         output_lines.append("```\n")
         final_map_str = "".join(output_lines)

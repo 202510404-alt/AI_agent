@@ -9,6 +9,14 @@ from pathlib import Path
 from pydantic import BaseModel
 from typing import List
 
+# 0. 필수 패키지 누락 시 자동 설치
+for pkg in ["psutil", "pydantic"]:
+    try:
+        __import__(pkg)
+    except ImportError:
+        print(f"📦 필수 패키지 '{pkg}' 미설치 감지 -> 자동 설치를 진행합니다...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", pkg])
+
 # 1. ROOT_DIR 초기화 및 경로 설정
 ROOT_DIR = Path(__file__).parent.resolve()
 sys.path.append(str(ROOT_DIR))
@@ -470,11 +478,22 @@ Generate a JSON object matching PatchPayload schema:
                             else:
                                 proc.terminate()
 
-            # 🖥️ 2) 브라우저 테스트 OFF일 때: 표준 CLI/터미널 명령 및 출력 검증
+            # 🖥️ 2) 브라우저 테스트 OFF일 때: TerminalAgentRunner 대화형/배치 검증 가동
             else:
-                print("🖥️ [Step 5-B] CLI/터미널 단독 검증 가동...")
+                print("🖥️ [Step 5-B] CLI/터미널 동적 제어 검증 가동...")
                 entrypoint = mission_data.get("entrypoint", mission_data.get("standalone_entrypoint", f"python3 {target_file_path}"))
-                terminal_output = run_terminal_command(entrypoint, cwd=str(ROOT_DIR), env=exec_env)
+                
+                from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
+                runner = TerminalAgentRunner(factory=factory, default_timeout=30)
+                res = runner.execute(
+                    command=entrypoint,
+                    goal_context=mission_data.get("task_id", ""),
+                    cwd=str(ROOT_DIR),
+                    env=exec_env,
+                    mission_data=mission_data,
+                    code_context=target_code
+                )
+                terminal_output = res["clean_output"]
                 print(f"📄 [TERMINAL OUTPUT]\n{terminal_output}")
 
                 patterns = mission_data.get("expected_terminal_outputs", mission_data.get("predicted_output_pattern", []))

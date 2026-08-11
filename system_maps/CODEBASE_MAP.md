@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **96개**
+현재 인덱싱된 총 파일 수: **101개**
 
 ## 🗂️ [Module Index]
 - `.env`
@@ -24,11 +24,15 @@
 - `agent_core/plan/prompt_builder.py`
 - `agent_core/plan/schemas.py`
 - `agent_core/plan/test_ai_chat.py`
+- `agent_core/tasks/task_01/checklist_01/mission_.json`
 - `agent_core/tasks/task_01/checklist_01/mission_01.json`
 - `agent_core/tasks/task_01/checklist_01/mission_012.json`
+- `agent_core/tasks/task_01/checklist_01/mission_013.json`
+- `agent_core/tasks/task_01/checklist_01/mission_end.json`
 - `agent_core/validation/__init__.py`
 - `agent_debug.log`
 - `agent_plan.md`
+- `extraction_target_project/AGENT_TEST/chess_ai.py`
 - `extraction_target_project/AI_agent.code-workspace`
 - `extraction_target_project/README.md`
 - `extraction_target_project/client/package-lock.json`
@@ -77,6 +81,7 @@
 - `tools/multi_agent_system/browser_tester.py`
 - `tools/multi_agent_system/code_patcher.py`
 - `tools/multi_agent_system/project_scale_detector.py`
+- `tools/multi_agent_system/terminal_agent_runner.py`
 - `tools/multi_agent_system/terminal_runner.py`
 - `tools/universal_indexer/README.md`
 - `tools/universal_indexer/agent_navigator.py`
@@ -1049,30 +1054,70 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
-### 📄 agent_core/tasks/task_01/checklist_01/mission_01.json
+### 📄 agent_core/tasks/task_01/checklist_01/mission_.json
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `task_id` (Line: 2~2)
-- **[JSON_KEY]** `target_file` (Line: 3~3)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/client/src/Canvas.js, Canvas.js`
-- **[JSON_KEY]** `entrypoint` (Line: 4~4)
-- **[JSON_KEY]** `test_type` (Line: 6~6)
-- **[JSON_KEY]** `use_browser_test` (Line: 7~7)
-- **[JSON_KEY]** `implementation_blueprint` (Line: 9~9)
-  - 🔗 *Calls (호출하는 것)*: `Canvas.js`
-- **[JSON_KEY]** `browser_test_spec` (Line: 26~26)
-- **[JSON_KEY]** `expected_terminal_outputs` (Line: 38~38)
+- **[JSON_KEY]** `test_type` (Line: 3~3)
+- **[JSON_KEY]** `use_browser_test` (Line: 4~4)
+- **[JSON_KEY]** `target_file` (Line: 6~6)
+  - 🔗 *Calls (호출하는 것)*: `relative/path/to/target_file.ext`
+- **[JSON_KEY]** `entrypoint` (Line: 7~7)
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 8~8)
+- **[JSON_KEY]** `debug_log_spec` (Line: 10~10)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 15~15)
+- **[JSON_KEY]** `servers` (Line: 30~30)
+- **[JSON_KEY]** `browser_test_spec` (Line: 39~39)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 41~41)
 
 #### 🧱 Code Skeleton:
 ```python
 📦 [JSON STRUCTURE MAP]
-  ├── "task_id": str (val: TASK-WHITEBOARD-COLORWHEEL-001)
-  ├── "target_file": str (val: extraction_target_project/clie)
-  ├── "entrypoint": str (val: cd extraction_target_project/c)
-  ├── "test_type": str (val: browser)
-  ├── "use_browser_test": bool (val: True)
+  ├── "task_id": str (val: TASK-UNIQUE-ID-001)
+  ├── "test_type": str (val: browser | cli_test | python_te)
+  ├── "use_browser_test": bool (val: False)
+  ├── "target_file": str (val: relative/path/to/target_file.e)
+  ├── "entrypoint": str (val: command to run or start main t)
+  ├── "standalone_entrypoint": str (val: command to run standalone test)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
   ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
-  ├── "browser_test_spec": Dict (keys: ['url', 'wait_for_selector', 'actions']...)
+  ├── "servers": List (len: 1)
+  ├── "browser_test_spec": NoneType (val: None)
   ├── "expected_terminal_outputs": List (len: 1)
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/tasks/task_01/checklist_01/mission_01.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `task_id` (Line: 2~2)
+- **[JSON_KEY]** `test_type` (Line: 3~3)
+- **[JSON_KEY]** `use_browser_test` (Line: 4~4)
+- **[JSON_KEY]** `target_file` (Line: 5~5)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `entrypoint` (Line: 6~6)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 7~7)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
+- **[JSON_KEY]** `servers` (Line: 29~29)
+- **[JSON_KEY]** `browser_test_spec` (Line: 30~30)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 31~31)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "task_id": str (val: mission_014)
+  ├── "test_type": str (val: cli_test)
+  ├── "use_browser_test": bool (val: False)
+  ├── "target_file": str (val: extraction_target_project/AGEN)
+  ├── "entrypoint": str (val: python extraction_target_proje)
+  ├── "standalone_entrypoint": str (val: python extraction_target_proje)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
+  ├── "servers": List (len: 0)
+  ├── "browser_test_spec": NoneType (val: None)
+  ├── "expected_terminal_outputs": List (len: 2)
 ```
 
 --------------------------------------------------
@@ -1104,6 +1149,75 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 agent_core/tasks/task_01/checklist_01/mission_013.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `task_id` (Line: 2~2)
+- **[JSON_KEY]** `test_type` (Line: 3~3)
+- **[JSON_KEY]** `use_browser_test` (Line: 4~4)
+- **[JSON_KEY]** `target_file` (Line: 5~5)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_gui.py`
+- **[JSON_KEY]** `entrypoint` (Line: 6~6)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_gui.py`
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 7~7)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_gui.py`
+- **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
+- **[JSON_KEY]** `servers` (Line: 28~28)
+- **[JSON_KEY]** `browser_test_spec` (Line: 29~29)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 30~30)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "task_id": str (val: mission_013)
+  ├── "test_type": str (val: cli_test)
+  ├── "use_browser_test": bool (val: False)
+  ├── "target_file": str (val: extraction_target_project/AGEN)
+  ├── "entrypoint": str (val: python extraction_target_proje)
+  ├── "standalone_entrypoint": str (val: python extraction_target_proje)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
+  ├── "servers": List (len: 0)
+  ├── "browser_test_spec": NoneType (val: None)
+  ├── "expected_terminal_outputs": List (len: 2)
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/tasks/task_01/checklist_01/mission_end.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `task_id` (Line: 2~2)
+- **[JSON_KEY]** `target_file` (Line: 3~3)
+  - 🔗 *Calls (호출하는 것)*: `Canvas.js, extraction_target_project/client/src/Canvas.js`
+- **[JSON_KEY]** `entrypoint` (Line: 4~4)
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 5~5)
+- **[JSON_KEY]** `servers` (Line: 6~6)
+- **[JSON_KEY]** `test_type` (Line: 21~21)
+- **[JSON_KEY]** `use_browser_test` (Line: 22~22)
+- **[JSON_KEY]** `debug_log_spec` (Line: 24~24)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 29~29)
+  - 🔗 *Calls (호출하는 것)*: `Canvas.js`
+- **[JSON_KEY]** `browser_test_spec` (Line: 46~46)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 58~58)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "task_id": str (val: TASK-WHITEBOARD-COLORWHEEL-001)
+  ├── "target_file": str (val: extraction_target_project/clie)
+  ├── "entrypoint": str (val: cd extraction_target_project/c)
+  ├── "standalone_entrypoint": str (val: cd extraction_target_project/c)
+  ├── "servers": List (len: 2)
+  ├── "test_type": str (val: browser)
+  ├── "use_browser_test": bool (val: True)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
+  ├── "browser_test_spec": Dict (keys: ['url', 'wait_for_selector', 'actions']...)
+  ├── "expected_terminal_outputs": List (len: 1)
+```
+
+--------------------------------------------------
+
 ### 📄 agent_core/validation/__init__.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
@@ -1116,6 +1230,380 @@ def run_interactive_chat():
 
 ### 📄 agent_plan.md
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/AGENT_TEST/chess_ai.py
+#### 🧱 Code Skeleton:
+```python
+class MockChess:
+    PAWN = 1; KNIGHT = 2; BISHOP = 3; ROOK = 4; QUEEN = 5; KING = 6
+    WHITE = True; BLACK = False
+    SQUARES = range(64)
+    def square_mirror(self, sq): return sq ^ 56
+    class Board:
+        def __init__(self): self.turn = True
+        def is_checkmate(self): return False
+        def is_stalemate(self): return False
+        def is_insufficient_material(self): return False
+        def piece_at(self, sq): return None
+        def is_check(self): return False
+        def is_capture(self, move): return False
+        def push(self, move): pass
+        def pop(self): pass
+        def _transposition_key(self): return 0
+        def __str__(self): return "Board"
+        def is_game_over(self): return False
+        def result(self): return "*"
+        @property
+        def legal_moves(self): return []
+        def parse_san(self, s): return None
+    class Move:
+        @staticmethod
+        def from_uci(s): return s
+        def null(): return None
+
+class TranspositionTable:
+    def __init__(self, size_mb=64):
+        self.size = (size_mb * 1024 * 1024) // 32
+        self.table = {}
+        self.zobrist_table = [[0] * 64 for _ in range(12)]
+        self.zobrist_table = [[0] * 64 for _ in range(12)]
+        self.zobrist_table = [[0] * 64 for _ in range(12)]
+        self.zobrist_table = [[0] * 64 for _ in range(12)]
+
+    def _get_index(self, key):
+        return key % self.size
+
+    def store(self, key, depth, score, flag, best_move):
+        entry = self.table.get(key)
+        if entry is None or entry['depth'] <= depth:
+            self.table[key] = {'depth': depth, 'score': score, 'flag': flag, 'move': best_move}
+
+    def probe(self, key):
+        return self.table.get(key, None)
+
+    def clear(self):
+        self.table.clear()
+
+class ApexChessEngine:
+    def __init__(self, board=None):
+        self.board = board if board else chess.Board()
+        self.tt = TranspositionTable(size_mb=128)
+        self.history_table = [[[0] * 64 for _ in range(64)] for _ in range(2)]
+        self.killer_moves = [[None, None] for _ in range(128)]
+        self.nodes = 0
+        self.time_limit = 3.0
+        self.start_time = 0.0
+        self.nps_start_time = time.time()
+        if os.environ.get("CHESS_AI_DEBUG") == "1":
+            print("[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0")
+
+    # -------------------------------------------------------------------------
+    # Evaluation Logic
+    # -------------------------------------------------------------------------
+    def evaluate(self):
+        if self.board.is_checkmate():
+            return -30000 if self.board.turn else 30000
+        if self.board.is_stalemate() or self.board.is_insufficient_material():
+            return 0
+
+        mg_score = 0
+        eg_score = 0
+        game_phase = 0
+
+        if os.environ.get("CHESS_AI_DEBUG") == "1":
+            print("[DEBUG_LOG] Step=EVAL_ENGINE | Score=0")
+
+        for sq in chess.SQUARES:
+            piece = self.board.piece_at(sq)
+            if piece is None:
+                continue
+
+            pt = piece.piece_type
+            color = piece.color
+            sq_idx = sq if color == chess.WHITE else chess.square_mirror(sq)
+            
+            mg_val = PIECE_VALUES[pt][0] + PST[pt][0][sq_idx]
+            eg_val = PIECE_VALUES[pt][1] + PST[pt][1][sq_idx]
+
+            if color == chess.WHITE:
+                mg_score += mg_val
+                eg_score += eg_val
+            else:
+                mg_score -= mg_val
+                eg_score -= eg_val
+
+            game_phase += GAME_PHASE_WEIGHTS[pt]
+
+        mg_phase = min(game_phase, TOTAL_GAME_PHASE)
+        eg_phase = TOTAL_GAME_PHASE - mg_phase
+        eval_score = (mg_score * mg_phase + eg_score * eg_phase) // TOTAL_GAME_PHASE
+
+        final_score = eval_score if self.board.turn == chess.WHITE else -eval_score
+        if os.environ.get("CHESS_AI_DEBUG") == "1":
+            print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={final_score}")
+        return final_score
+
+    # -------------------------------------------------------------------------
+    # Move Ordering (MVV-LVA, Killers, History, TT)
+    # -------------------------------------------------------------------------
+    def get_mvv_lva_score(self, move):
+        victim = self.board.piece_at(move.to_square)
+        attacker = self.board.piece_at(move.from_square)
+        if victim and attacker:
+            return 10000 + (PIECE_VALUES[victim.piece_type][0] * 10) - PIECE_VALUES[attacker.piece_type][0]
+        return 0
+
+    def score_move(self, move, depth, tt_move):
+        if move == tt_move:
+            return 1000000
+        if self.board.is_capture(move):
+            return 100000 + self.get_mvv_lva_score(move)
+        
+        # Killer Moves
+        if depth < 128:
+            if move == self.killer_moves[depth][0]:
+                return 90000
+            if move == self.killer_moves[depth][1]:
+                return 80000
+
+        # History Heuristic
+        color_idx = 0 if self.board.turn == chess.WHITE else 1
+        return self.history_table[color_idx][move.from_square][move.to_square]
+
+    def order_moves(self, moves, depth, tt_move):
+        return sorted(moves, key=lambda m: self.score_move(m, depth, tt_move), reverse=True)
+
+    # -------------------------------------------------------------------------
+    # Quiescence Search (Prevent Horizon Effect)
+    # -------------------------------------------------------------------------
+    def quiescence(self, alpha, beta, ply=0):
+        self.nodes += 1
+        stand_pat = self.evaluate()
+
+        if stand_pat >= beta:
+            return beta
+        if alpha < stand_pat:
+            alpha = stand_pat
+
+        captures = [m for m in self.board.legal_moves if self.board.is_capture(m)]
+        captures = sorted(captures, key=self.get_mvv_lva_score, reverse=True)
+
+        for move in captures:
+            self.board.push(move)
+            score = -self.quiescence(-beta, -alpha, ply + 1)
+            self.board.pop()
+
+            if score >= beta:
+                return beta
+            if score > alpha:
+                alpha = score
+
+        return alpha
+
+    # -------------------------------------------------------------------------
+    # Negamax Engine with PVS, NMP, LMR, and TT
+    # -------------------------------------------------------------------------
+    def pvs(self, depth, alpha, beta, ply=0, allow_null=True):
+        if time.time() - self.start_time > self.time_limit:
+            raise TimeoutError()
+
+        self.nodes += 1
+        alpha_orig = alpha
+
+        # 1. Transposition Table Probe
+        zobrist_key = self.board._transposition_key()
+        tt_entry = self.tt.probe(zobrist_key)
+        tt_move = None
+
+        if tt_entry and tt_entry['depth'] >= depth:
+            tt_move = tt_entry['move']
+            if tt_entry['flag'] == TT_EXACT:
+                return tt_entry['score']
+            elif tt_entry['flag'] == TT_LOWERBOUND:
+                alpha = max(alpha, tt_entry['score'])
+            elif tt_entry['flag'] == TT_UPPERBOUND:
+                beta = min(beta, tt_entry['score'])
+            if alpha >= beta:
+                return tt_entry['score']
+
+        # Terminal conditions
+        if depth <= 0:
+            return self.quiescence(alpha, beta, ply)
+
+        in_check = self.board.is_check()
+
+        # 2. Null Move Pruning (NMP)
+        if allow_null and not in_check and depth >= 3 and self.evaluate() >= beta:
+            R = 2 + depth // 4
+            self.board.push(chess.Move.null())
+            score = -self.pvs(depth - 1 - R, -beta, -beta + 1, ply + 1, False)
+            self.board.pop()
+
+            if score >= beta:
+                return beta
+
+        moves = list(self.board.legal_moves)
+        if not moves:
+            if in_check:
+                return -30000 + ply  # Distance to mate
+            return 0  # Stalemate
+
+        moves = self.order_moves(moves, depth, tt_move)
+        best_move = moves[0]
+        b_search_pv = True
+
+        for i, move in enumerate(moves):
+            self.board.push(move)
+
+            # 3. Late Move Reduction (LMR)
+            reduction = 0
+            if i >= 3 and depth >= 3 and not in_check and not self.board.is_capture(move) and not move.promotion:
+                reduction = 1 + (depth // 4) + (i // 6)
+
+            # 4. Principal Variation Search (PVS)
+            if b_search_pv:
+                score = -self.pvs(depth - 1, -beta, -alpha, ply + 1, True)
+            else:
+                # Zero Window Search
+                score = -self.pvs(depth - 1 - reduction, -alpha - 1, -alpha, ply + 1, True)
+                if score > alpha and reduction > 0:
+                    # Re-search if reduced search raised alpha
+                    score = -self.pvs(depth - 1, -alpha - 1, -alpha, ply + 1, True)
+                if alpha < score < beta:
+                    # Full re-search
+                    score = -self.pvs(depth - 1, -beta, -alpha, ply + 1, True)
+
+            self.board.pop()
+
+            if score >= beta:
+                # Store Killer & History
+                if not self.board.is_capture(move):
+                    if depth < 128:
+                        self.killer_moves[depth][1] = self.killer_moves[depth][0]
+                        self.killer_moves[depth][0] = move
+                    color_idx = 0 if self.board.turn == chess.WHITE else 1
+                    self.history_table[color_idx][move.from_square][move.to_square] += depth * depth
+
+                self.tt.store(zobrist_key, depth, beta, TT_LOWERBOUND, move)
+                return beta
+
+            if score > alpha:
+                alpha = score
+                best_move = move
+                b_search_pv = False
+
+        # Store TT
+        flag = TT_EXACT if alpha > alpha_orig else TT_UPPERBOUND
+        self.tt.store(zobrist_key, depth, alpha, flag, best_move)
+
+        return alpha
+
+    # -------------------------------------------------------------------------
+    # Iterative Deepening Framework
+    # -------------------------------------------------------------------------
+    def search(self, time_limit=3.0, max_depth=64):
+        self.start_time = time.time()
+        self.time_limit = time_limit
+        self.nodes = 0
+        
+        best_move = None
+        best_score = 0
+
+        # Iterative Deepening
+        for depth in range(1, max_depth + 1):
+            try:
+                # Aspiration Windows
+                if depth >= 5:
+                    window = 50
+                    alpha = best_score - window
+                    beta = best_score + window
+                    score = self.pvs(depth, alpha, beta)
+
+                    if score <= alpha or score >= beta:
+                        # Window fail: reset to full search
+                        score = self.pvs(depth, -35000, 35000)
+                else:
+                    score = self.pvs(depth, -35000, 35000)
+
+                zobrist_key = self.board._transposition_key()
+                tt_entry = self.tt.probe(zobrist_key)
+                if tt_entry and tt_entry['move']:
+                    best_move = tt_entry['move']
+                    best_score = score
+
+                elapsed = time.time() - self.start_time
+                nps = int(self.nodes / elapsed) if elapsed > 0 else 0
+                if os.environ.get("CHESS_AI_DEBUG") == "1":
+                    print(f"[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps}")
+                print(f"info depth {depth} score cp {best_score} nodes {self.nodes} nps {nps} time {elapsed:.2f}s pv {best_move}")
+
+            except TimeoutError:
+                print(f"[Engine] Time limit reached! Stopping search at Depth {depth - 1}")
+                break
+
+        return best_move if best_move else list(self.board.legal_moves)[0]
+
+def main():
+    board = chess.Board()
+    engine = ApexChessEngine(board)
+
+    print("==========================================================")
+    print("      ApexChess AI v1.0 (Advanced Minimax Engine)")
+    print("==========================================================")
+    print("Commands:")
+    print(" - 'go': AI play for current turn")
+    print(" - 'move <SAN/UCI>' (e.g., 'e4', 'e2e4'): Make a move")
+    print(" - 'auto': AI vs AI match")
+    print(" - 'print': Display current board state")
+    print(" - 'quit': Exit game")
+    print("==========================================================")
+
+    while not board.is_game_over():
+        print("\n" + str(board))
+        print(f"\nTurn: {'WHITE' if board.turn == chess.WHITE else 'BLACK'}")
+        
+        cmd = input("ApexChess> ").strip()
+
+        if cmd == "quit":
+            break
+        elif cmd == "print":
+            continue
+        elif cmd == "go":
+            print("[Engine Thinking...]")
+            move = engine.search(time_limit=3.0)
+            board.push(move)
+            print(f"\n[AI Played]: {move}")
+        elif cmd.startswith("move"):
+            try:
+                move_str = cmd.split()[1]
+                try:
+                    move = board.parse_san(move_str)
+                except ValueError:
+                    move = chess.Move.from_uci(move_str)
+                
+                if move in board.legal_moves:
+                    board.push(move)
+                else:
+                    print("Illegal move!")
+            except Exception as e:
+                print(f"Invalid move format! Error: {e}")
+        elif cmd == "auto":
+            while not board.is_game_over():
+                print("\n" + str(board))
+                print(f"\nTurn: {'WHITE' if board.turn == chess.WHITE else 'BLACK'}")
+                print("[Engine Thinking...]")
+                move = engine.search(time_limit=1.5)
+                board.push(move)
+                print(f"\n[AI Played]: {move}")
+                time.sleep(0.5)
+            break
+        else:
+            print("Unknown command!")
+
+    print("\nGame Over! Result:", board.result())
+```
 
 --------------------------------------------------
 
@@ -1137,7 +1625,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/string.prototype.trimend, bin/react-scripts.js, bin/jest.js, bin/js-yaml.js, node_modules/lodash.memoize, node_modules/socket.io, node_modules/arraybuffer.prototype.slice, node_modules/iterator.prototype, bin/webpack-dev-server.js, node_modules/object.assign, node_modules/object.values, bin/cli.js, node_modules/decimal.js, bin/esvalidate.js, node_modules/ipaddr.js, node_modules/object.entries, fraction.js, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/lodash.merge, bin/webpack.js, bin/jiti.js, bin/semver.js, lib/cli.js, node_modules/util.promisify, node_modules/fs.realpath, node_modules/array.prototype.flat, big.js, node_modules/css.escape, bin/cmd.js, node_modules/array.prototype.reduce, node_modules/sanitize.css, node_modules/lodash.uniq, node_modules/array.prototype.tosorted, node_modules/big.js, node_modules/array.prototype.toreversed, node_modules/array.prototype.flatmap, node_modules/function.prototype.name, bin/esparse.js, node_modules/regexp.prototype.flags, hpack.js, node_modules/string.prototype.trim, bin/babel-parser.js, dist/cli.cjs, cli.js, node_modules/reflect.getprototypeof, dist/esm/bin.mjs, node_modules/lodash.debounce, node_modules/object.hasown, node_modules/engine.io, node_modules/object.fromentries, bin/nopt.js, bin/eslint.js, node_modules/string.prototype.trimstart, node_modules/array.prototype.findlast, node_modules/array.prototype.findlastindex, node_modules/hpack.js, node_modules/lodash.sortby, bin/nanoid.cjs, ipaddr.js, bin.js, bin/escodegen.js, decimal.js, node_modules/object.groupby, node_modules/object.getownpropertydescriptors, node_modules/resolve.exports, node_modules/string.prototype.matchall, bin/esgenerate.js, fixtures/cli.js, bin/bin.js, node_modules/fraction.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/function.prototype.name, node_modules/lodash.debounce, node_modules/proxy-addr/node_modules/ipaddr.js, bin/webpack-dev-server.js, bin/esparse.js, node_modules/big.js, bin/esgenerate.js, node_modules/object.entries, bin/cli.js, node_modules/hpack.js, bin.js, node_modules/object.getownpropertydescriptors, node_modules/reflect.getprototypeof, fixtures/cli.js, node_modules/fraction.js, node_modules/object.hasown, node_modules/array.prototype.flatmap, node_modules/socket.io, bin/escodegen.js, node_modules/object.fromentries, node_modules/lodash.sortby, node_modules/regexp.prototype.flags, node_modules/array.prototype.findlastindex, ipaddr.js, bin/js-yaml.js, node_modules/array.prototype.toreversed, node_modules/lodash.memoize, bin/react-scripts.js, node_modules/string.prototype.trim, node_modules/array.prototype.reduce, bin/jiti.js, node_modules/object.groupby, node_modules/css.escape, node_modules/array.prototype.tosorted, fraction.js, bin/bin.js, node_modules/iterator.prototype, bin/nanoid.cjs, node_modules/object.values, node_modules/lodash.merge, node_modules/string.prototype.trimstart, node_modules/util.promisify, decimal.js, big.js, bin/webpack.js, dist/cli.cjs, node_modules/decimal.js, cli.js, node_modules/resolve.exports, bin/eslint.js, node_modules/lodash.uniq, node_modules/string.prototype.trimend, node_modules/fs.realpath, lib/cli.js, bin/semver.js, dist/esm/bin.mjs, bin/jest.js, node_modules/object.assign, node_modules/string.prototype.matchall, bin/cmd.js, bin/babel-parser.js, bin/nopt.js, node_modules/arraybuffer.prototype.slice, hpack.js, node_modules/array.prototype.flat, node_modules/engine.io, node_modules/sanitize.css, bin/esvalidate.js, node_modules/array.prototype.findlast, node_modules/ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1391,7 +1879,7 @@ def run_interactive_chat():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/pstree.remy, bin/semver.js, cli.js, node_modules/socket.io, ipaddr.js, node_modules/engine.io, bin/nodetouch.js, bin/nodemon.js, node_modules/ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `bin/nodetouch.js, node_modules/socket.io, node_modules/pstree.remy, ipaddr.js, bin/nodemon.js, cli.js, node_modules/engine.io, node_modules/ipaddr.js, bin/semver.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1475,10 +1963,11 @@ class PatchPayload(BaseModel):
     patches: List[PatchItem]
 
 def build_log_regex_pattern(template_msg: str) -> str:
-    """미션의 디버그 로그 메시지 내 변수 표기({x}, {str} 등)를 Regex 유연 패턴으로 자동 변환"""
+    """미션의 디버그 로그 메시지 내 변수 표기({x}, {hex_code} 등)를 Regex 유연 패턴으로 자동 변환"""
     escaped = re.escape(template_msg)
     escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
     escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)  # Hex Color 지원 추가
     escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
     return escaped
 
@@ -1775,9 +2264,10 @@ Generate a JSON object matching PatchPayload schema:
             exec_env = os.environ.copy()
             exec_env["BROWSER"] = "none"  # npm start 등 서버 실행 시 기본 브라우저(Edge) 자동 오픈 방지
 
-            toggle_key = mission_data.get("implementation_blueprint", {}).get("debug_toggle_key")
-            if not toggle_key and "debug_log_spec" in mission_data:
-                toggle_key = mission_data["debug_log_spec"].get("toggle_key")
+            toggle_key = (
+                mission_data.get("debug_log_spec", {}).get("toggle_key") or 
+                mission_data.get("implementation_blueprint", {}).get("debug_toggle_key")
+            )
 
             if toggle_key:
                 exec_env[toggle_key] = "true"
@@ -1788,60 +2278,70 @@ Generate a JSON object matching PatchPayload schema:
                 print("\n🌐 [Step 5-B] Headless Browser 실제 UI/콘솔 검증 가동...")
                 
                 target_url = browser_spec.get("url", "http://localhost:3000")
-                entrypoint = mission_data.get("entrypoint")
-                server_process = None
+                server_configs = mission_data.get("servers", [
+                    {"name": "Client", "cwd": ".", "command": mission_data.get("entrypoint"), "health_check_url": target_url}
+                ])
+                server_processes = []
 
                 try:
-                    if entrypoint:
-                        print(f"🚀 [Step 5-B] 백그라운드 타깃 서버 구동 시작: {entrypoint}")
-                        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-                        server_process = subprocess.Popen(
-                            entrypoint,
+                    creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+                    for cfg in server_configs:
+                        srv_cwd = (ROOT_DIR / cfg.get("cwd", ".")).resolve()
+                        srv_cmd = cfg.get("command")
+                        srv_url = cfg.get("health_check_url", target_url)
+
+                        if not srv_cwd.exists() or not srv_cwd.is_dir():
+                            print(f"⚠️ [Step 5-B SKIP] {cfg.get('name')} 디렉터리가 존재하지 않음: {srv_cwd}")
+                            continue
+
+                        print(f"🚀 [Step 5-B] {cfg.get('name', 'Server')} 구동 시작: {srv_cmd}")
+                        
+                        proc = subprocess.Popen(
+                            srv_cmd,
                             shell=True,
-                            cwd=str(ROOT_DIR),
+                            cwd=str(srv_cwd),
                             env=exec_env,
                             creationflags=creation_flags
                         )
+                        server_processes.append(proc)
 
-                        print(f"⏳ [Step 5-B] 서버 헬스체크 대기 중 ({target_url})...")
-                        server_ready = False
+                        # 서버별 헬스체크 대기 (최대 30초)
                         start_time = time.time()
+                        srv_ready = False
                         while time.time() - start_time < 30:
-                            if server_process and server_process.poll() is not None:
-                                print("❌ [Step 5-B FAIL] 타깃 서버 프로세스가 구동 중 비정상 종료(Crash)되었습니다.")
+                            if proc.poll() is not None:
+                                print(f"❌ [Step 5-B FAIL] {cfg.get('name')} 프로세스 비정상 종료")
                                 break
                             try:
-                                with urllib.request.urlopen(target_url, timeout=2) as res:
-                                    if res.status == 200:
-                                        server_ready = True
-                                        ...
+                                with urllib.request.urlopen(srv_url, timeout=2) as res:
+                                    if 200 <= res.status < 500:
+                                        srv_ready = True
+                                        print(f"✅ [Step 5-B] {cfg.get('name')} 준비 완료 ({srv_url})")
                                         break
+                            except urllib.error.HTTPError:
+                                srv_ready = True
+                                print(f"✅ [Step 5-B] {cfg.get('name')} 응답 감지 완료 ({srv_url})")
+                                break
                             except Exception:
                                 time.sleep(1)
 
-                        if not server_ready:
-                            is_verified = False
-                            server_log = ""
-                            if server_process and server_process.poll() is not None:
-                                try:
-                                    stdout_out, stderr_out = server_process.communicate(timeout=2)
-                                    server_log = f"\n[STDERR]\n{stderr_out}\n[STDOUT]\n{stdout_out}"
-                                except Exception:
-                                    pass
-                            
-                            terminal_output = f"[SERVER START ERROR] 타깃 서버 구동 실패 또는 컴파일 에러 ({target_url}):\n{server_log}"
-                            print(f"❌ [Step 5-B FAIL] 타깃 서버 헬스체크 타임아웃 (30초)")
-                            print(f"  └─ [SERVER LOG]: {server_log.strip()}")
+                        if not srv_ready:
+                            print(f"⚠️ [Step 5-B Warning] {cfg.get('name')} 응답 대기 초과 - 다음 진행")
 
                     if is_verified:
                         print("🤖 [Step 5-C] BrowserTester 1차 정적 액션 검증 수행 중...")
-                        tester = BrowserTester(headless=True)
+                        tester = BrowserTester(headless=False)
                         actions = browser_spec.get("actions", [])
                         wait_selector = browser_spec.get("wait_for_selector")
-                        expected_patterns = [
-                            build_log_regex_pattern(p) for p in mission_data.get("expected_terminal_outputs", [])
-                        ]
+                        raw_patterns = mission_data.get("expected_terminal_outputs", [])
+                        if not raw_patterns and "debug_log_spec" in mission_data:
+                            spec_pattern = mission_data["debug_log_spec"].get("log_pattern")
+                            if spec_pattern:
+                                raw_patterns = [spec_pattern]
 
+                        expected_patterns = [
+                            build_log_regex_pattern(p) for p in raw_patterns
+                        ]
                         b_result = tester.run_browser_verification(
                             target_url=target_url,
                             actions=actions,
@@ -1854,9 +2354,28 @@ Generate a JSON object matching PatchPayload schema:
                             print("⚠️ [Step 5-C Fallback] 1차 정적 검증 실패! 2차 자율 브라우저 에이전트 가동...")
                             from tools.multi_agent_system.browser_agent_runner import BrowserAgentRunner
                             agent_runner = BrowserAgentRunner(factory)
+
+                            # 📌 미션 JSON 내부 스펙 기반 동적 목표 프롬프트 추출 (하드코딩 제거)
+                            blueprint = mission_data.get("implementation_blueprint", {})
+                            browser_spec = mission_data.get("browser_test_spec", {})
+                            
+                            task_title = blueprint.get("feature_title") or mission_data.get("task_id", "UI Feature Verification")
+                            target_selector = browser_spec.get("wait_for_selector", "target UI elements")
+                            planned_actions = browser_spec.get("actions", [])
+                            raw_patterns = mission_data.get("expected_terminal_outputs", [])
+                            
+                            # JSON 데이터만 가지고 자율 에이전트 지침을 동적으로 조립
+                            detailed_goal = (
+                                f"1. Navigate to the app and complete lobby/room setup if prompted.\n"
+                                f"2. Objective: Verify feature '{task_title}'.\n"
+                                f"3. Locate and interact with target element: '{target_selector}'.\n"
+                                f"4. Planned action steps: {planned_actions}\n"
+                                f"5. Trigger necessary UI events until target console output patterns are generated: {raw_patterns}"
+                            )
+
                             b_result = agent_runner.run_autonomous_loop(
                                 target_url=target_url,
-                                goal_description=mission_data.get("description", "Perform UI verification"),
+                                goal_description=detailed_goal,
                                 expected_patterns=expected_patterns
                             )
 
@@ -1873,18 +2392,30 @@ Generate a JSON object matching PatchPayload schema:
                             print(f"❌ [Step 5-C FAIL] 브라우저 최종 검증 실패")
 
                 finally:
-                    if server_process:
-                        print("🧹 [Step 5 CLEANUP] 백그라운드 서버 프로세스 자원 해제 중...")
-                        if os.name == 'nt':
-                            subprocess.run(f"taskkill /F /T /PID {server_process.pid}", shell=True, capture_output=True)
-                        else:
-                            server_process.terminate()
+                    if server_processes:
+                        print("🧹 [Step 5 CLEANUP] 모든 백그라운드 서버 프로세스 자원 해제 중...")
+                        for proc in server_processes:
+                            if os.name == 'nt':
+                                subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True)
+                            else:
+                                proc.terminate()
 
-            # 🖥️ 2) 브라우저 테스트 OFF일 때: 표준 CLI/터미널 명령 및 출력 검증
+            # 🖥️ 2) 브라우저 테스트 OFF일 때: TerminalAgentRunner 대화형/배치 검증 가동
             else:
-                print("🖥️ [Step 5-B] CLI/터미널 단독 검증 가동...")
+                print("🖥️ [Step 5-B] CLI/터미널 동적 제어 검증 가동...")
                 entrypoint = mission_data.get("entrypoint", mission_data.get("standalone_entrypoint", f"python3 {target_file_path}"))
-                terminal_output = run_terminal_command(entrypoint, cwd=str(ROOT_DIR), env=exec_env)
+                
+                from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
+                runner = TerminalAgentRunner(factory=factory, default_timeout=30)
+                res = runner.execute(
+                    command=entrypoint,
+                    goal_context=mission_data.get("task_id", ""),
+                    cwd=str(ROOT_DIR),
+                    env=exec_env,
+                    mission_data=mission_data,
+                    code_context=target_code
+                )
+                terminal_output = res["clean_output"]
                 print(f"📄 [TERMINAL OUTPUT]\n{terminal_output}")
 
                 patterns = mission_data.get("expected_terminal_outputs", mission_data.get("predicted_output_pattern", []))
@@ -2574,12 +3105,74 @@ class AgentMapExtractor:
             if posix_rel_path in path_to_protocol:
                 for proto_name, fields in path_to_protocol[posix_rel_path]:
                     output_lines.append(f"{indent}│     ├── 📊 [PROTOCOL]: \"{proto_name}\"\n")
+                    if isinstance(fields, dict):
+                        field_items = [
+                            f"{k}({v.replace(' (기본값: ', ':').replace(')', '')})"
+                            for k, v in fields.items()
+                        ]
+                        chunks = [field_items[x:x + 4] for x in range(0, len(field_items), 4)]
+                        for chunk in chunks:
+                            output_lines.append(f"{indent}│     │     ├── {', '.join(chunk)}\n")
 
-            # 심볼 상세 트리 (L라인, CALLS, USED BY)
+            # 🎯 [알맹이 보강] 정밀 심볼 트리 (클래스/함수/인자/줄범위/🔑key/CALLS/USED_BY) 생성
             file_symbols = symbols_by_file.get(posix_rel_path, [])
             for sym in file_symbols:
-                formatted_lines = format_symbol_node(sym, symbol_by_id, posix_rel_path, indent)
-                output_lines.extend(formatted_lines)
+                sym_type = sym.get("type", "function")
+                sym_name = sym.get("name", "")
+                full_name = sym.get("full_name", sym_name)
+                if not sym_name:
+                    continue
+
+                # 1. 인자(Arguments) 복원
+                raw_args = sym.get("args")
+                if isinstance(raw_args, list):
+                    args_str = f"({', '.join(raw_args)})" if raw_args else ""
+                elif isinstance(raw_args, str) and raw_args:
+                    args_str = f"({raw_args})"
+                else:
+                    args_str = ""
+
+                # 2. 줄범위(Start Line - End Line) 계산
+                start_line = sym.get("start_line")
+                end_line = sym.get("end_line")
+                if start_line and end_line and start_line != end_line:
+                    line_str = f"[L{start_line}-L{end_line}]"
+                elif start_line:
+                    line_str = f"[L{start_line}]"
+                else:
+                    line_str = ""
+
+                # 3. 타입별 아이콘 및 표현 구분
+                if sym_type == "class":
+                    icon_str = f"🧬 class {sym_name}"
+                elif sym_type == "json_key":
+                    icon_str = f"🔑 key \"{sym_name}\""
+                else:
+                    icon_str = f"🎯 def {sym_name}{args_str if args_str else '()'}"
+
+                output_lines.append(f"{indent}│   ├── {icon_str} {line_str}\n".rstrip() + "\n")
+
+                # 4. 호출 관계 (CALLS)
+                calls = sym.get("calls", [])
+                if calls:
+                    output_lines.append(f"{indent}│   │   ├── 📞 [CALLS]: {', '.join(calls)}\n")
+
+                # 5. 역방향 참조 관계 (USED BY)
+                used_by_ids = sym.get("used_by", [])
+                if used_by_ids:
+                    used_by_info = []
+                    for u_id in used_by_ids:
+                        target = symbol_by_id.get(u_id)
+                        if target:
+                            u_file = target.get("file") or target.get("path", "")
+                            u_name = target.get("name", "")
+                            if u_file == posix_rel_path:
+                                used_by_info.append(f"::{u_name}")
+                            else:
+                                used_by_info.append(f"{u_file}::{u_name}")
+                        else:
+                            used_by_info.append(str(u_id))
+                    output_lines.append(f"{indent}│   │   ├── 🔗 [USED BY]: {', '.join(used_by_info)}\n")
 
         output_lines.append("```\n")
         final_map_str = "".join(output_lines)
@@ -2730,9 +3323,16 @@ class AgentSessionFactory:
             return full_map, False
 
 
-    def execute_worker_step(self, prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_retries: int = 5) -> str:
+    def execute_worker_step(
+        self, 
+        prompt: str, 
+        system_instruction: str = "", 
+        image_bytes: Optional[bytes] = None,  # 👈 image_bytes 매개변수 추가
+        response_mime_type: str = "application/json", 
+        max_retries: int = 5
+    ) -> str:
         """
-        [Step 3 인터페이스] 단발성 LLM 요청을 수행합니다. (429 Quota 초과 시 API Key 자동 Rotate 처리)
+        [Step 3 인터페이스] 단발성 LLM 요청을 수행합니다. (이미지 멀티모달 지원 추가)
         """
         import time
         time.sleep(0.8)  # ⏱️ 연속 호출 폭주 방지용 최소 완충 딜레이
@@ -2751,14 +3351,27 @@ class AgentSessionFactory:
                 self.client = genai.Client(api_key=current_api_key)
                 target_model = resolve_best_gemini_model(self.client)
 
+                # 💡 image_bytes가 들어올 경우 Gemini 멀티모달 Part 구성
+                contents = [prompt]
+                if image_bytes:
+                    contents.append(
+                    types.Part.from_bytes(
+                        data=image_bytes,
+                        mime_type="image/jpeg"  # JPEG 규격 매칭
+                    )
+                )
+
+                config_args = {
+                    "temperature": 0.0,  # 온도를 0.0으로 설정하여 무작위성 제거
+                    "response_mime_type": response_mime_type
+                }
+                if system_instruction:
+                    config_args["system_instruction"] = system_instruction
+
                 response = self.client.models.generate_content(
                     model=target_model,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_instruction,
-                        response_mime_type=response_mime_type,
-                        temperature=0.1
-                    )
+                    contents=contents,
+                    config=types.GenerateContentConfig(**config_args)
                 )
                 return response.text
 
@@ -2809,11 +3422,19 @@ class AgentSessionFactory:
             print(f"\n🗺️ [TOOL EXECUTION] AI가 특정 구간 타깃 맵을 요청함: {target_paths}")
             return extract_targeted_ai_map(target_paths=target_paths, save_to_file=False)
 
-        # terminal_runner 래핑
+        # TerminalAgentRunner 인스턴스를 활용한 안전 실행기 연동
+        from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
+
         def safe_run_terminal_command(command: str) -> str:
-            """터미널 명령어를 실행합니다."""
+            """터미널 명령어를 동적 모드 제어 방식으로 안전 실행합니다."""
             time.sleep(2)  # ⏱️ Rate Limit(RPM) 방어 딜레이
-            return run_terminal_command(command)
+            runner = TerminalAgentRunner(factory=self, default_timeout=30)
+            res = runner.execute(command=command, cwd=str(self.root_dir))
+            
+            if res["status"] in ["SUCCESS", "DAEMON_RUNNING"]:
+                return f"✅ 실행 성공\n\n{res['clean_output']}"
+            else:
+                return f"⚠️ 실행 상태 [{res['status']}]: {res['error_msg']}\n\n{res['clean_output']}"
 
         return [extract_code_slice, safe_run_terminal_command, patch_code_slice, get_targeted_codebase_map]
 
@@ -2832,13 +3453,13 @@ class AgentSessionFactory:
         system_instruction = """
 당신은 최소 토큰으로 브라우저 UI 요소 리스트를 분석하여 목표 액션을 결정하는 자율 에이전트입니다.
 반드시 지정된 JSON 액션 형식으로만 응답하십시오:
-{"action": "click" | "fill" | "finish", "selector": "CSS_SELECTOR", "value": "VALUE_IF_ANY"}
+{"action": "click" | "fill" | "press" | "wait" | "finish", "selector": "CSS_SELECTOR", "value": "VALUE_IF_ANY"}
 """
         chat = self.client.chats.create(
             model=target_model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
-                temperature=0.1,
+                temperature=0.0,  # 👈 0.0 강제 적용으로 무작위 추측 및 환각 차단
                 response_mime_type="application/json"
             )
         )
@@ -2862,7 +3483,8 @@ class AgentSessionFactory:
         self.current_model = target_model  # 💡 디버깅용 모델 저장
         print(f"🤖 [SESSION MODEL] Chat 세션 가동 모델: {target_model}")
 
-        codebase_map, is_oversized = self._prepare_codebase_map(max_shallow_depth=shallow_depth)
+        # 💡 [FIX 1] 존재하지 않는 메서드인 _prepare_codebase_map 대신 prepare_step1_map 호출
+        codebase_map, is_oversized = self.prepare_step1_map(max_shallow_depth=shallow_depth)
         tools = self._build_tools()
 
         oversized_guideline = """
@@ -2872,8 +3494,6 @@ class AgentSessionFactory:
 반드시 `get_targeted_codebase_map(target_paths=["상세경로"])` 도구를 호출하여 
 필요한 구역의 정밀 세부 맵을 확보한 후 작업을 수행하십시오.
 """ if is_oversized else ""
-
-        # tools/multi_agent_system/agent_session.py 수정 구간
 
         system_instruction = f"""
 당신은 현재 프로젝트의 코드베이스 구조를 파악하고, 터미널 명령어로 디버깅하며 코드를 정밀 수정하는 AI 에이전트입니다.
@@ -2893,21 +3513,20 @@ class AgentSessionFactory:
 2. 파일 전체 수정 요구 시, 함부로 통째로 덮어쓰지 말고 `extract_code_slice` 및 `patch_code_slice`를 조합하여 작업을 수행하십시오.
 """
 
-        # Tool call 설정을 필요에 맞춰 AUTO 또는 사용자 지정 조건으로 변경
         tool_config_dict = {
             "function_calling_config": {
-                "mode": "AUTO"  # 필요 시 도구를 선택적으로 호출할 수 있도록 AUTO로 변경
+                "mode": "AUTO"
             }
         }
 
+        # 💡 [FIX 2] Function Calling(tools) 사용 시 API 충돌 및 에러를 유발하는 response_mime_type 옵션 제거
         chat = self.client.chats.create(
             model=target_model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 tools=tools,
                 temperature=0.2,
-                tool_config=tool_config_dict,
-                response_mime_type="application/json"  # 💡 필수 추가: 메인 Chat 세션에서도 JSON 출력을 엄격히 강제함
+                tool_config=tool_config_dict
             )
         )
         
@@ -2920,7 +3539,7 @@ class AgentSessionFactory:
 #### 🧱 Code Skeleton:
 ```python
 class BrowserActionSchema(BaseModel):
-    action: Literal["click", "fill", "finish"]
+    action: Literal["click", "fill", "type", "press", "wait", "finish"]  # press, wait 추가
     selector: Optional[str] = None
     value: Optional[str] = ""
 
@@ -2933,7 +3552,7 @@ class BrowserAgentRunner:
         target_url: str, 
         goal_description: str, 
         expected_patterns: List[str] = None,
-        max_steps: int = 5
+        max_steps: int = 15
     ) -> Dict[str, Any]:
         """
         Playwright로 브라우저를 열고 Lite 모델과 토큰 최적화 대화형 루프를 수행
@@ -2946,11 +3565,11 @@ class BrowserAgentRunner:
         captured_errors: List[str] = []
         expected_patterns = expected_patterns or []
 
-        tester = BrowserTester(headless=True, default_timeout=15000)
+        tester = BrowserTester(headless=False, default_timeout=15000)
 
         try:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=False)
+                browser = p.chromium.launch(headless=False, slow_mo=500)  # slow_mo(ms)로 동작을 천천히 관찰 가능
                 context = browser.new_context()
                 page = context.new_page()
 
@@ -2959,15 +3578,43 @@ class BrowserAgentRunner:
 
                 page.goto(target_url, timeout=tester.default_timeout, wait_until="domcontentloaded")
 
+                action_history: List[str] = []  # 이전 실행 행동 및 결과 기록용 히스토리
+
+                # 교착 상태(Stuck) 감지용 추적 변수 초기화
+                consecutive_error_count = 0
+                stuck_dom_count = 0
+                prev_dom_hash = None
+
                 for step in range(1, max_steps + 1):
-                    # 1. 시각 정보(압축 스크린샷) 및 DOM 요소 동시 추출
+                    # 1. 행동 실행 직후의 최신 스크린샷 및 DOM 요소 무조건 즉시 캡처 (화면 무변화 방지)
                     screenshot_bytes = tester.capture_compressed_screenshot(page)
                     elements = tester.extract_interactive_elements(page)
 
-                    # 2. 매 스텝 독립된(Stateless) 단발성 프롬프트 구성
+                    # 💡 [STUCK DETECTION] 기능적 대화형 요소(URL + Selector + Value + Disabled) 기반 해시 비교 (애니메이션 소음 제거)
+                    current_url = page.url
+                    interactive_state_str = f"{current_url}|" + "|".join(
+                        f"{el.get('selector')}:{el.get('text')}" for el in elements
+                    )
+                    
+                    if prev_dom_hash is not None and interactive_state_str == prev_dom_hash:
+                        stuck_dom_count += 1
+                        print(f"⚠️ [STUCK CHECK] 기능적 DOM 상태 변화 없음 ({stuck_dom_count}/3)")
+                        if stuck_dom_count >= 3:
+                            err_msg = "🚨 [FAIL-FAST] 3스텝 연속 화면 상태(기능적 DOM) 변화 없음 (Stuck 감지)"
+                            print(err_msg)
+                            captured_errors.append(err_msg)
+                            break
+                    else:
+                        stuck_dom_count = 0
+                        prev_dom_hash = interactive_state_str
+
+                    # 2. 매 스텝 이전 행동 히스토리가 명시된 상태 전달 프롬프트 구성
                     prompt = f"""
 [MISSION GOAL]
 {goal_description}
+
+[PREVIOUS ACTION HISTORY]
+{json.dumps(action_history, ensure_ascii=False, indent=2) if action_history else "None (First Step)"}
 
 [CURRENT STATUS]
 Step: {step}/{max_steps}
@@ -2981,13 +3628,27 @@ Page Errors:
 {captured_errors[-5:]}
 
 [INSTRUCTION]
-Analyze the provided current screenshot image, interactive DOM elements, and console logs.
+Analyze the provided current screenshot image, interactive DOM elements, action history, and console logs.
 Select the next single browser action to fulfill the goal.
 If the mission objective is already fully satisfied in the UI or console logs, output "finish" action.
 """
-                    # 3. 대화 세션 없이 단발성 워커 스텝 실행 (스크린샷 바이너리 함께 전달)
+                    # system_instruction 구성하여 행동 규격 및 실패 액션 반복 금지 강제
+                    system_instruction = """
+당신은 브라우저 UI를 제어하는 자율 에이전트입니다.
+반드시 아래 JSON 형식으로만 응답하십시오:
+{"action": "click" | "fill" | "press" | "wait" | "finish", "selector": "CSS_SELECTOR", "value": "VALUE"}
+
+[최우선 금지 및 우회 수칙]
+1. PREVIOUS ACTION HISTORY를 반드시 확인하십시오.
+2. 이전 스텝에서 FAILED (Timeout 등) 오류가 발생한 동일한 selector와 action 조합은 절대로 다시 실행하지 마십시오!
+3. 특정 입력창 세렉터가 실패했다면, Interactive Elements (DOM)에 제공된 다른 세렉터(예: placeholder 기반)를 선택하거나 click 후 press 액션을 사용하십시오.
+4. 텍스트 입력 시 action 이름은 "fill"을 사용하고, 입력 후 제출이 필요하면 다음 스텝에서 action: "press", value: "Enter"를 호출하십시오.
+"""
+
+                    # 3. 대화 세션 없이 단발성 워커 스텝 실행 (system_instruction 추가 전달)
                     res_text = self.factory.execute_worker_step(
                         prompt=prompt,
+                        system_instruction=system_instruction,
                         image_bytes=screenshot_bytes,
                         response_mime_type="application/json"
                     )
@@ -3004,11 +3665,51 @@ If the mission objective is already fully satisfied in the UI or console logs, o
                     print(f"🤖 [BROWSER AGENT Step {step}] {act} -> {sel} (val: {val})")
 
                     if act == "finish":
+                        action_history.append(f"Step {step}: finish (Mission complete requested)")
                         break
-                    elif act == "click" and sel:
-                        page.click(sel)
-                    elif act == "fill" and sel:
-                        page.fill(sel, str(val))
+
+                    # 5. Fail-Fast 예외 처리 및 자체 복구 로직 포함 실행 + 히스토리 기록
+                    exec_result_status = "SUCCESS"
+                    try:
+                        if act == "click" and sel:
+                            page.click(sel, timeout=3000)
+                        elif act in ["fill", "type"] and sel:
+                            page.fill(sel, str(val), timeout=3000)
+                        elif act == "press" and sel:
+                            page.press(sel, str(val or "Enter"), timeout=3000)
+                        elif act == "wait" and sel:
+                            page.wait_for_selector(sel, timeout=3000)
+                    except PlaywrightTimeoutError:
+                        err_msg = f"Timeout(3s) executing '{act}' on '{sel}'"
+                        print(f"⚠️ [FAIL-FAST] {err_msg}")
+                        captured_errors.append(err_msg)
+                        exec_result_status = f"FAILED ({err_msg})"
+                        consecutive_error_count += 1
+                        # 입력창에 갇혔을 경우 자동 엔터 제출 1차 보완 시도
+                        if act in ["fill", "type"] and sel:
+                            try:
+                                page.press(sel, "Enter", timeout=1500)
+                                print("⚡ [SYSTEM AUTO-RECOVERY] 입력 타임아웃 발생으로 Enter 키 자동 제출 시도함")
+                                exec_result_status += " -> Auto-recovery Enter pressed"
+                            except Exception:
+                                pass
+                    except Exception as action_err:
+                        err_msg = f"Error executing '{act}' on '{sel}': {action_err}"
+                        print(f"⚠️ [ACTION ERROR] {err_msg}")
+                        captured_errors.append(err_msg)
+                        exec_result_status = f"FAILED ({err_msg})"
+                        consecutive_error_count += 1
+                    else:
+                        consecutive_error_count = 0
+
+                    action_history.append(f"Step {step}: action='{act}', selector='{sel}', value='{val}' -> Result: {exec_result_status}")
+
+                    # 💡 [FAIL-FAST] 동일/연속 액션 실패 에러 3회 연속 발생 시 즉시 중단
+                    if consecutive_error_count >= 3:
+                        err_msg = "🚨 [FAIL-FAST] 액션 실패 에러가 3회 연속 발생하여 테스트를 강제 종료합니다."
+                        print(err_msg)
+                        captured_errors.append(err_msg)
+                        break
 
                     page.wait_for_timeout(300)
 
@@ -3070,22 +3771,40 @@ def ensure_playwright():
             return None, None
 
 class BrowserTester:
-    def __init__(self, headless: bool = True, default_timeout: int = 5000):
+    def __init__(self, headless: bool = False, default_timeout: int = 5000):
         self.headless = headless
         self.default_timeout = default_timeout
 
     def extract_interactive_elements(self, page) -> List[Dict[str, str]]:
         """
-        페이지 내 클릭/입력 가능한 대화형 요소(Accessibility Elements)를 경량화하여 추출 (토큰 다이어트)
+        페이지 내 대화형 요소를 추출하고, 환각 예방을 위한 유일한 선택자(Unique Selector)를 정밀 생성합니다.
         """
         js_script = """
         () => {
             const elements = Array.from(document.querySelectorAll('button, a, input, select, textarea, [role="button"]'));
             return elements.map((el, idx) => {
-                let idStr = el.id ? `#${el.id}` : '';
-                let nameStr = el.name ? `[name="${el.name}"]` : '';
                 let text = (el.innerText || el.value || el.placeholder || '').trim().replace(/\\s+/g, ' ');
-                let selector = idStr || nameStr || (el.className ? `${el.tagName.toLowerCase()}.${el.className.trim().replace(/\s+/g, '.')}` : `${el.tagName.toLowerCase()}`);
+                
+                // 유일성 매핑 (ID -> placeholder -> name -> 부모 기준 nth-of-type 순 번)
+                let selector = '';
+                if (el.id) {
+                    selector = `#${el.id}`;
+                } else if (el.getAttribute('placeholder')) {
+                    selector = `${el.tagName.toLowerCase()}[placeholder="${el.getAttribute('placeholder')}"]`;
+                } else if (el.name) {
+                    selector = `${el.tagName.toLowerCase()}[name="${el.name}"]`;
+                } else {
+                    const parent = el.parentElement;
+                    if (parent) {
+                        const siblings = Array.from(parent.querySelectorAll(el.tagName.toLowerCase()));
+                        const index = siblings.indexOf(el) + 1;
+                        const classStr = el.className ? '.' + el.className.trim().replace(/\\s+/g, '.') : '';
+                        selector = `${el.tagName.toLowerCase()}${classStr}:nth-of-type(${index})`;
+                    } else {
+                        selector = el.tagName.toLowerCase();
+                    }
+                }
+
                 return {
                     tag: el.tagName.toLowerCase(),
                     selector: selector,
@@ -3166,8 +3885,12 @@ class BrowserTester:
 
                     if act_type == "click":
                         page.click(selector)
-                    elif act_type == "fill":
+                    elif act_type in ["fill", "type"]:
                         page.fill(selector, str(value))
+                    elif act_type == "press":
+                        page.press(selector, str(value or "Enter"))
+                    elif act_type == "wait":
+                        page.wait_for_selector(selector, timeout=self.default_timeout)
                     elif act_type == "change_color_input":
                         # HTML5 Color Picker (<input type='color'>) 값 변경 이벤트 강제 트리거
                         page.eval_on_selector(
@@ -3470,57 +4193,679 @@ class ProjectScaleDetector:
 
 --------------------------------------------------
 
-### 📄 tools/multi_agent_system/terminal_runner.py
+### 📄 tools/multi_agent_system/terminal_agent_runner.py
 #### 🧱 Code Skeleton:
 ```python
-def run_terminal_command(command: str, cwd: str = None, timeout: int = 30, env: dict = None) -> str:
+class ProcessHandle:
     """
-    터미널 명령어를 실행하고 stdout 및 stderr 결과를 반환합니다.
-    
-    Args:
-        command: 실행할 명령어 (예: "python run_test.py", "pytest", "npm test")
-        cwd: 명령어를 실행할 작업 디렉토리 경로 (기본값: 프로젝트 루트)
-        timeout: 최대 실행 대기 시간(초)
-        env: 실행 환경변수 딕셔너리
+    Subprocess를 비동기/Non-blocking 방식으로 모니터링하고 
+    stdout/stderr 수집 및 stdin 주입을 담당하는 래퍼 클래스
     """
-    for forbidden in FORBIDDEN_COMMANDS:
-        if forbidden in command.lower():
-            return f"❌ [보안 거부] 위험 키워드가 포함된 명령어는 실행이 차단되었습니다: '{forbidden}'"
+    def __init__(self, proc: subprocess.Popen):
+        self.proc = proc
+        self.pid = proc.pid
+        self._output_queue = queue.Queue()
+        self._stop_event = threading.Event()
+        self.last_output_time = time.time()  # 마지막 출력 시간 타임스탬프 추가
 
-    # 프로젝트 루트 경로 자동 설정
-    work_dir = cwd if cwd else str(Path(__file__).parent.parent.parent.resolve())
+        # 비동기 stdout/stderr 수집 스레드 시작
+        self._stdout_thread = threading.Thread(target=self._reader_thread, args=(self.proc.stdout,), daemon=True)
+        self._stderr_thread = threading.Thread(target=self._reader_thread, args=(self.proc.stderr,), daemon=True)
+        self._stdout_thread.start()
+        self._stderr_thread.start()
 
-    print(f"\n💻 [TERMINAL TOOL] 명령어 실행 중: `{command}` (경로: {work_dir})")
+    def _reader_thread(self, stream):
+        """스트림에서 실시간으로 텍스트를 읽어 큐에 적재"""
+        try:
+            for line in iter(stream.readline, ''):
+                if line:
+                    self._output_queue.put(line)
+                    self.last_output_time = time.time()  # 출력 발생 시 타임스탬프 갱신
+                if self._stop_event.is_set():
+                    break
+        except Exception:
+            pass
+        finally:
+            stream.close()
 
-    try:
-        result = subprocess.run(
+    def read_stdout(self) -> str:
+        """큐에 쌓인 새로운 출력을 비동기로 모두 읽어옴"""
+        data = []
+        while not self._output_queue.empty():
+            try:
+                data.append(self._output_queue.get_nowait())
+            except queue.Empty:
+                break
+        return "".join(data)
+
+    def write_stdin(self, text: str):
+        """프로세스의 stdin으로 대답 주입"""
+        if self.proc.stdin and self.is_alive():
+            try:
+                self.proc.stdin.write(text)
+                self.proc.stdin.flush()
+            except (IOError, ValueError):
+                pass
+
+    def is_alive(self) -> bool:
+        """프로세스 생존 여부 확인"""
+        return self.proc.poll() is None
+
+    @property
+    def exit_code(self) -> Optional[int]:
+        return self.proc.returncode
+
+    def close(self):
+        self._stop_event.set()
+
+class TerminalAgentRunner:
+    """
+    AI 에이전트 전용 터미널 실행기
+    - 모드 자동 분류 (BATCH / INTERACTIVE / DAEMON)
+    - OS 커널 레벨 input() 감지 & 3단계 동적 대답 주입
+    - LLM 디버깅용 Minimal Context Payload 자동 생성
+    - 안전성 확보 (위험 명령어 차단, 프로세스 트리 완벽 cleanup)
+    """
+
+    def __init__(self, factory: Any = None, max_retries: int = 3, default_timeout: int = 30):
+        self.factory = factory
+        self.max_retries = max_retries
+        self.default_timeout = default_timeout
+
+    def execute(
+        self,
+        command: str,
+        goal_context: str = "",
+        cwd: Optional[str] = None,
+        env: Optional[Dict[str, str]] = None,
+        mission_data: Optional[Dict[str, Any]] = None,
+        code_context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        터미널 명령어 안전 실행 엔트리포인트
+        """
+        # 0. 보안 검사
+        for forbidden in FORBIDDEN_COMMANDS:
+            if forbidden in command.lower():
+                return self._build_result(
+                    status="FORBIDDEN_ABORT",
+                    buffer="",
+                    error_msg=f"❌ [보안 거부] 위험 키워드가 포함된 명령어 차단: '{forbidden}'"
+                )
+
+        # 환경변수 기본 세팅
+        exec_env = os.environ.copy()
+        if env:
+            exec_env.update(env)
+
+        # 작업 디렉토리 설정
+        work_dir = cwd if cwd else os.getcwd()
+
+        # 1. 실행 모드 자동 분류
+        mode = self._classify_command(command)
+
+        # 2. 모드별 실행 분기
+        if mode == "DAEMON":
+            return self._run_daemon_mode(command, work_dir, exec_env)
+        else:
+            return self._run_interactive_loop(
+                command=command,
+                goal=goal_context,
+                cwd=work_dir,
+                env=exec_env,
+                mode=mode,
+                mission_data=mission_data,
+                code_context=code_context
+            )
+
+    def _classify_command(self, command: str) -> str:
+        """명령어 패턴을 분석하여 실행 모드 분류"""
+        cmd_lower = command.lower()
+
+        # 백그라운드 서버/데몬 모드
+        daemon_keywords = ["npm start", "python -m http.server", "uvicorn", "flask run", "gunicorn", "vite", "next dev"]
+        if any(dk in cmd_lower for dk in daemon_keywords) or cmd_lower.endswith("&"):
+            return "DAEMON"
+
+        # 대화형 CLI 모드 (추가 확장이 가능한 인터랙티브 명령어)
+        interactive_keywords = ["python", "node", "npm init", "pip install", "git clone", "bash", "sh"]
+        if any(ik in cmd_lower for ik in interactive_keywords):
+            return "INTERACTIVE"
+
+        return "BATCH"
+
+    def _spawn_process(self, command: str, cwd: str, env: Dict[str, str]) -> ProcessHandle:
+        """하위 프로세스를 생성하고 ProcessHandle로 래핑"""
+        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+        
+        proc = subprocess.Popen(
             command,
             shell=True,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,  # stderr를 stdout으로 병합 수집
+            stdin=subprocess.PIPE,
             text=True,
             encoding="utf-8",
             errors="replace",
-            cwd=work_dir,
-            timeout=timeout,
-            env=env
+            bufsize=1,  # Line buffered
+            cwd=cwd,
+            env=env,
+            creationflags=creation_flags
         )
+        return ProcessHandle(proc)
 
-        output = []
-        if result.stdout:
-            output.append(f"--- [STDOUT (정상 출력)] ---\n{result.stdout.strip()}")
-        if result.stderr:
-            output.append(f"--- [STDERR (에러 로그)] ---\n{result.stderr.strip()}")
+    def _run_interactive_loop(
+        self,
+        command: str,
+        goal: str,
+        cwd: str,
+        env: Dict[str, str],
+        mode: str,
+        mission_data: Optional[Dict[str, Any]] = None,
+        code_context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        PTY/Subprocess 기반 실시간 모니터링 & 자율 입력 루프
+        """
+        proc_handle = self._spawn_process(command, cwd, env)
+        buffer = ""
+        start_time = time.time()
 
-        if not output:
-            return f"✅ 명령어 실행 완료 (반환 코드: {result.returncode}, 출력 없음)"
+        try:
+            while True:
+                time.sleep(0.1)  # CPU 점유율 방지
 
-        status_msg = "✅ 실행 성공" if result.returncode == 0 else f"⚠️ 실행 종료 (오류 코드: {result.returncode})"
-        return f"{status_msg}\n\n" + "\n\n".join(output)
+                # A. 타임아웃 검사
+                if time.time() - start_time > self.default_timeout:
+                    self._kill_process_tree(proc_handle.pid)
+                    return self._build_result(
+                        status="TIMEOUT",
+                        buffer=buffer,
+                        error_msg=f"⏰ [타임아웃] 지정된 실행 시간({self.default_timeout}초) 초과",
+                        debug_payload=self._build_llm_debug_payload(
+                            goal, command, cwd, env, "TIMEOUT", buffer, mission_data, code_context
+                        )
+                    )
 
-    except subprocess.TimeoutExpired:
-        return f"⏰ [타임아웃] 명령어 실행 시간이 {timeout}초를 초과하여 강제 종료되었습니다."
-    except Exception as e:
-        return f"💥 [실행 예외 발생] {str(e)}"
+                # B. 실시간 출력 수집
+                new_data = proc_handle.read_stdout()
+                if new_data:
+                    buffer += new_data
+                    start_time = time.time()  # 출력이 발생하면 타임아웃 타이머 리셋
+
+                # C. 프로세스 정상/오류 종료 완료 여부 확인
+                if not proc_handle.is_alive():
+                    # 남아있는 출력 최종 긁어오기
+                    buffer += proc_handle.read_stdout()
+                    status = "SUCCESS" if proc_handle.exit_code == 0 else "FAILED"
+                    return self._build_result(
+                        status=status,
+                        buffer=buffer,
+                        exit_code=proc_handle.exit_code,
+                        debug_payload=self._build_llm_debug_payload(
+                            goal, command, cwd, env, status, buffer, mission_data, code_context
+                        )
+                    )
+
+                # D. Quiet Period + Tail Pattern 기반 실시간 입력 대기 감지 및 동적 응답 주입
+                if self._is_waiting_for_input(proc_handle, buffer):
+                    response = self._resolve_input(
+                        current_buffer=buffer,
+                        goal=goal,
+                        mission_data=mission_data,
+                        code_context=code_context
+                    )
+                    
+                    if response is None:
+                        # 보안 경보 또는 대답 불가 시 프로세스 안전 차단
+                        self._kill_process_tree(proc_handle.pid)
+                        return self._build_result(
+                            status="SECURITY_ABORT",
+                            buffer=buffer,
+                            error_msg="🚨 보안 가드레일 작동 또는 대답 불가로 인한 프로세스 안전 종료"
+                        )
+
+                    # 대답 주입
+                    proc_handle.write_stdin(response + "\n")
+                    buffer += f"\n[Agent Input Inject]: {response}\n"
+                    start_time = time.time()
+
+        finally:
+            proc_handle.close()
+
+    def _run_daemon_mode(self, command: str, cwd: str, env: Dict[str, str]) -> Dict[str, Any]:
+        """데몬/서버 프로세스 실행 모드"""
+        try:
+            creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+            proc = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                cwd=cwd,
+                env=env,
+                creationflags=creation_flags
+            )
+            time.sleep(2)  # 서버 기동 초기 로그 수집 대기
+
+            if proc.poll() is not None:
+                # 2초 만에 즉시 종료된 경우 (실패)
+                out, _ = proc.communicate()
+                return self._build_result("DAEMON_FAILED", out, exit_code=proc.returncode, error_msg="데몬 서버 구동 실패")
+
+            return self._build_result("DAEMON_RUNNING", f"🚀 백그라운드 데몬 서버 실행 완료 (PID: {proc.pid})")
+        except Exception as e:
+            return self._build_result("DAEMON_ERROR", "", error_msg=str(e))
+
+    def _is_waiting_for_input(self, proc_handle: ProcessHandle, buffer: str, quiet_time_sec: float = 0.3) -> bool:
+        """
+        Quiet Period(출력 정지 시간) + Tail Pattern(프롬프트 패턴) 기반 감지
+        """
+        if not proc_handle.is_alive():
+            return False
+
+        # 1. Quiet Period 검사: 지정된 시간(0.3초) 동안 아무 출력이 없었는지 확인
+        if time.time() - proc_handle.last_output_time < quiet_time_sec:
+            return False
+
+        # 2. Tail Pattern 검사: 버퍼의 마지막 줄이 입력 유도 패턴으로 끝나는지 확인
+        clean_tail = buffer.strip().splitlines()[-1] if buffer.strip() else ""
+        interactive_indicators = [">", ":", "?", "Turn:", "Enter", "input", "[y/n]"]
+
+        return any(clean_tail.endswith(ind) or ind in clean_tail for ind in interactive_indicators)
+
+    def _resolve_input(
+        self,
+        current_buffer: str,
+        goal: str,
+        mission_data: Optional[Dict[str, Any]] = None,
+        code_context: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        3단계 자율 대답 판단 레이어 (Regex -> Security Guardrail -> LLM)
+        """
+        buffer_lower = current_buffer.lower()
+
+        # Tier 1: Regex 단순 질문 패스트트랙
+        if "[y/n]" in buffer_lower or "(y/n)" in buffer_lower or "proceed? [y/n]" in buffer_lower:
+            return "y"
+
+        # Tier 3: 보안 가드레일 (비밀번호 입력, 강제 삭제 확인 등 위험 동작 중단)
+        security_patterns = ["password:", "sudo password", "confirm delete", "are you sure you want to delete"]
+        if any(sp in buffer_lower for sp in security_patterns):
+            return None  # 중단 요청
+
+        # Tier 2: LLM Context 기반 동적 판단
+        return self._call_fast_llm_decision(current_buffer, goal, mission_data, code_context)
+
+    def _call_fast_llm_decision(
+        self,
+        current_buffer: str,
+        goal: str,
+        mission_data: Optional[Dict[str, Any]],
+        code_context: Optional[str]
+    ) -> str:
+        """LLM을 호출하여 인터랙티브 대약 프롬프트에 입력할 최적의 응답 문자열 도출"""
+        if not self.factory:
+            return "y"  # LLM 팩토리가 없을 경우 Fallback 기본값
+
+        prompt = f"""[INTERACTIVE TERMINAL PROMPT DETECTED]
+Goal: {goal}
+Mission Spec: {mission_data.get('task_id') if mission_data else 'N/A'}
+Terminal Output Buffer Tail:
+{current_buffer[-1000:]}
+
+Provide ONLY the single-line input string to answer the terminal prompt. No commentary."""
+
+        try:
+            response = self.factory.execute_worker_step(
+                prompt=prompt,
+                system_instruction="STRICT PROTOCOL: Output the raw single-line response string only.",
+                response_mime_type="text/plain"
+            )
+            return response.strip()
+        except Exception:
+            return "y"
+
+    def _build_llm_debug_payload(
+        self,
+        goal: str,
+        command: str,
+        cwd: str,
+        env: Dict[str, str],
+        trigger: str,
+        buffer: str,
+        mission_data: Optional[Dict[str, Any]] = None,
+        code_context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """LLM 디버깅을 위한 5대 핵심 전달 데이터(Minimal Context Payload) 조립"""
+        # ANSI 색상 제어 코드 제거
+        clean_buffer = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', buffer)
+        
+        # 최근 100줄 / 마지막 3KB 로그만 추출 (Tail)
+        log_lines = clean_buffer.splitlines()
+        log_tail = "\n".join(log_lines[-100:])
+
+        return {
+            "task_goal": goal,
+            "mission_spec": mission_data,
+            "command_info": {
+                "command": command,
+                "cwd": cwd,
+                "debug_env_toggles": {k: v for k, v in env.items() if "DEBUG" in k or "LOG" in k}
+            },
+            "execution_status": {
+                "trigger": trigger,
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+            },
+            "cleaned_log_tail": log_tail,
+            "code_context_slice": code_context if code_context else "N/A"
+        }
+
+    def _kill_process_tree(self, pid: int):
+        """하위 프로세스를 포함한 전체 프로세스 트리 강제 종료 (좀비 방지)"""
+        try:
+            parent = psutil.Process(pid)
+            children = parent.children(recursive=True)
+            for child in children:
+                try:
+                    child.kill()
+                except psutil.NoSuchProcess:
+                    pass
+            parent.kill()
+        except psutil.NoSuchProcess:
+            pass
+        except Exception as e:
+            # OS별 명령어로 보완 강제 종료
+            if os.name == 'nt':
+                subprocess.run(f"taskkill /F /T /PID {pid}", shell=True, capture_output=True)
+            else:
+                subprocess.run(f"kill -9 {pid}", shell=True, capture_output=True)
+
+    def _build_result(
+        self,
+        status: str,
+        buffer: str,
+        exit_code: Optional[int] = None,
+        error_msg: str = "",
+        debug_payload: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
+        """결과 표준화 dictionary 생성"""
+        clean_buffer = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', buffer)
+        return {
+            "status": status,
+            "exit_code": exit_code,
+            "raw_output": buffer,
+            "clean_output": clean_buffer,
+            "error_msg": error_msg,
+            "debug_payload": debug_payload
+        }
+```
+
+--------------------------------------------------
+
+### 📄 tools/multi_agent_system/terminal_runner.py
+#### 🧱 Code Skeleton:
+```python
+class ProcessHandle:
+    """subprocess.Popen을 감싸 비동기 입출력 및 상태를 관리하는 핸들러 클래스"""
+    def __init__(self, proc: subprocess.Popen):
+        self.proc = proc
+        self._output_queue: queue.Queue = queue.Queue()
+        self._stop_event = threading.Event()
+        
+        # 백그라운드에서 stdout을 읽어 큐에 저장하는 스레드 가동
+        self._reader_thread = threading.Thread(target=self._read_stdout_loop, daemon=True)
+        self._reader_thread.start()
+
+    def _read_stdout_loop(self):
+        if self.proc.stdout:
+            while not self._stop_event.is_set():
+                line = self.proc.stdout.readline()
+                if not line:
+                    break
+                self._output_queue.put(line)
+
+    @property
+    def pid(self) -> int:
+        return self.proc.pid
+
+    def read_stdout(self) -> str:
+        data = []
+        while not self._output_queue.empty():
+            try:
+                data.append(self._output_queue.get_nowait())
+            except queue.Empty:
+                break
+        return "".join(data)
+
+    def write_stdin(self, text: str):
+        if self.proc.stdin and self.is_alive():
+            try:
+                self.proc.stdin.write(text)
+                self.proc.stdin.flush()
+            except (IOError, ValueError):
+                pass
+
+    def is_alive(self) -> bool:
+        return self.proc.poll() is None
+
+    @property
+    def exit_code(self) -> Optional[int]:
+        return self.proc.returncode
+
+    def close(self):
+        self._stop_event.set()
+        if self.proc.stdin:
+            try:
+                self.proc.stdin.close()
+            except Exception:
+                pass
+
+class TerminalAgentRunner:
+    """AI 에이전트 전용 터미널 실행기 엔진"""
+    def __init__(self, factory: Any = None, max_retries: int = 3, default_timeout: int = 30):
+        self.factory = factory
+        self.max_retries = max_retries
+        self.default_timeout = default_timeout
+
+    def execute(
+        self,
+        command: str,
+        goal_context: str = "",
+        cwd: Optional[str] = None,
+        env: Optional[Dict[str, str]] = None,
+        mission_data: Optional[Dict[str, Any]] = None,
+        code_context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        for forbidden in FORBIDDEN_COMMANDS:
+            if forbidden in command.lower():
+                return self._build_result(
+                    status="FORBIDDEN_ABORT",
+                    buffer="",
+                    error_msg=f"❌ [보안 거부] 위험 키워드가 포함된 명령어 차단: '{forbidden}'"
+                )
+
+        exec_env = os.environ.copy()
+        if env:
+            exec_env.update(env)
+
+        work_dir = cwd if cwd else str(Path(__file__).parent.parent.parent.resolve())
+        mode = self._classify_command(command)
+
+        if mode == "DAEMON":
+            return self._run_daemon_mode(command, work_dir, exec_env)
+        else:
+            return self._run_interactive_loop(
+                command=command,
+                goal=goal_context,
+                cwd=work_dir,
+                env=exec_env,
+                mode=mode,
+                mission_data=mission_data,
+                code_context=code_context
+            )
+
+    def _classify_command(self, command: str) -> str:
+        cmd_lower = command.lower()
+        daemon_keywords = ["npm start", "python -m http.server", "uvicorn", "flask run", "gunicorn", "vite", "next dev"]
+        if any(dk in cmd_lower for dk in daemon_keywords) or cmd_lower.endswith("&"):
+            return "DAEMON"
+
+        interactive_keywords = ["python", "node", "npm init", "pip install", "git clone", "bash", "sh"]
+        if any(ik in cmd_lower for ik in interactive_keywords):
+            return "INTERACTIVE"
+
+        return "BATCH"
+
+    def _spawn_process(self, command: str, cwd: str, env: Dict[str, str]) -> ProcessHandle:
+        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            bufsize=1,
+            cwd=cwd,
+            env=env,
+            creationflags=creation_flags
+        )
+        return ProcessHandle(proc)
+
+    def _run_interactive_loop(
+        self,
+        command: str,
+        goal: str,
+        cwd: str,
+        env: Dict[str, str],
+        mode: str,
+        mission_data: Optional[Dict[str, Any]] = None,
+        code_context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        proc_handle = self._spawn_process(command, cwd, env)
+        buffer = ""
+        start_time = time.time()
+
+        try:
+            while True:
+                time.sleep(0.1)
+
+                if time.time() - start_time > self.default_timeout:
+                    self._kill_process_tree(proc_handle.pid)
+                    return self._build_result(
+                        status="TIMEOUT",
+                        buffer=buffer,
+                        error_msg=f"⏰ [타임아웃] 지정된 실행 시간({self.default_timeout}초) 초과"
+                    )
+
+                new_data = proc_handle.read_stdout()
+                if new_data:
+                    buffer += new_data
+                    start_time = time.time()
+
+                if not proc_handle.is_alive():
+                    buffer += proc_handle.read_stdout()
+                    status = "SUCCESS" if proc_handle.exit_code == 0 else "FAILED"
+                    return self._build_result(
+                        status=status,
+                        buffer=buffer,
+                        exit_code=proc_handle.exit_code
+                    )
+
+                if self._is_kernel_waiting_stdin(proc_handle.pid):
+                    response = self._resolve_input(buffer, goal, mission_data, code_context)
+                    if response is None:
+                        self._kill_process_tree(proc_handle.pid)
+                        return self._build_result(
+                            status="SECURITY_ABORT",
+                            buffer=buffer,
+                            error_msg="🚨 보안 가드레일 작동으로 프로세스 종료"
+                        )
+                    proc_handle.write_stdin(response + "\n")
+                    buffer += f"\n[Agent Input Inject]: {response}\n"
+                    start_time = time.time()
+        finally:
+            proc_handle.close()
+
+    def _run_daemon_mode(self, command: str, cwd: str, env: Dict[str, str]) -> Dict[str, Any]:
+        try:
+            creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+            proc = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding="utf-8",
+                cwd=cwd,
+                env=env,
+                creationflags=creation_flags
+            )
+            time.sleep(2)
+            if proc.poll() is not None:
+                out, _ = proc.communicate()
+                return self._build_result("DAEMON_FAILED", out, exit_code=proc.returncode, error_msg="데몬 구동 실패")
+            return self._build_result("DAEMON_RUNNING", f"🚀 백그라운드 데몬 서버 실행 완료 (PID: {proc.pid})")
+        except Exception as e:
+            return self._build_result("DAEMON_ERROR", "", error_msg=str(e))
+
+    def _is_kernel_waiting_stdin(self, pid: int) -> bool:
+        try:
+            proc = psutil.Process(pid)
+            if proc.status() == psutil.STATUS_WAITING:
+                return True
+        except Exception:
+            pass
+        return False
+
+    def _resolve_input(self, current_buffer: str, goal: str, mission_data: Optional[Dict[str, Any]], code_context: Optional[str]) -> Optional[str]:
+        buffer_lower = current_buffer.lower()
+        if any(sp in buffer_lower for sp in ["password:", "confirm delete"]):
+            return None
+        if "[y/n]" in buffer_lower or "(y/n)" in buffer_lower:
+            return "y"
+        return "y"
+
+    def _kill_process_tree(self, pid: int):
+        try:
+            parent = psutil.Process(pid)
+            for child in parent.children(recursive=True):
+                try:
+                    child.kill()
+                except psutil.NoSuchProcess:
+                    pass
+            parent.kill()
+        except Exception:
+            if os.name == 'nt':
+                subprocess.run(f"taskkill /F /T /PID {pid}", shell=True, capture_output=True)
+
+    def _build_result(self, status: str, buffer: str, exit_code: Optional[int] = None, error_msg: str = "", debug_payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        clean_buffer = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', buffer)
+        return {
+            "status": status,
+            "exit_code": exit_code,
+            "raw_output": buffer,
+            "clean_output": clean_buffer,
+            "error_msg": error_msg,
+            "debug_payload": debug_payload
+        }
+
+def run_terminal_command(command: str, cwd: str = None, timeout: int = 30, env: dict = None) -> str:
+    """기존 함수 시그니처 하위 호환 래퍼"""
+    runner = TerminalAgentRunner(default_timeout=timeout)
+    res = runner.execute(command=command, cwd=cwd, env=env)
+    
+    if res["status"] in ["SUCCESS", "DAEMON_RUNNING"]:
+        return f"✅ 실행 성공\n\n{res['clean_output']}"
+    else:
+        err = res.get("error_msg") or res.get("clean_output")
+        return f"⚠️ 실행 종료 ({res['status']})\n\n{err}"
 ```
 
 --------------------------------------------------

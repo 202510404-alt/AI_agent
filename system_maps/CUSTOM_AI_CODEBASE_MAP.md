@@ -11,7 +11,7 @@ project_root/
 │   ├── modules.xml [📂 .idea/modules.xml] -> [General File (8 lines)]
 │   ├── vcs.xml [📂 .idea/vcs.xml] -> [General File (6 lines)]
 │   ├── workspace.xml [📂 .idea/workspace.xml] -> [General File (185 lines)]
-├── a [📂 a] -> [General File (643 lines)]
+├── a [📂 a] -> [General File (743 lines)]
 ├── agent_core/
 │   ├── __init__.py [📂 agent_core/__init__.py]
 │   ├── execution/
@@ -71,7 +71,7 @@ project_root/
 │   │   │   ├── 🧬 class Task [L61-L70]
 │   │   │   ├── 🧬 class ExecutionResult [L74-L79]
 │   │   │   ├── 🎯 def to_symbol_ref() [L82-L104]
-│   │   │   │   ├── 📞 [CALLS]: log_debug, SymbolRef
+│   │   │   │   ├── 📞 [CALLS]: SymbolRef, log_debug
 │   │   ├── test_ai_chat.py [📂 agent_core/plan/test_ai_chat.py] -> [💡 📦 imp: agent_core.llm.gemini_client, agent_core.plan.prompt_builder, google, google.genai, json, os, pathlib, sys, tools.multi_agent_system.agent_code_extractor | 🎯 def extract_code_slice(file_and_line) [L32-43] | 🎯 def run_interactive_chat() [L49-104]]
 │   │   │   ├── 🎯 def extract_code_slice() [L32-L43]
 │   │   │   ├── 🎯 def run_interactive_chat() [L49-L104]
@@ -81,6 +81,32 @@ project_root/
 ├── agent_plan.md [📂 agent_plan.md] -> [General File (1101 lines)]
 ├── extraction_target_project/
 │   ├── .gitignore [📂 extraction_target_project/.gitignore] -> [General File (4 lines)]
+│   ├── AGENT_TEST/
+│   │   ├── chess_ai.py [📂 extraction_target_project/AGENT_TEST/chess_ai.py] -> [💡 📦 imp: math, os, sys, time | 🧬 class MockChess [L7-32] |     └─ def square_mirror(sq) [L11-11] | 🧬 class TranspositionTable [L211-246] |     └─ def __init__(size_mb) [L212-214] |     └─ def _get_index(key) [L216-217] |     └─ def store(key, depth, score, flag, best_move) [L219-223] |     └─ def probe(key) [L225-230] |     └─ def store(key, depth, score, flag, best_move) [L232-240] |     └─ def probe(key) [L242-243] |     └─ def clear() [L245-246] | 🧬 class ApexChessEngine [L252-506] |     └─ def __init__(board) [L253-260] |     └─ def evaluate() [L265-306] |     └─ def get_mvv_lva_score(move) [L311-316] |     └─ def score_move(move, depth, tt_move) [L318-333] |     └─ def order_moves(moves, depth, tt_move) [L335-336] |     └─ def quiescence(alpha, beta, ply) [L341-363] |     └─ def pvs(depth, alpha, beta, ply, allow_null) [L368-461] |     └─ def search(time_limit, max_depth) [L466-506] | 🎯 def main() [L513-570]]
+│   │   │   ├── 🧬 class MockChess [L7-L32]
+│   │   │   ├── 🎯 def square_mirror() [L11]
+│   │   │   ├── 🧬 class TranspositionTable [L211-L246]
+│   │   │   │   ├── 🔗 [USED BY]: ::__init__
+│   │   │   ├── 🎯 def __init__() [L212-L214]
+│   │   │   ├── 🎯 def _get_index() [L216-L217]
+│   │   │   ├── 🎯 def store() [L219-L223]
+│   │   │   ├── 🎯 def probe() [L225-L230]
+│   │   │   ├── 🎯 def store() [L232-L240]
+│   │   │   ├── 🎯 def probe() [L242-L243]
+│   │   │   ├── 🎯 def clear() [L245-L246]
+│   │   │   ├── 🧬 class ApexChessEngine [L252-L506]
+│   │   │   │   ├── 🔗 [USED BY]: ::main
+│   │   │   ├── 🎯 def __init__() [L253-L260]
+│   │   │   │   ├── 📞 [CALLS]: TranspositionTable
+│   │   │   ├── 🎯 def evaluate() [L265-L306]
+│   │   │   ├── 🎯 def get_mvv_lva_score() [L311-L316]
+│   │   │   ├── 🎯 def score_move() [L318-L333]
+│   │   │   ├── 🎯 def order_moves() [L335-L336]
+│   │   │   ├── 🎯 def quiescence() [L341-L363]
+│   │   │   ├── 🎯 def pvs() [L368-L461]
+│   │   │   ├── 🎯 def search() [L466-L506]
+│   │   │   ├── 🎯 def main() [L513-L570]
+│   │   │   │   ├── 📞 [CALLS]: ApexChessEngine
 │   ├── AI_agent.code-workspace [📂 extraction_target_project/AI_agent.code-workspace] -> [General File (26 lines)]
 │   ├── client/
 │   │   ├── .gitignore [📂 extraction_target_project/client/.gitignore] -> [General File (21 lines)]
@@ -149,17 +175,17 @@ project_root/
 │   ├── agent_plan3.md [📂 oldplan/agent_plan3.md] -> [General File (980 lines)]
 ├── prompt.md [📂 prompt.md] -> [General File (113 lines)]
 ├── README.md [📂 README.md] -> [General File (220 lines)]
-├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, pydantic, re, subprocess, sys, time, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.browser_agent_runner, tools.multi_agent_system.browser_tester, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing, urllib.request | 🧬 class PatchItem [L24-27] | 🧬 class PatchPayload [L29-30] | 🎯 def build_log_regex_pattern(template_msg) [L32-38] | 🎯 def load_mission_file(mission_rel_path) [L40-55] | 🎯 def clean_json_response(raw_response) [L57-63] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L68-602] | 🎯 def main() [L607-616]]
+├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, json, os, pathlib, pydantic, re, subprocess, sys, time, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.browser_agent_runner, tools.multi_agent_system.browser_tester, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing, urllib.request | 🧬 class PatchItem [L24-27] | 🧬 class PatchPayload [L29-30] | 🎯 def build_log_regex_pattern(template_msg) [L32-39] | 🎯 def load_mission_file(mission_rel_path) [L41-56] | 🎯 def clean_json_response(raw_response) [L58-64] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L69-645] | 🎯 def main() [L650-659]]
 │   ├── 🧬 class PatchItem [L24-L27]
 │   ├── 🧬 class PatchPayload [L29-L30]
-│   ├── 🎯 def build_log_regex_pattern() [L32-L38]
-│   ├── 🎯 def load_mission_file() [L40-L55]
+│   ├── 🎯 def build_log_regex_pattern() [L32-L39]
+│   ├── 🎯 def load_mission_file() [L41-L56]
 │   │   ├── 🔗 [USED BY]: ::run_step_worker_pipeline
-│   ├── 🎯 def clean_json_response() [L57-L63]
-│   ├── 🎯 def run_step_worker_pipeline() [L68-L602]
-│   │   ├── 📞 [CALLS]: load_mission_file, safe_execute_step, build_log_regex_pattern, clean_json_response
+│   ├── 🎯 def clean_json_response() [L58-L64]
+│   ├── 🎯 def run_step_worker_pipeline() [L69-L645]
+│   │   ├── 📞 [CALLS]: load_mission_file, safe_execute_step, clean_json_response, build_log_regex_pattern
 │   │   ├── 🔗 [USED BY]: ::main
-│   ├── 🎯 def main() [L607-L616]
+│   ├── 🎯 def main() [L650-L659]
 │   │   ├── 📞 [CALLS]: run_step_worker_pipeline
 ├── scan_debug.txt [📂 scan_debug.txt] -> [General File (296 lines)]
 ├── setup_architecture.bat [📂 setup_architecture.bat] -> [General File (104 lines)]
@@ -181,9 +207,9 @@ project_root/
 │   │   │   ├── 🎯 def extract_multi_slices() [L103-L260]
 │   │   │   ├── 🎯 def format_as_markdown() [L262-L282]
 │   │   │   ├── 🎯 def process() [L284-L318]
-│   │   ├── agent_map_extractor.py [📂 tools/multi_agent_system/agent_map_extractor.py] -> [💡 📦 imp: json, os, pathlib, sys, tools.universal_indexer.core_parsers.gitignore_parser, tools.universal_indexer.map_formatter, typing | 🧬 class AgentMapExtractor [L46-251] |     └─ def __init__(project_root) [L49-50] |     └─ def _load_jjap_context() [L52-59] |     └─ def _load_all_symbols() [L61-79] |     └─ def _load_registry_and_protocols() [L81-118] |     └─ def _normalize_path(raw_path) [L120-128] |     └─ def collect_files_in_targets(target_paths, exclude_paths) [L130-181] |     └─ def generate_custom_map(target_paths, exclude_paths, save_to_file) [L183-251] | 🎯 def extract_targeted_ai_map(target_paths, exclude_paths, save_to_file) [L254-260]]
+│   │   ├── agent_map_extractor.py [📂 tools/multi_agent_system/agent_map_extractor.py] -> [💡 📦 imp: json, os, pathlib, sys, tools.universal_indexer.core_parsers.gitignore_parser, tools.universal_indexer.map_formatter, typing | 🧬 class AgentMapExtractor [L46-313] |     └─ def __init__(project_root) [L49-50] |     └─ def _load_jjap_context() [L52-59] |     └─ def _load_all_symbols() [L61-79] |     └─ def _load_registry_and_protocols() [L81-118] |     └─ def _normalize_path(raw_path) [L120-128] |     └─ def collect_files_in_targets(target_paths, exclude_paths) [L130-181] |     └─ def generate_custom_map(target_paths, exclude_paths, save_to_file) [L183-313] | 🎯 def extract_targeted_ai_map(target_paths, exclude_paths, save_to_file) [L316-322]]
 │   │   │     ├── 🔑 [REGISTRY]: "AgentMapExtractor"
-│   │   │   ├── 🧬 class AgentMapExtractor [L46-L251]
+│   │   │   ├── 🧬 class AgentMapExtractor [L46-L313]
 │   │   │   │   ├── 🔗 [USED BY]: ::extract_targeted_ai_map
 │   │   │   ├── 🎯 def __init__() [L49-L50]
 │   │   │   ├── 🎯 def _load_jjap_context() [L52-L59]
@@ -191,39 +217,39 @@ project_root/
 │   │   │   ├── 🎯 def _load_registry_and_protocols() [L81-L118]
 │   │   │   ├── 🎯 def _normalize_path() [L120-L128]
 │   │   │   ├── 🎯 def collect_files_in_targets() [L130-L181]
-│   │   │   ├── 🎯 def generate_custom_map() [L183-L251]
-│   │   │   ├── 🎯 def extract_targeted_ai_map() [L254-L260]
+│   │   │   ├── 🎯 def generate_custom_map() [L183-L313]
+│   │   │   ├── 🎯 def extract_targeted_ai_map() [L316-L322]
 │   │   │   │   ├── 📞 [CALLS]: AgentMapExtractor
-│   │   ├── agent_session.py [📂 tools/multi_agent_system/agent_session.py] -> [💡 📦 imp: agent_core.llm.gemini_client, google, google.genai, os, pathlib, time, tools.multi_agent_system.agent_code_extractor, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.code_patcher, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing | 🧬 class KeyManager [L20-93] |     └─ def __init__(env_path) [L22-80] |     └─ def get_current_key() [L82-85] |     └─ def rotate_key() [L87-93] | 🧬 class AgentSessionFactory [L97-327] |     └─ def __init__(root_dir) [L99-113] |     └─ def switch_to_next_key(last_error_msg) [L115-119] |     └─ def prepare_step1_map(max_shallow_depth) [L121-143] |     └─ def execute_worker_step(prompt, system_instruction, response_mime_type, max_retries) [L146-198] |     └─ def _build_tools() [L200-231] |     └─ def create_browser_agent_session(preferred_lite_model) [L233-258] |     └─ def create_chat_session(model_name, shallow_depth) [L260-327]]
+│   │   ├── agent_session.py [📂 tools/multi_agent_system/agent_session.py] -> [💡 📦 imp: agent_core.llm.gemini_client, google, google.genai, os, pathlib, time, tools.multi_agent_system.agent_code_extractor, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.code_patcher, tools.multi_agent_system.project_scale_detector, tools.multi_agent_system.terminal_runner, typing | 🧬 class KeyManager [L20-93] |     └─ def __init__(env_path) [L22-80] |     └─ def get_current_key() [L82-85] |     └─ def rotate_key() [L87-93] | 🧬 class AgentSessionFactory [L97-353] |     └─ def __init__(root_dir) [L99-113] |     └─ def switch_to_next_key(last_error_msg) [L115-119] |     └─ def prepare_step1_map(max_shallow_depth) [L121-143] |     └─ def execute_worker_step(prompt, system_instruction, image_bytes, response_mime_type, max_retries) [L146-218] |     └─ def _build_tools() [L220-259] |     └─ def create_browser_agent_session(preferred_lite_model) [L261-286] |     └─ def create_chat_session(model_name, shallow_depth) [L288-353]]
 │   │   │     ├── 🔑 [REGISTRY]: "AgentSessionFactory"
 │   │   │   ├── 🧬 class KeyManager [L20-L93]
 │   │   │   │   ├── 🔗 [USED BY]: ::__init__
 │   │   │   ├── 🎯 def __init__() [L22-L80]
 │   │   │   ├── 🎯 def get_current_key() [L82-L85]
 │   │   │   ├── 🎯 def rotate_key() [L87-L93]
-│   │   │   ├── 🧬 class AgentSessionFactory [L97-L327]
+│   │   │   ├── 🧬 class AgentSessionFactory [L97-L353]
 │   │   │   ├── 🎯 def __init__() [L99-L113]
 │   │   │   │   ├── 📞 [CALLS]: KeyManager
 │   │   │   ├── 🎯 def switch_to_next_key() [L115-L119]
 │   │   │   ├── 🎯 def prepare_step1_map() [L121-L143]
-│   │   │   ├── 🎯 def execute_worker_step() [L146-L198]
-│   │   │   ├── 🎯 def _build_tools() [L200-L231]
-│   │   │   ├── 🎯 def create_browser_agent_session() [L233-L258]
-│   │   │   ├── 🎯 def create_chat_session() [L260-L327]
-│   │   ├── browser_agent_runner.py [📂 tools/multi_agent_system/browser_agent_runner.py] -> [💡 📦 imp: json, pydantic, re, time, tools.multi_agent_system.browser_tester, typing | 🧬 class BrowserActionSchema [L8-11] | 🧬 class BrowserAgentRunner [L13-133] |     └─ def __init__(session_factory) [L14-15] |     └─ def run_autonomous_loop(target_url, goal_description, expected_patterns, max_steps) [L17-133]]
+│   │   │   ├── 🎯 def execute_worker_step() [L146-L218]
+│   │   │   ├── 🎯 def _build_tools() [L220-L259]
+│   │   │   ├── 🎯 def create_browser_agent_session() [L261-L286]
+│   │   │   ├── 🎯 def create_chat_session() [L288-L353]
+│   │   ├── browser_agent_runner.py [📂 tools/multi_agent_system/browser_agent_runner.py] -> [💡 📦 imp: json, pydantic, re, time, tools.multi_agent_system.browser_tester, typing | 🧬 class BrowserActionSchema [L8-11] | 🧬 class BrowserAgentRunner [L13-215] |     └─ def __init__(session_factory) [L14-15] |     └─ def run_autonomous_loop(target_url, goal_description, expected_patterns, max_steps) [L17-215]]
 │   │   │     ├── 🔑 [REGISTRY]: "BrowserAgentRunner"
 │   │   │   ├── 🧬 class BrowserActionSchema [L8-L11]
-│   │   │   ├── 🧬 class BrowserAgentRunner [L13-L133]
+│   │   │   ├── 🧬 class BrowserAgentRunner [L13-L215]
 │   │   │   ├── 🎯 def __init__() [L14-L15]
-│   │   │   ├── 🎯 def run_autonomous_loop() [L17-L133]
-│   │   ├── browser_tester.py [📂 tools/multi_agent_system/browser_tester.py] -> [💡 📦 imp: pathlib, playwright.sync_api, re, subprocess, sys, time, typing | 🎯 def ensure_playwright() [L12-27] | 🧬 class BrowserTester [L29-190] |     └─ def __init__(headless, default_timeout) [L30-32] |     └─ def extract_interactive_elements(page) [L34-58] |     └─ def capture_compressed_screenshot(page) [L60-68] |     └─ def run_browser_verification(target_url, actions, expected_patterns, wait_for_selector) [L70-190]]
+│   │   │   ├── 🎯 def run_autonomous_loop() [L17-L215]
+│   │   ├── browser_tester.py [📂 tools/multi_agent_system/browser_tester.py] -> [💡 📦 imp: pathlib, playwright.sync_api, re, subprocess, sys, time, typing | 🎯 def ensure_playwright() [L12-27] | 🧬 class BrowserTester [L29-212] |     └─ def __init__(headless, default_timeout) [L30-32] |     └─ def extract_interactive_elements(page) [L34-76] |     └─ def capture_compressed_screenshot(page) [L78-86] |     └─ def run_browser_verification(target_url, actions, expected_patterns, wait_for_selector) [L88-212]]
 │   │   │   ├── 🎯 def ensure_playwright() [L12-L27]
 │   │   │   │   ├── 🔗 [USED BY]: ::run_browser_verification
-│   │   │   ├── 🧬 class BrowserTester [L29-L190]
+│   │   │   ├── 🧬 class BrowserTester [L29-L212]
 │   │   │   ├── 🎯 def __init__() [L30-L32]
-│   │   │   ├── 🎯 def extract_interactive_elements() [L34-L58]
-│   │   │   ├── 🎯 def capture_compressed_screenshot() [L60-L68]
-│   │   │   ├── 🎯 def run_browser_verification() [L70-L190]
+│   │   │   ├── 🎯 def extract_interactive_elements() [L34-L76]
+│   │   │   ├── 🎯 def capture_compressed_screenshot() [L78-L86]
+│   │   │   ├── 🎯 def run_browser_verification() [L88-L212]
 │   │   │   │   ├── 📞 [CALLS]: ensure_playwright
 │   │   ├── code_patcher.py [📂 tools/multi_agent_system/code_patcher.py] -> [💡 📦 imp: pathlib | 🧬 class CodePatcher [L9-81] |     └─ def __init__(root_dir) [L10-11] |     └─ def apply_patch(rel_path, existing_code, replacement_code) [L13-81]]
 │   │   │   ├── 🧬 class CodePatcher [L9-L81]
@@ -236,8 +262,54 @@ project_root/
 │   │   │   ├── 🎯 def analyze_project_scale() [L68-L138]
 │   │   │   ├── 🎯 def generate_shallow_structure_map() [L140-L178]
 │   │   │   │   ├── 📞 [CALLS]: _build_tree
-│   │   ├── terminal_runner.py [📂 tools/multi_agent_system/terminal_runner.py] -> [💡 📦 imp: pathlib, subprocess | 🎯 def run_terminal_command(command, cwd, timeout, env) [L12-59]]
-│   │   │   ├── 🎯 def run_terminal_command() [L12-L59]
+│   │   ├── terminal_agent_runner.py [📂 tools/multi_agent_system/terminal_agent_runner.py] -> [💡 📦 imp: os, pathlib, psutil, queue, re, select, subprocess, sys, threading, time, typing | 🧬 class ProcessHandle [L19-77] |     └─ def __init__(proc) [L24-34] |     └─ def _reader_thread(stream) [L36-47] |     └─ def read_stdout() [L49-57] |     └─ def write_stdin(text) [L59-66] |     └─ def is_alive() [L68-70] |     └─ def exit_code() [L73-74] |     └─ def close() [L76-77] | 🧬 class TerminalAgentRunner [L80-433] |     └─ def __init__(factory, max_retries, default_timeout) [L89-92] |     └─ def execute(command, goal_context, cwd, env, mission_data, code_context) [L94-138] |     └─ def _classify_command(command) [L140-154] |     └─ def _spawn_process(command, cwd, env) [L156-174] |     └─ def _run_interactive_loop(command, goal, cwd, env, mode, mission_data, code_context) [L176-253] |     └─ def _run_daemon_mode(command, cwd, env) [L255-279] |     └─ def _is_kernel_waiting_stdin(pid) [L281-306] |     └─ def _resolve_input(current_buffer, goal, mission_data, code_context) [L308-330] |     └─ def _call_fast_llm_decision(current_buffer, goal, mission_data, code_context) [L332-359] |     └─ def _build_llm_debug_payload(goal, command, cwd, env, trigger, buffer, mission_data, code_context) [L361-394] |     └─ def _kill_process_tree(pid) [L396-414] |     └─ def _build_result(status, buffer, exit_code, error_msg, debug_payload) [L416-433]]
+│   │   │     ├── 🔑 [REGISTRY]: "TerminalAgentRunner"
+│   │   │   ├── 🧬 class ProcessHandle [L19-L77]
+│   │   │   ├── 🎯 def __init__() [L24-L34]
+│   │   │   ├── 🎯 def _reader_thread() [L36-L47]
+│   │   │   ├── 🎯 def read_stdout() [L49-L57]
+│   │   │   ├── 🎯 def write_stdin() [L59-L66]
+│   │   │   ├── 🎯 def is_alive() [L68-L70]
+│   │   │   ├── 🎯 def exit_code() [L73-L74]
+│   │   │   ├── 🎯 def close() [L76-L77]
+│   │   │   ├── 🧬 class TerminalAgentRunner [L80-L433]
+│   │   │   ├── 🎯 def __init__() [L89-L92]
+│   │   │   ├── 🎯 def execute() [L94-L138]
+│   │   │   ├── 🎯 def _classify_command() [L140-L154]
+│   │   │   ├── 🎯 def _spawn_process() [L156-L174]
+│   │   │   │   ├── 📞 [CALLS]: ProcessHandle
+│   │   │   ├── 🎯 def _run_interactive_loop() [L176-L253]
+│   │   │   ├── 🎯 def _run_daemon_mode() [L255-L279]
+│   │   │   ├── 🎯 def _is_kernel_waiting_stdin() [L281-L306]
+│   │   │   ├── 🎯 def _resolve_input() [L308-L330]
+│   │   │   ├── 🎯 def _call_fast_llm_decision() [L332-L359]
+│   │   │   ├── 🎯 def _build_llm_debug_payload() [L361-L394]
+│   │   │   ├── 🎯 def _kill_process_tree() [L396-L414]
+│   │   │   ├── 🎯 def _build_result() [L416-L433]
+│   │   ├── terminal_runner.py [📂 tools/multi_agent_system/terminal_runner.py] -> [💡 📦 imp: os, pathlib, psutil, queue, re, select, subprocess, sys, threading, time, typing | 🧬 class ProcessHandle [L22-73] |     └─ def __init__(proc) [L24-33] |     └─ def _reader_thread(stream) [L35-46] |     └─ def read_stdout() [L48-55] |     └─ def write_stdin(text) [L57-63] |     └─ def is_alive() [L65-66] |     └─ def exit_code() [L69-70] |     └─ def close() [L72-73] | 🧬 class TerminalAgentRunner [L76-266] |     └─ def __init__(factory, max_retries, default_timeout) [L78-81] |     └─ def execute(command, goal_context, cwd, env, mission_data, code_context) [L83-118] |     └─ def _classify_command(command) [L120-130] |     └─ def _spawn_process(command, cwd, env) [L132-148] |     └─ def _run_interactive_loop(command, goal, cwd, env, mode, mission_data, code_context) [L150-203] |     └─ def _run_daemon_mode(command, cwd, env) [L205-225] |     └─ def _is_kernel_waiting_stdin(pid) [L227-234] |     └─ def _resolve_input(current_buffer, goal, mission_data, code_context) [L236-242] |     └─ def _kill_process_tree(pid) [L244-255] |     └─ def _build_result(status, buffer, exit_code, error_msg, debug_payload) [L257-266] | 🎯 def run_terminal_command(command, cwd, timeout, env) [L269-278]]
+│   │   │     ├── 🔑 [REGISTRY]: "TerminalAgentRunner"
+│   │   │   ├── 🧬 class ProcessHandle [L22-L73]
+│   │   │   ├── 🎯 def __init__() [L24-L33]
+│   │   │   ├── 🎯 def _reader_thread() [L35-L46]
+│   │   │   ├── 🎯 def read_stdout() [L48-L55]
+│   │   │   ├── 🎯 def write_stdin() [L57-L63]
+│   │   │   ├── 🎯 def is_alive() [L65-L66]
+│   │   │   ├── 🎯 def exit_code() [L69-L70]
+│   │   │   ├── 🎯 def close() [L72-L73]
+│   │   │   ├── 🧬 class TerminalAgentRunner [L76-L266]
+│   │   │   ├── 🎯 def __init__() [L78-L81]
+│   │   │   ├── 🎯 def execute() [L83-L118]
+│   │   │   ├── 🎯 def _classify_command() [L120-L130]
+│   │   │   ├── 🎯 def _spawn_process() [L132-L148]
+│   │   │   │   ├── 📞 [CALLS]: ProcessHandle
+│   │   │   ├── 🎯 def _run_interactive_loop() [L150-L203]
+│   │   │   ├── 🎯 def _run_daemon_mode() [L205-L225]
+│   │   │   ├── 🎯 def _is_kernel_waiting_stdin() [L227-L234]
+│   │   │   ├── 🎯 def _resolve_input() [L236-L242]
+│   │   │   ├── 🎯 def _kill_process_tree() [L244-L255]
+│   │   │   ├── 🎯 def _build_result() [L257-L266]
+│   │   │   ├── 🎯 def run_terminal_command() [L269-L278]
+│   │   │   │   ├── 📞 [CALLS]: TerminalAgentRunner
 │   ├── universal_indexer/
 │   │   ├── agent_navigator.py [📂 tools/universal_indexer/agent_navigator.py] -> [💡 📦 imp: json, pathlib, re, switch, sys, tkinter, traceback | 🧬 class CodeExtractor [L18-281] |     └─ def __init__(root_dir) [L23-46] |     └─ def _load_database() [L48-55] |     └─ def resolve_file_path(raw_path_str) [L57-85] |     └─ def extract_multi_slices(raw_prompt) [L87-237] |     └─ def format_as_markdown(extracted_slices) [L239-256] |     └─ def process(raw_prompt, auto_save, output_path) [L258-281] | 🧬 class JjapCursorNavigatorGUI [L288-384] |     └─ def __init__(root, project_root) [L289-339] |     └─ def execute_slicing_pipeline() [L341-366] |     └─ def manual_export_file() [L368-384]]
 │   │   │     ├── 🔑 [REGISTRY]: "JjapCursorNavigatorGUI"
@@ -273,7 +345,7 @@ project_root/
 │   │   │   │   ├── 🎯 def _find_matching_curly_brace() [L15-L37]
 │   │   │   │   │   ├── 🔗 [USED BY]: ::extract_symbols
 │   │   │   │   ├── 🎯 def extract_symbols() [L39-L194]
-│   │   │   │   │   ├── 📞 [CALLS]: log, _find_matching_curly_brace
+│   │   │   │   │   ├── 📞 [CALLS]: _find_matching_curly_brace, log
 │   │   │   ├── js_parser.py [📂 tools/universal_indexer/core_parsers/js_parser.py] -> [💡 📦 imp: hashlib, pathlib, re, sys | 🎯 def debug_log(message) [L12-14] | 🎯 def find_end_line_by_braces(lines, start_line_idx, max_search_range) [L17-47] | 🎯 def extract_symbols(file_path, project_root) [L50-171]]
 │   │   │   │   ├── 🎯 def debug_log() [L12-L14]
 │   │   │   │   ├── 🎯 def find_end_line_by_braces() [L17-L47]
@@ -297,12 +369,12 @@ project_root/
 │   │   │   ├── 🎯 def load_protocols() [L100-L117]
 │   │   │   │   ├── 🔗 [USED BY]: ::parse_protocols_and_registries
 │   │   │   ├── 🎯 def parse_protocols_and_registries() [L120-L159]
-│   │   │   │   ├── 📞 [CALLS]: load_registry, load_protocols
+│   │   │   │   ├── 📞 [CALLS]: load_protocols, load_registry
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def load_all_symbols() [L163-L184]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def main() [L187-L318]
-│   │   │   │   ├── 📞 [CALLS]: collect_target_files, load_all_symbols, load_jjap_context, parse_protocols_and_registries
+│   │   │   │   ├── 📞 [CALLS]: collect_target_files, load_jjap_context, parse_protocols_and_registries, load_all_symbols
 │   │   │   ├── 🎯 def generate_ai_optimized_map() [L321-L322]
 │   │   │   │   ├── 📞 [CALLS]: main
 │   │   ├── indexer.py [📂 tools/universal_indexer/indexer.py] -> [💡 📦 imp: collections, config, hashlib, importlib.util, json, os, pathlib, typing | 🎯 def log(message) [L22-24] | 🧬 class AdvancedIndexerV2 [L26-217] |     └─ def __init__(project_root) [L31-41] |     └─ def _auto_load_parsers() [L43-74] |     └─ def scan_project() [L78-152] |     └─ def index_file(file_path, ext) [L154-194] |     └─ def save_index_data() [L196-217]]
