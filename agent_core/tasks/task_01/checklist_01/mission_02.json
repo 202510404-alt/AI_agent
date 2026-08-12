@@ -1,0 +1,30 @@
+{
+  "task_id": "mission_014_step3_tt_caching",
+  "test_type": "cli_test",
+  "use_browser_test": false,
+  "target_file": "extraction_target_project/AGENT_TEST/chess_ai.py",
+  "entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "debug_log_spec": {
+    "toggle_key": "CHESS_AI_DEBUG",
+    "log_pattern": "[DEBUG_LOG] Step=TT_STAT | Hits={tt_hits}"
+  },
+  "implementation_blueprint": {
+    "feature_title": "ApexChessEngine - Transposition Table(TT) 캐싱 및 적중 최적화",
+    "target_component": "TranspositionTable.probe",
+    "debug_toggle_key": "CHESS_AI_DEBUG",
+    "variable_bindings": {
+      "tt_hits": "Transposition Table 적중(Hit) 누적 횟수"
+    },
+    "step_by_step_recipe": [
+      "1. TranspositionTable.probe() 및 store() 함수 내 Zobrist Hash 기반 조회/저장 알고리즘 구현",
+      "2. TT Hit 성공 시 탐색 시점 첫 번째 수(TT Move First)로 정렬되도록 연동",
+      "3. TT 조회 적중 시 tt_hits 카운트 증가 후 [DEBUG_LOG] Step=TT_STAT | Hits={tt_hits} 로그 출력"
+    ]
+  },
+  "servers": [],
+  "browser_test_spec": null,
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=TT_STAT | Hits={tt_hits}"
+  ]
+}

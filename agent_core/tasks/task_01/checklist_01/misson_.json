@@ -1,0 +1,30 @@
+{
+  "task_id": "mission_014_step2_search_pruning",
+  "test_type": "cli_test",
+  "use_browser_test": false,
+  "target_file": "extraction_target_project/AGENT_TEST/chess_ai.py",
+  "entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "debug_log_spec": {
+    "toggle_key": "CHESS_AI_DEBUG",
+    "log_pattern": "[DEBUG_LOG] Step=PRUNING_STAT | Pruned={pruned_nodes}"
+  },
+  "implementation_blueprint": {
+    "feature_title": "ApexChessEngine - 탐색(Search) & 가지치기(Pruning) 강화",
+    "target_component": "ApexChessEngine.search",
+    "debug_toggle_key": "CHESS_AI_DEBUG",
+    "variable_bindings": {
+      "pruned_nodes": "Futility Pruning / Razoring에 의해 가지치기된 누적 노드 수"
+    },
+    "step_by_step_recipe": [
+      "1. ApexChessEngine.search() 내 Futility Pruning 및 Razoring 조건 검사 로직 추가",
+      "2. History Heuristic 테이블을 참조하여 Move Ordering 정렬 순위 고도화",
+      "3. 가지치기 조건 충족 시 pruned_nodes 카운터 증가 및 [DEBUG_LOG] Step=PRUNING_STAT | Pruned={pruned_nodes} 디버그 로그 출력"
+    ]
+  },
+  "servers": [],
+  "browser_test_spec": null,
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=PRUNING_STAT | Pruned={pruned_nodes}"
+  ]
+}

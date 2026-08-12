@@ -219,6 +219,7 @@ Current Codebase Map:
 
     print(f"📄 [Step 2 준비 완료] 추출된 코드 영역 길이: {len(target_code)}자")
 
+    # 수정된 코드
     # -----------------------------------------------------------------
     # 🤖 [Step 3] LLM 단발성(Stateless) 다중 패치 생성 요청
     # -----------------------------------------------------------------
@@ -228,8 +229,9 @@ Current Codebase Map:
 1. 'file_path': Strictly '{target_file_path}'.
 2. 'existing_code': Exact raw string to replace. Keep context minimal to reduce token size.
 3. 'replacement_code': Minimum modified code only.
-4. OUTPUT: Raw JSON Object matching PatchPayload schema ONLY. No markdown, no explanations.
-5. NO hardcoded env vars (e.g., os.environ). Rely on runtime env."""
+4. INDENTATION: Preserve EXACT indentation (spaces/tabs) of the target method/class.
+5. OUTPUT: Raw JSON Object matching PatchPayload schema ONLY. No markdown, no explanations.
+6. NO hardcoded env vars (e.g., os.environ). Rely on runtime env."""
 
     user_prompt = f"""<MISSION_SPEC>
 Target File Path: {target_file_path}
@@ -259,6 +261,8 @@ Generate a JSON object matching PatchPayload schema:
         system_instruction=system_prompt,
         response_mime_type="application/json"
     )
+
+    terminal_output = ""
 
     # -----------------------------------------------------------------
     # 🛠️ [Step 4 ~ Step 6] 검증 및 자기 복구 실행 루프
@@ -297,8 +301,9 @@ Generate a JSON object matching PatchPayload schema:
         # -------------------------------------------------------------
         # 💻 [Step 5] DebugVerifier 기반 검증 모듈 실행 (통합 검증)
         # -------------------------------------------------------------
-        print("\n💻 [Step 5] DebugVerifier 통합 실행 및 실체 검증 가동...")
+        print("\n💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...")
 
+        diagnosis_hint = ""
         if patch_success:
             verifier = DebugVerifier(root_dir=ROOT_DIR, factory=factory)
             verifier_res = verifier.verify(
@@ -308,6 +313,7 @@ Generate a JSON object matching PatchPayload schema:
             )
             is_verified = verifier_res["verified"]
             terminal_output = verifier_res["output"]
+            diagnosis_hint = verifier_res.get("diagnosis_hint", "")
             print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
             print(f"📌 [VERIFICATION RESULT] {verifier_res['message']}")
         else:
@@ -336,9 +342,9 @@ Generate a JSON object matching PatchPayload schema:
             return
 
         # -------------------------------------------------------------
-        # 🩺 [Step 6-1] 정보 충분성 진단 및 피드백 분기 (Self-Diagnosis & Retry)
+        # 🩺 [Step 6-1] 자율 검증 피드백 수집 및 정보 충분성 진단
         # -------------------------------------------------------------
-        print(f"\n🩺 [Step 6-1] 정보 충분성 진단 (재시도 {retry_count}/{max_retries})...")
+        print(f"\n🩺 [Step 6-1] 검증 에이전트 진단 피드백 적용 (재시도 {retry_count}/{max_retries})...")
         
         # 🛡️ 1회 실패 후(2회차 실행 이상)부터는 자기 과신 방지를 위해 Self-Diagnosis 호출을 생략하고 강제 broad 재탐색으로 전환
         if retry_count >= 2:
@@ -349,8 +355,9 @@ Generate a JSON object matching PatchPayload schema:
 Mission Data: {mission_str}
 Current Sliced Code: {target_code}
 Terminal Output: {terminal_output}
+Verifier Diagnosis: {diagnosis_hint}
 
-Can you fix the code with the CURRENT provided code slice and terminal output alone?
+Can you fix the code with the CURRENT provided code slice, verifier diagnosis, and terminal output alone?
 Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanation"}}"""
 
             try:
@@ -366,12 +373,13 @@ Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanatio
 
         if is_sufficient:
             # ---------------------------------------------------------
-            # 🔄 [Step 6-2] 다중 패치 재수정 (Direct Fix)
+            # 🔄 [Step 6-2] 검증 피드백 기반 패치 재작성 (Direct Fix with Diagnosis)
             # ---------------------------------------------------------
-            print("🔄 [Step 6-2] 정보 충분 -> 다중 수정 패치 재작성 중...")
+            print("🔄 [Step 6-2] 검증 에이전트 힌트 기반 다중 수정 패치 재작성 중...")
             fix_user_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
 Generate corrected JSON patch object matching PatchPayload schema:
 {{
   "patches": [

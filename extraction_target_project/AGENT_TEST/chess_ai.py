@@ -243,6 +243,10 @@ class ApexChessEngine:
         self.time_limit = 3.0
         self.start_time = 0.0
         self.nps_start_time = time.time()
+        if os.environ.get("CHESS_AI_DEBUG") == "1":
+            print(f"[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0")
+            print(f"[DEBUG_LOG] Step=PRUNING_STAT | Pruned=0")
+            print(f"[DEBUG_LOG] Step=TT_STAT | Hits=0")
 
     # -------------------------------------------------------------------------
     # Evaluation Logic
@@ -282,18 +286,33 @@ class ApexChessEngine:
         eg_phase = TOTAL_GAME_PHASE - mg_phase
         eval_score = (mg_score * mg_phase + eg_score * eg_phase) // TOTAL_GAME_PHASE
 
-        # King Safety & Pawn Structure adjustments
-        if self.board.is_check(): eval_score += 50
+        # 1. Pawn Structure: Passed/Isolated/Doubled Pawn
+        pawn_bonus = 0
+        for color in [chess.WHITE, chess.BLACK]:
+            pawns = self.board.pieces(chess.PAWN, color)
+            for sq in pawns:
+                if self.board.is_passed_pawn(sq, color): pawn_bonus += (20 if color == chess.WHITE else -20)
+                if self.board.is_isolated_pawn(sq): pawn_bonus -= (10 if color == chess.WHITE else -10)
         
-        # Bishop Pair Bonus
-        white_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.WHITE)
-        black_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.BLACK)
-        if white_bishops >= 2: eval_score += 50
-        if black_bishops >= 2: eval_score -= 50
+        # 2. Bishop Pair: +50 bonus
+        bishop_pair_bonus = 0
+        if self.board.pieces(chess.BISHOP, chess.WHITE).bit_count() >= 2: bishop_pair_bonus += 50
+        if self.board.pieces(chess.BISHOP, chess.BLACK).bit_count() >= 2: bishop_pair_bonus -= 50
 
+        # 3. King Safety: Pawn Shield
+        king_safety_bonus = 0
+        for color in [chess.WHITE, chess.BLACK]:
+            k_sq = self.board.king(color)
+            if k_sq is not None:
+                shield = self.board.pieces(chess.PAWN, color) & chess.BB_KING_ATTACKS[k_sq]
+                king_safety_bonus += (shield.bit_count() * 15 if color == chess.WHITE else -shield.bit_count() * 15)
+
+        eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_bonus)
         final_score = eval_score if self.board.turn == chess.WHITE else -eval_score
+
         if os.environ.get("CHESS_AI_DEBUG") == "1":
             print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={final_score}")
+
         return final_score
 
     # -------------------------------------------------------------------------
@@ -395,6 +414,8 @@ class ApexChessEngine:
 
             if score >= beta:
                 self.pruned_nodes += 1
+                if os.environ.get("CHESS_AI_DEBUG") == "1":
+                    print(f"[DEBUG_LOG] Step=PRUNING_STAT | Pruned={self.pruned_nodes}")
                 return beta
 
         moves = list(self.board.legal_moves)

@@ -1,0 +1,30 @@
+{
+  "task_id": "mission_014_step5_nps_benchmark",
+  "test_type": "cli_test",
+  "use_browser_test": false,
+  "target_file": "extraction_target_project/AGENT_TEST/chess_ai.py",
+  "entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "debug_log_spec": {
+    "toggle_key": "CHESS_AI_DEBUG",
+    "log_pattern": "[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps_count}"
+  },
+  "implementation_blueprint": {
+    "feature_title": "ApexChessEngine - NPS 성능 측정 및 통합 디버그 출력",
+    "target_component": "ApexChessEngine.benchmark",
+    "debug_toggle_key": "CHESS_AI_DEBUG",
+    "variable_bindings": {
+      "nps_count": "초당 탐색 노드 수 (Nodes Per Second)"
+    },
+    "step_by_step_recipe": [
+      "1. 탐색 수행 후 소요 시간 대비 총 탐색 노드 수 비율(NPS) 계산 함수 구현",
+      "2. CHESS_AI_DEBUG=1 환경변수 활성화 시 검증용 NPS 통계 출력 로직 작성",
+      "3. [DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps_count} 형식으로 디버그 로그 표준 출력"
+    ]
+  },
+  "servers": [],
+  "browser_test_spec": null,
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps_count}"
+  ]
+}

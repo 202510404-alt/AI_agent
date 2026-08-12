@@ -334,20 +334,13 @@ class AgentSessionFactory:
 2. 파일 전체 수정 요구 시, 함부로 통째로 덮어쓰지 말고 `extract_code_slice` 및 `patch_code_slice`를 조합하여 작업을 수행하십시오.
 """
 
-        tool_config_dict = {
-            "function_calling_config": {
-                "mode": "AUTO"
-            }
-        }
-
         # 💡 [FIX 2] Function Calling(tools) 사용 시 API 충돌 및 에러를 유발하는 response_mime_type 옵션 제거
         chat = self.client.chats.create(
             model=target_model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 tools=tools,
-                temperature=0.0,
-                tool_config=tool_config_dict
+                temperature=0.0
             )
         )
         

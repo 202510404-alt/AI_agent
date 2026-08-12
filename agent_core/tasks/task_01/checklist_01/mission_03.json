@@ -1,0 +1,30 @@
+{
+  "task_id": "mission_014_step4_opening_book",
+  "test_type": "cli_test",
+  "use_browser_test": false,
+  "target_file": "extraction_target_project/AGENT_TEST/chess_ai.py",
+  "entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  "debug_log_spec": {
+    "toggle_key": "CHESS_AI_DEBUG",
+    "log_pattern": "[DEBUG_LOG] Step=OPENING_BOOK | Move={selected_move}"
+  },
+  "implementation_blueprint": {
+    "feature_title": "ApexChessEngine - 순수 파이썬 오프닝 북 모듈 구현",
+    "target_component": "OpeningBook.get_move",
+    "debug_toggle_key": "CHESS_AI_DEBUG",
+    "variable_bindings": {
+      "selected_move": "Polyglot (.bin) 룩업 테이블에서 선택된 수"
+    },
+    "step_by_step_recipe": [
+      "1. 외부 DB 라이브러리 없이 표준 Polyglot (.bin) 구조를 파싱하는 순수 파이썬 오프닝 북 함수 구현",
+      "2. 현재 체스판 해시와 매칭되는 오프닝 수 선택 및 반환 처리",
+      "3. 오프닝 수 매칭 성공 시 [DEBUG_LOG] Step=OPENING_BOOK | Move={selected_move} 로그 출력"
+    ]
+  },
+  "servers": [],
+  "browser_test_spec": null,
+  "expected_terminal_outputs": [
+    "[DEBUG_LOG] Step=OPENING_BOOK | Move={selected_move}"
+  ]
+}

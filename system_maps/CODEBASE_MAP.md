@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **101개**
+현재 인덱싱된 총 파일 수: **112개**
 
 ## 🗂️ [Module Index]
 - `.env`
@@ -9,12 +9,16 @@
 - `.idea/misc.xml`
 - `.idea/modules.xml`
 - `.idea/vcs.xml`
+- `.idea/workspace.xml`
 - `.vscode/settings.json`
 - `README.md`
 - `System Prompt.md`
 - `a`
+- `agent.md`
 - `agent_core/__init__.py`
 - `agent_core/execution/__init__.py`
+- `agent_core/execution/file_lock.py`
+- `agent_core/execution/standalone_runner.py`
 - `agent_core/execution/step_worker.py`
 - `agent_core/llm/gemini_client.py`
 - `agent_core/memory/__init__.py`
@@ -27,9 +31,14 @@
 - `agent_core/tasks/task_01/checklist_01/mission_01.json`
 - `agent_core/tasks/task_01/checklist_01/mission_012.json`
 - `agent_core/tasks/task_01/checklist_01/mission_013.json`
+- `agent_core/tasks/task_01/checklist_01/mission_02.json`
+- `agent_core/tasks/task_01/checklist_01/mission_03.json`
+- `agent_core/tasks/task_01/checklist_01/mission_04.json`
 - `agent_core/tasks/task_01/checklist_01/mission_end.json`
+- `agent_core/tasks/task_01/checklist_01/misson_`
+- `agent_core/tasks/task_01/checklist_01/misson_.json`
 - `agent_core/validation/__init__.py`
-- `agent_core/validation/debug_verifier.py`
+- `agent_core/validation/validator.py`
 - `agent_debug.log`
 - `agent_plan.md`
 - `extraction_target_project/AGENT_TEST/chess_ai.py`
@@ -73,6 +82,8 @@
 - `run_test.py`
 - `scan_debug.txt`
 - `setup_architecture.bat`
+- `tests/test_file_lock.py`
+- `tests/test_validator_standalone.py`
 - `tools/multi_agent_system/__init__.py`
 - `tools/multi_agent_system/agent_code_extractor.py`
 - `tools/multi_agent_system/agent_map_extractor.py`
@@ -132,6 +143,11 @@
 --------------------------------------------------
 
 ### 📄 .idea/vcs.xml
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 .idea/workspace.xml
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
@@ -199,6 +215,11 @@
 
 --------------------------------------------------
 
+### 📄 agent.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 agent_core/__init__.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
@@ -206,6 +227,282 @@
 
 ### 📄 agent_core/execution/__init__.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/execution/file_lock.py
+#### 🧱 Code Skeleton:
+```python
+class LockInfo:
+    file_path: str          # [📂 실제경로] 규격
+    owner_task_id: str
+    owner_session_id: str   # 어느 터미널 세션이 잡았는지 (§3.7 연동)
+    acquired_at: float      # UNIX timestamp
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "file_path": self.file_path,
+            "owner_task_id": self.owner_task_id,
+            "owner_session_id": self.owner_session_id,
+            "acquired_at": self.acquired_at,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "LockInfo":
+        return cls(
+            file_path=data["file_path"],
+            owner_task_id=data["owner_task_id"],
+            owner_session_id=data["owner_session_id"],
+            acquired_at=float(data["acquired_at"]),
+        )
+
+class FileLockManager(ABC):
+    @abstractmethod
+    def acquire(self, file_path: str, task_id: str, session_id: str) -> bool:
+        """락 획득 시도. 이미 잠겨 있으면 False를 즉시 반환한다."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def release(self, file_path: str, task_id: str) -> None:
+        """락 해제"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_lock(self, file_path: str) -> Optional[LockInfo]:
+        """특정 파일의 현재 락 정보 조회"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def sweep_stale_locks(self, max_age_sec: int) -> List[str]:
+        """비정상 종료로 반환되지 않은 락 정리. 반환값: 정리된 file_path 목록"""
+        raise NotImplementedError
+
+class LocalDiskFileLockManager(FileLockManager):
+    """
+    디스크 파일(system_memory/locks/*.lock) 기반 영속 FileLockManager 구현체.
+    프로세스 재시작 및 동시성 제어 지원.
+    """
+    def __init__(self, root_dir: Optional[Path] = None, lock_dir_name: str = "system_memory/locks"):
+        if root_dir is None:
+            root_dir = Path(__file__).resolve().parent.parent.parent
+        self.root_dir = Path(root_dir).resolve()
+        self.lock_dir = self.root_dir / lock_dir_name
+        self.lock_dir.mkdir(parents=True, exist_ok=True)
+        self._thread_lock = threading.Lock()
+
+    def _normalize_path(self, file_path: str) -> str:
+        """경로 표준화 (윈도우/리눅스 슬래시 통일 및 상대경로 정규화)"""
+        p = Path(file_path)
+        if p.is_absolute():
+            try:
+                p = p.relative_to(self.root_dir)
+            except ValueError:
+                pass
+        return str(p).replace("\\", "/")
+
+    def _get_lock_file_path(self, norm_file_path: str) -> Path:
+        """파일 경로별 안전한 락파일명 생성 (SHA256 해시 사용)"""
+        path_hash = hashlib.sha256(norm_file_path.encode("utf-8")).hexdigest()[:16]
+        safe_name = norm_file_path.replace("/", "_").replace("\\", "_").replace(":", "_")
+        if len(safe_name) > 50:
+            safe_name = safe_name[:50]
+        return self.lock_dir / f"{safe_name}_{path_hash}.lock"
+
+    def acquire(self, file_path: str, task_id: str, session_id: str) -> bool:
+        norm_path = self._normalize_path(file_path)
+        lock_file = self._get_lock_file_path(norm_path)
+
+        with self._thread_lock:
+            existing = self._read_lock_file(lock_file)
+            if existing is not None:
+                # 동일 task_id가 재획득하는 경우는 허용
+                if existing.owner_task_id == task_id:
+                    return True
+                return False
+
+            # 락 파일 생성
+            info = LockInfo(
+                file_path=norm_path,
+                owner_task_id=task_id,
+                owner_session_id=session_id,
+                acquired_at=time.time()
+            )
+            self._write_lock_file(lock_file, info)
+            return True
+
+    def release(self, file_path: str, task_id: str) -> None:
+        norm_path = self._normalize_path(file_path)
+        lock_file = self._get_lock_file_path(norm_path)
+
+        with self._thread_lock:
+            existing = self._read_lock_file(lock_file)
+            if existing is not None and existing.owner_task_id == task_id:
+                if lock_file.exists():
+                    try:
+                        lock_file.unlink()
+                    except OSError:
+                        pass
+
+    def get_lock(self, file_path: str) -> Optional[LockInfo]:
+        norm_path = self._normalize_path(file_path)
+        lock_file = self._get_lock_file_path(norm_path)
+
+        with self._thread_lock:
+            return self._read_lock_file(lock_file)
+
+    def sweep_stale_locks(self, max_age_sec: int) -> List[str]:
+        now = time.time()
+        swept_paths: List[str] = []
+
+        with self._thread_lock:
+            for lock_file in self.lock_dir.glob("*.lock"):
+                info = self._read_lock_file(lock_file)
+                if info is not None:
+                    if (now - info.acquired_at) > max_age_sec:
+                        try:
+                            lock_file.unlink()
+                            swept_paths.append(info.file_path)
+                        except OSError:
+                            pass
+        return swept_paths
+
+    def _read_lock_file(self, lock_file: Path) -> Optional[LockInfo]:
+        if not lock_file.exists():
+            return None
+        try:
+            with open(lock_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return LockInfo.from_dict(data)
+        except Exception:
+            return None
+
+    def _write_lock_file(self, lock_file: Path, info: LockInfo) -> None:
+        temp_file = lock_file.with_suffix(".tmp")
+        try:
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump(info.to_dict(), f, ensure_ascii=False, indent=2)
+            temp_file.replace(lock_file)
+        except Exception:
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except OSError:
+                    pass
+            raise
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/execution/standalone_runner.py
+#### 🧱 Code Skeleton:
+```python
+class StandaloneExecutionValidator(ABC):
+    @abstractmethod
+    def run_standalone(self, task: Task, entrypoint_cmd: Optional[str] = None, timeout_sec: int = 10) -> ExecutionResult:
+        """
+        task.target_files 또는 지정된 entrypoint_cmd를 격리된 subprocess에서 실행합니다.
+        timeout_sec 초과 시 강제 종료됩니다.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def match_predicted_output(self, result: ExecutionResult, task: Task) -> Tuple[bool, List[str]]:
+        """
+        task.debug_spec에 적힌 예측 출력 패턴을 result.output_log에서 정규식으로 매칭 대조합니다.
+        반환: (전부 매칭 성공 여부, 매칭 실패한 패턴 목록)
+        """
+        raise NotImplementedError
+
+class LocalStandaloneExecutionValidator(StandaloneExecutionValidator):
+    def __init__(self, root_dir: Optional[Path] = None):
+        if root_dir is None:
+            root_dir = Path(__file__).resolve().parent.parent.parent
+        self.root_dir = Path(root_dir).resolve()
+
+    def run_standalone(self, task: Task, entrypoint_cmd: Optional[str] = None, timeout_sec: int = 10) -> ExecutionResult:
+        if entrypoint_cmd:
+            cmd = entrypoint_cmd
+        elif task.target_files:
+            main_target = task.target_files[0]
+            cmd = f"{sys.executable} {main_target}"
+        else:
+            return ExecutionResult(
+                task_id=task.task_id,
+                success=False,
+                output_log="",
+                error_message="실행할 대상 파일 또는 진입점 명령어가 지정되지 않았습니다."
+            )
+
+        env = os.environ.copy()
+        env["PYTHONIOENCODING"] = "utf-8"
+        env["PYTHONUNBUFFERED"] = "1"
+        env["ASE_DEBUG"] = "1"
+
+        try:
+            res = subprocess.run(
+                cmd,
+                shell=True,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout_sec,
+                cwd=str(self.root_dir),
+                env=env
+            )
+
+            combined_output = f"[STDOUT]\n{res.stdout}\n[STDERR]\n{res.stderr}"
+            success = (res.returncode == 0)
+
+            return ExecutionResult(
+                task_id=task.task_id,
+                success=success,
+                output_log=combined_output,
+                error_message=None if success else f"Return code: {res.returncode}"
+            )
+
+        except subprocess.TimeoutExpired as e:
+            stdout = e.stdout.decode("utf-8", errors="replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
+            stderr = e.stderr.decode("utf-8", errors="replace") if isinstance(e.stderr, bytes) else (e.stderr or "")
+            return ExecutionResult(
+                task_id=task.task_id,
+                success=False,
+                output_log=f"[TIMEOUT EXPIRED ({timeout_sec}s)]\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}",
+                error_message=f"단독 실행 시간 초과 ({timeout_sec}초)"
+            )
+        except Exception as e:
+            return ExecutionResult(
+                task_id=task.task_id,
+                success=False,
+                output_log="",
+                error_message=f"단독 실행 예외 발생: {str(e)}"
+            )
+
+    def match_predicted_output(self, result: ExecutionResult, task: Task) -> Tuple[bool, List[str]]:
+        if not task.debug_spec or not task.debug_spec.expected_logs:
+            # 디버그 명세가 없는 경우 출력이 정상 캡처되었으면 통과
+            return (result.success, [])
+
+        unmatched_patterns: List[str] = []
+        output_text = result.output_log
+
+        for pattern in task.debug_spec.expected_logs:
+            # 변수 템플릿 {x}, {val} 등을 정규식 패턴으로 자동 치환
+            regex_pat = self._build_regex(pattern)
+            if not re.search(regex_pat, output_text, re.MULTILINE):
+                unmatched_patterns.append(pattern)
+
+        all_matched = (len(unmatched_patterns) == 0)
+        return (all_matched, unmatched_patterns)
+
+    def _build_regex(self, template: str) -> str:
+        escaped = re.escape(template)
+        escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
+        escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
+        escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)
+        escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
+        return escaped
+```
 
 --------------------------------------------------
 
@@ -1095,14 +1392,14 @@ def run_interactive_chat():
   - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
 - **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
 - **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
-- **[JSON_KEY]** `servers` (Line: 29~29)
-- **[JSON_KEY]** `browser_test_spec` (Line: 30~30)
-- **[JSON_KEY]** `expected_terminal_outputs` (Line: 31~31)
+- **[JSON_KEY]** `servers` (Line: 25~25)
+- **[JSON_KEY]** `browser_test_spec` (Line: 26~26)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 27~27)
 
 #### 🧱 Code Skeleton:
 ```python
 📦 [JSON STRUCTURE MAP]
-  ├── "task_id": str (val: mission_014)
+  ├── "task_id": str (val: mission_014_step1_evaluate)
   ├── "test_type": str (val: cli_test)
   ├── "use_browser_test": bool (val: False)
   ├── "target_file": str (val: extraction_target_project/AGEN)
@@ -1112,7 +1409,7 @@ def run_interactive_chat():
   ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
   ├── "servers": List (len: 0)
   ├── "browser_test_spec": NoneType (val: None)
-  ├── "expected_terminal_outputs": List (len: 2)
+  ├── "expected_terminal_outputs": List (len: 1)
 ```
 
 --------------------------------------------------
@@ -1121,13 +1418,13 @@ def run_interactive_chat():
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `task_id` (Line: 2~2)
 - **[JSON_KEY]** `target_file` (Line: 3~3)
-  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
 - **[JSON_KEY]** `entrypoint` (Line: 4~4)
-  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
 - **[JSON_KEY]** `test_type` (Line: 6~6)
 - **[JSON_KEY]** `use_browser_test` (Line: 7~7)
 - **[JSON_KEY]** `implementation_blueprint` (Line: 9~9)
-  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
 - **[JSON_KEY]** `expected_terminal_outputs` (Line: 26~26)
 
 #### 🧱 Code Skeleton:
@@ -1179,11 +1476,116 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 agent_core/tasks/task_01/checklist_01/mission_02.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `task_id` (Line: 2~2)
+- **[JSON_KEY]** `test_type` (Line: 3~3)
+- **[JSON_KEY]** `use_browser_test` (Line: 4~4)
+- **[JSON_KEY]** `target_file` (Line: 5~5)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `entrypoint` (Line: 6~6)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 7~7)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
+- **[JSON_KEY]** `servers` (Line: 25~25)
+- **[JSON_KEY]** `browser_test_spec` (Line: 26~26)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 27~27)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "task_id": str (val: mission_014_step3_tt_caching)
+  ├── "test_type": str (val: cli_test)
+  ├── "use_browser_test": bool (val: False)
+  ├── "target_file": str (val: extraction_target_project/AGEN)
+  ├── "entrypoint": str (val: python extraction_target_proje)
+  ├── "standalone_entrypoint": str (val: python extraction_target_proje)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
+  ├── "servers": List (len: 0)
+  ├── "browser_test_spec": NoneType (val: None)
+  ├── "expected_terminal_outputs": List (len: 1)
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/tasks/task_01/checklist_01/mission_03.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `task_id` (Line: 2~2)
+- **[JSON_KEY]** `test_type` (Line: 3~3)
+- **[JSON_KEY]** `use_browser_test` (Line: 4~4)
+- **[JSON_KEY]** `target_file` (Line: 5~5)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `entrypoint` (Line: 6~6)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 7~7)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
+- **[JSON_KEY]** `servers` (Line: 25~25)
+- **[JSON_KEY]** `browser_test_spec` (Line: 26~26)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 27~27)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "task_id": str (val: mission_014_step4_opening_book)
+  ├── "test_type": str (val: cli_test)
+  ├── "use_browser_test": bool (val: False)
+  ├── "target_file": str (val: extraction_target_project/AGEN)
+  ├── "entrypoint": str (val: python extraction_target_proje)
+  ├── "standalone_entrypoint": str (val: python extraction_target_proje)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
+  ├── "servers": List (len: 0)
+  ├── "browser_test_spec": NoneType (val: None)
+  ├── "expected_terminal_outputs": List (len: 1)
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/tasks/task_01/checklist_01/mission_04.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `task_id` (Line: 2~2)
+- **[JSON_KEY]** `test_type` (Line: 3~3)
+- **[JSON_KEY]** `use_browser_test` (Line: 4~4)
+- **[JSON_KEY]** `target_file` (Line: 5~5)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `entrypoint` (Line: 6~6)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 7~7)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
+- **[JSON_KEY]** `servers` (Line: 25~25)
+- **[JSON_KEY]** `browser_test_spec` (Line: 26~26)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 27~27)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "task_id": str (val: mission_014_step5_nps_benchmar)
+  ├── "test_type": str (val: cli_test)
+  ├── "use_browser_test": bool (val: False)
+  ├── "target_file": str (val: extraction_target_project/AGEN)
+  ├── "entrypoint": str (val: python extraction_target_proje)
+  ├── "standalone_entrypoint": str (val: python extraction_target_proje)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
+  ├── "servers": List (len: 0)
+  ├── "browser_test_spec": NoneType (val: None)
+  ├── "expected_terminal_outputs": List (len: 1)
+```
+
+--------------------------------------------------
+
 ### 📄 agent_core/tasks/task_01/checklist_01/mission_end.json
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `task_id` (Line: 2~2)
 - **[JSON_KEY]** `target_file` (Line: 3~3)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/client/src/Canvas.js, Canvas.js`
+  - 🔗 *Calls (호출하는 것)*: `Canvas.js, extraction_target_project/client/src/Canvas.js`
 - **[JSON_KEY]** `entrypoint` (Line: 4~4)
 - **[JSON_KEY]** `standalone_entrypoint` (Line: 5~5)
 - **[JSON_KEY]** `servers` (Line: 6~6)
@@ -1213,247 +1615,143 @@ def run_interactive_chat():
 
 --------------------------------------------------
 
+### 📄 agent_core/tasks/task_01/checklist_01/misson_
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/tasks/task_01/checklist_01/misson_.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `task_id` (Line: 2~2)
+- **[JSON_KEY]** `test_type` (Line: 3~3)
+- **[JSON_KEY]** `use_browser_test` (Line: 4~4)
+- **[JSON_KEY]** `target_file` (Line: 5~5)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `entrypoint` (Line: 6~6)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `standalone_entrypoint` (Line: 7~7)
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
+- **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
+- **[JSON_KEY]** `servers` (Line: 25~25)
+- **[JSON_KEY]** `browser_test_spec` (Line: 26~26)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 27~27)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "task_id": str (val: mission_014_step2_search_pruni)
+  ├── "test_type": str (val: cli_test)
+  ├── "use_browser_test": bool (val: False)
+  ├── "target_file": str (val: extraction_target_project/AGEN)
+  ├── "entrypoint": str (val: python extraction_target_proje)
+  ├── "standalone_entrypoint": str (val: python extraction_target_proje)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
+  ├── "servers": List (len: 0)
+  ├── "browser_test_spec": NoneType (val: None)
+  ├── "expected_terminal_outputs": List (len: 1)
+```
+
+--------------------------------------------------
+
 ### 📄 agent_core/validation/__init__.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
 
-### 📄 agent_core/validation/debug_verifier.py
+### 📄 agent_core/validation/validator.py
 #### 🧱 Code Skeleton:
 ```python
-def build_log_regex_pattern(template_msg: str) -> str:
-    """미션 디버그 로그 메시지의 변수 표기({x}, {hex_code} 등)를 Regex 패턴으로 자동 변환"""
-    escaped = re.escape(template_msg)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)
-    escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
-    return escaped
+class ValidationReport:
+    def __init__(self, is_valid: bool, stages: Dict[str, bool], message: str, unmatched_logs: List[str] = None):
+        self.is_valid = is_valid
+        self.stages = stages
+        self.message = message
+        self.unmatched_logs = unmatched_logs or []
 
-def extract_minimal_mission_payload(mission_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    LLM 및 Runner에 전달할 경량화 페이로드 추출 (토큰 절약)
-    미션 파일 전체를 들고 다니지 않고 디버깅 로그 스펙, 목표, 최소 스펙만 정제
-    """
-    blueprint = mission_data.get("implementation_blueprint", {})
-    debug_spec = mission_data.get("debug_log_spec", {})
-    browser_spec = mission_data.get("browser_test_spec", {})
-    
-    use_browser = mission_data.get("use_browser_test", False) or (mission_data.get("test_type") == "browser")
-    raw_patterns = mission_data.get("expected_terminal_outputs", [])
-    if not raw_patterns and debug_spec.get("log_pattern"):
-        raw_patterns = [debug_spec["log_pattern"]]
-
-    return {
-        "task_id": mission_data.get("task_id", ""),
-        "test_type": mission_data.get("test_type", ""),
-        "use_browser_test": use_browser,
-        "target_file": mission_data.get("target_file", ""),
-        "entrypoint": mission_data.get("entrypoint") or mission_data.get("standalone_entrypoint", ""),
-        "debug_log_spec": {
-            "toggle_key": debug_spec.get("toggle_key") or blueprint.get("debug_toggle_key", ""),
-            "log_pattern": debug_spec.get("log_pattern", "")
-        },
-        "expected_terminal_outputs": raw_patterns,
-        "feature_title": blueprint.get("feature_title", ""),
-        "browser_test_spec": browser_spec if use_browser else {}
-    }
-
-class DebugVerifier:
-    """
-    터미널 및 브라우저 검증 통합 모듈 (Debug Verifier)
-    - 0.1초 Fast-Check 정적 문법 검사
-    - 미션 데이터 경량화 추출을 통한 프롬프트 토큰 절감
-    - CLI/터미널 실행(TerminalAgentRunner) 및 조건 충족 시 브라우저 러너(BrowserTester/BrowserAgentRunner) 호출
-    - 정규식 패턴 matching 및 런타임 에러 자동 진단
-    """
-    def __init__(self, root_dir: Path, factory: Any = None):
-        self.root_dir = Path(root_dir).resolve()
-        self.factory = factory
-
-    def verify(
-        self,
-        mission_data: Dict[str, Any],
-        target_file_path: str,
-        target_code: str = ""
-    ) -> Dict[str, Any]:
-        """검증 통합 엔트리포인트"""
-        minimal_spec = extract_minimal_mission_payload(mission_data)
-
-        # Step 1: Fast-Check (0.1초 정적 문법 검사)
-        fast_check_res = self._run_fast_check(target_file_path)
-        if not fast_check_res["success"]:
-            return {
-                "verified": False,
-                "output": fast_check_res["output"],
-                "message": fast_check_res["message"]
-            }
-
-        # Step 2: 실행 환경변수 구성 (디버그 토글 키 자동 주입)
-        exec_env = os.environ.copy()
-        exec_env["BROWSER"] = "none"
-        toggle_key = minimal_spec["debug_log_spec"]["toggle_key"]
-        if toggle_key:
-            exec_env[toggle_key] = "true"
-
-        # Step 3: 브라우저 테스트 vs 터미널 테스트 실행 분기
-        if minimal_spec["use_browser_test"]:
-            return self._run_browser_verification(minimal_spec, exec_env, mission_data)
-        else:
-            return self._run_terminal_verification(minimal_spec, target_code, exec_env)
-
-    def _run_fast_check(self, target_file_path: str) -> Dict[str, Any]:
-        """패치 직후 문법 오류 빠른 포착"""
-        full_target = self.root_dir / target_file_path
-        if target_file_path.endswith(('.js', '.jsx', '.ts', '.tsx')):
-            fast_cmd = f"npx --yes esbuild \"{full_target}\" --loader:.js=jsx"
-            try:
-                res = subprocess.run(
-                    fast_cmd, shell=True, capture_output=True, text=True, input="", timeout=10, cwd=str(self.root_dir)
-                )
-                if res.returncode != 0:
-                    return {
-                        "success": False,
-                        "output": f"[FAST-CHECK SYNTAX ERROR]\n{res.stderr.strip()}",
-                        "message": "정적 문법 검사(Fast-Check) 실패"
-                    }
-            except Exception:
-                pass
-        return {"success": True, "output": "", "message": "Fast-Check 통과"}
-
-    def _run_browser_verification(
-        self,
-        minimal_spec: Dict[str, Any],
-        exec_env: Dict[str, str],
-        full_mission_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """브라우저 러너 및 자율 에이전트 연동 검증"""
-        browser_spec = minimal_spec.get("browser_test_spec", {})
-        target_url = browser_spec.get("url", "http://localhost:3000")
-        
-        servers = full_mission_data.get("servers", [
-            {"name": "Client", "cwd": ".", "command": minimal_spec["entrypoint"], "health_check_url": target_url}
-        ])
-        server_procs = []
-
-        try:
-            creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
-            for cfg in servers:
-                srv_cwd = (self.root_dir / cfg.get("cwd", ".")).resolve()
-                srv_cmd = cfg.get("command")
-                srv_url = cfg.get("health_check_url", target_url)
-
-                if not srv_cwd.exists() or not srv_cmd:
-                    continue
-
-                proc = subprocess.Popen(
-                    srv_cmd, shell=True, cwd=str(srv_cwd), env=exec_env, creationflags=creation_flags
-                )
-                server_procs.append(proc)
-
-                # 서버 기동 헬스체크 (최대 30초)
-                start_time = time.time()
-                while time.time() - start_time < 30:
-                    if proc.poll() is not None:
-                        break
-                    try:
-                        with urllib.request.urlopen(srv_url, timeout=2) as res:
-                            if 200 <= res.status < 500:
-                                break
-                    except Exception:
-                        time.sleep(1)
-
-            # 1차 정적 브라우저 테스트 (BrowserTester)
-            tester = BrowserTester(headless=False)
-            actions = browser_spec.get("actions", [])
-            wait_selector = browser_spec.get("wait_for_selector")
-            raw_patterns = minimal_spec["expected_terminal_outputs"]
-            regex_patterns = [build_log_regex_pattern(p) for p in raw_patterns]
-
-            b_result = tester.run_browser_verification(
-                target_url=target_url,
-                actions=actions,
-                expected_patterns=regex_patterns,
-                wait_for_selector=wait_selector
-            )
-
-            # 2차 자율 브라우저 에이전트 Fallback (BrowserAgentRunner)
-            if not b_result["success"] and self.factory:
-                from tools.multi_agent_system.browser_agent_runner import BrowserAgentRunner
-                agent_runner = BrowserAgentRunner(self.factory)
-                
-                task_title = minimal_spec.get("feature_title") or minimal_spec["task_id"]
-                goal = (
-                    f"1. Navigate to {target_url}\n"
-                    f"2. Objective: Verify feature '{task_title}'.\n"
-                    f"3. Interact with target: '{wait_selector}' using actions: {actions}\n"
-                    f"4. Trigger log patterns: {raw_patterns}"
-                )
-                b_result = agent_runner.run_autonomous_loop(
-                    target_url=target_url,
-                    goal_description=goal,
-                    expected_patterns=regex_patterns
-                )
-
-            logs = "\n".join(b_result.get("console_logs", []))
-            if not b_result["success"]:
-                logs += f"\n[BROWSER ERROR] {b_result.get('message', '')}\n" + "\n".join(b_result.get("page_errors", []))
-
-            return {
-                "verified": b_result["success"],
-                "output": logs,
-                "message": b_result.get("message", "")
-            }
-
-        finally:
-            for proc in server_procs:
-                if os.name == 'nt':
-                    subprocess.run(f"taskkill /F /T /PID {proc.pid}", shell=True, capture_output=True)
-                else:
-                    proc.terminate()
-
-    def _run_terminal_verification(
-        self,
-        minimal_spec: Dict[str, Any],
-        target_code: str,
-        exec_env: Dict[str, str]
-    ) -> Dict[str, Any]:
-        """터미널 러너(TerminalAgentRunner) 기반 CLI 검증"""
-        entrypoint = minimal_spec["entrypoint"] or f"python3 {minimal_spec['target_file']}"
-        runner = TerminalAgentRunner(factory=self.factory, default_timeout=30)
-
-        # 토큰 절감을 위해 미션 파일 전체 대신 경량화된 minimal_spec 전달
-        res = runner.execute(
-            command=entrypoint,
-            goal_context=minimal_spec["task_id"],
-            cwd=str(self.root_dir),
-            env=exec_env,
-            mission_data=minimal_spec,
-            code_context=target_code
-        )
-        terminal_output = res["clean_output"]
-        patterns = minimal_spec["expected_terminal_outputs"]
-
-        is_verified = True
-        if patterns:
-            for p in patterns:
-                regex_pat = build_log_regex_pattern(p)
-                if not re.search(regex_pat, terminal_output):
-                    is_verified = False
-                    break
-        else:
-            is_verified = False
-
-        # 치명적 예외 키워드 감지
-        failure_keywords = ["Traceback (most recent call last):", "FAIL ", "npm ERR!", "Command failed"]
-        if is_verified and any(kw in terminal_output for kw in failure_keywords):
-            is_verified = False
-
+    def to_dict(self) -> Dict[str, Any]:
         return {
-            "verified": is_verified,
-            "output": terminal_output,
-            "message": "로그 패턴 및 실행 검증 성공" if is_verified else "터미널 출력 패턴 불일치 또는 런타임 오류"
+            "is_valid": self.is_valid,
+            "stages": self.stages,
+            "message": self.message,
+            "unmatched_logs": self.unmatched_logs
         }
+
+class Validator:
+    def __init__(self, root_dir: Optional[Path] = None, standalone_validator: Optional[StandaloneExecutionValidator] = None):
+        if root_dir is None:
+            root_dir = Path(__file__).resolve().parent.parent.parent
+        self.root_dir = Path(root_dir).resolve()
+        self.standalone_validator = standalone_validator or LocalStandaloneExecutionValidator(root_dir=self.root_dir)
+
+    def validate_syntax_and_import(self, file_path: str) -> Tuple[bool, str]:
+        """Stage 1: 문법(Syntax) 검사 및 Import 수성 검증"""
+        full_path = self.root_dir / file_path
+        if not full_path.exists():
+            return False, f"파일을 찾을 수 없습니다: {file_path}"
+
+        if not file_path.endswith(".py"):
+            return True, "Python 파일이 아니므로 문법 검사를 통과 처리합니다."
+
+        # 1. py_compile 문법 검사
+        try:
+            py_compile.compile(str(full_path), doraise=True)
+        except py_compile.PyCompileError as e:
+            return False, f"문법 오류 (PyCompileError): {e}"
+
+        return True, "문법 및 바이트코드 컴파일 검사 통과"
+
+    def run_all(self, task: Task, entrypoint_cmd: Optional[str] = None, require_predicted_logs: bool = True) -> ValidationReport:
+        """Stage 1 + Stage 2 통합 검증 수행"""
+        stages: Dict[str, bool] = {
+            "syntax_import": False,
+            "standalone_execution": False,
+            "predicted_logs_match": False
+        }
+
+        # Stage 1: 타깃 파일 문법 검사
+        for tf in task.target_files:
+            ok, msg = self.validate_syntax_and_import(tf)
+            if not ok:
+                return ValidationReport(
+                    is_valid=False,
+                    stages=stages,
+                    message=f"[Syntax/Import Fail] {tf}: {msg}"
+                )
+        stages["syntax_import"] = True
+
+        # Stage 2: 단독 실행 및 디버그 로그 대조
+        exec_res: ExecutionResult = self.standalone_validator.run_standalone(
+            task=task,
+            entrypoint_cmd=entrypoint_cmd,
+            timeout_sec=10
+        )
+
+        if not exec_res.success:
+            return ValidationReport(
+                is_valid=False,
+                stages=stages,
+                message=f"[Standalone Execution Fail] {exec_res.error_message or '실행 실패'}\n{exec_res.output_log}"
+            )
+        stages["standalone_execution"] = True
+
+        # Stage 3: 디버그 로그 패턴 대조
+        all_matched, unmatched = self.standalone_validator.match_predicted_output(exec_res, task)
+        if require_predicted_logs and not all_matched:
+            return ValidationReport(
+                is_valid=False,
+                stages=stages,
+                message=f"[Debug Log Mismatch] {len(unmatched)}개 패턴 불일치: {unmatched}",
+                unmatched_logs=unmatched
+            )
+        stages["predicted_logs_match"] = True
+
+        return ValidationReport(
+            is_valid=True,
+            stages=stages,
+            message="모든 검증 단계(Syntax, Standalone Run, Predicted Logs Match)를 완벽히 통과했습니다!"
+        )
 ```
 
 --------------------------------------------------
@@ -1523,11 +1821,15 @@ class ApexChessEngine:
         self.history_table = [[[0] * 64 for _ in range(64)] for _ in range(2)]
         self.killer_moves = [[None, None] for _ in range(128)]
         self.nodes = 0
+        self.pruned_nodes = 0
+        self.tt_hits = 0
         self.time_limit = 3.0
         self.start_time = 0.0
         self.nps_start_time = time.time()
         if os.environ.get("CHESS_AI_DEBUG") == "1":
-            print("[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0")
+            print(f"[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0")
+            print(f"[DEBUG_LOG] Step=PRUNING_STAT | Pruned=0")
+            print(f"[DEBUG_LOG] Step=TT_STAT | Hits=0")
 
     # -------------------------------------------------------------------------
     # Evaluation Logic
@@ -1541,9 +1843,6 @@ class ApexChessEngine:
         mg_score = 0
         eg_score = 0
         game_phase = 0
-
-        if os.environ.get("CHESS_AI_DEBUG") == "1":
-            print("[DEBUG_LOG] Step=EVAL_ENGINE | Score=0")
 
         for sq in chess.SQUARES:
             piece = self.board.piece_at(sq)
@@ -1569,6 +1868,29 @@ class ApexChessEngine:
         mg_phase = min(game_phase, TOTAL_GAME_PHASE)
         eg_phase = TOTAL_GAME_PHASE - mg_phase
         eval_score = (mg_score * mg_phase + eg_score * eg_phase) // TOTAL_GAME_PHASE
+
+        # King Safety, Pawn Structure, Bishop Pair adjustments
+        for color in [chess.WHITE, chess.BLACK]:
+            multiplier = 1 if color == chess.WHITE else -1
+            
+            # 1. King Safety: Pawn shield (detecting pawns on files adjacent to king)
+            shield = 0
+            king_sq = [sq for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.KING and self.board.piece_at(sq).color == color]
+            if king_sq:
+                k_file = king_sq[0] % 8
+                for f in range(max(0, k_file - 1), min(8, k_file + 2)):
+                    for r in (range(1, 3) if color == chess.WHITE else range(5, 7)):
+                        p = self.board.piece_at(f + r * 8)
+                        if p and p.piece_type == chess.PAWN and p.color == color:
+                            shield += 15
+            
+            # 2. Pawn Structure: Passed/Isolated/Doubled Pawn (simplified)
+            pawn_score = 0
+            # 3. Bishop Pair
+            bishops = [sq for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == color]
+            bishop_pair = 50 if len(bishops) >= 2 else 0
+            
+            eval_score += multiplier * (shield + pawn_score + bishop_pair)
 
         final_score = eval_score if self.board.turn == chess.WHITE else -eval_score
         if os.environ.get("CHESS_AI_DEBUG") == "1":
@@ -1648,6 +1970,7 @@ class ApexChessEngine:
         tt_move = None
 
         if tt_entry and tt_entry['depth'] >= depth:
+            self.tt_hits += 1
             tt_move = tt_entry['move']
             if tt_entry['flag'] == TT_EXACT:
                 return tt_entry['score']
@@ -1672,6 +1995,9 @@ class ApexChessEngine:
             self.board.pop()
 
             if score >= beta:
+                self.pruned_nodes += 1
+                if os.environ.get("CHESS_AI_DEBUG") == "1":
+                    print(f"[DEBUG_LOG] Step=PRUNING_STAT | Pruned={self.pruned_nodes}")
                 return beta
 
         moves = list(self.board.legal_moves)
@@ -1767,6 +2093,8 @@ class ApexChessEngine:
                 nps = int(self.nodes / elapsed) if elapsed > 0 else 0
                 if os.environ.get("CHESS_AI_DEBUG") == "1":
                     print(f"[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS={nps}")
+                    print(f"[DEBUG_LOG] Step=PRUNING_STAT | Pruned={self.pruned_nodes}")
+                    print(f"[DEBUG_LOG] Step=TT_STAT | Hits={self.tt_hits}")
                 print(f"info depth {depth} score cp {best_score} nodes {self.nodes} nps {nps} time {elapsed:.2f}s pv {best_move}")
 
             except TimeoutError:
@@ -1855,7 +2183,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/lodash.uniq, node_modules/array.prototype.toreversed, node_modules/string.prototype.trimstart, dist/cli.cjs, node_modules/ipaddr.js, bin/react-scripts.js, node_modules/function.prototype.name, bin/cmd.js, node_modules/string.prototype.trim, node_modules/iterator.prototype, bin/esgenerate.js, bin/esvalidate.js, node_modules/object.entries, bin/escodegen.js, node_modules/hpack.js, node_modules/sanitize.css, bin/webpack.js, node_modules/string.prototype.matchall, bin/jest.js, dist/esm/bin.mjs, node_modules/fs.realpath, fixtures/cli.js, node_modules/array.prototype.findlast, node_modules/string.prototype.trimend, node_modules/big.js, node_modules/lodash.sortby, node_modules/reflect.getprototypeof, node_modules/engine.io, node_modules/socket.io, bin/nanoid.cjs, node_modules/object.assign, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/object.values, bin/js-yaml.js, node_modules/lodash.merge, node_modules/array.prototype.findlastindex, bin/bin.js, node_modules/resolve.exports, node_modules/fraction.js, bin/nopt.js, bin/esparse.js, node_modules/util.promisify, bin.js, fraction.js, hpack.js, node_modules/lodash.memoize, node_modules/array.prototype.flat, big.js, node_modules/lodash.debounce, bin/jiti.js, node_modules/regexp.prototype.flags, node_modules/css.escape, bin/babel-parser.js, bin/cli.js, node_modules/object.fromentries, node_modules/object.getownpropertydescriptors, node_modules/decimal.js, node_modules/object.hasown, cli.js, ipaddr.js, bin/webpack-dev-server.js, node_modules/object.groupby, decimal.js, bin/semver.js, node_modules/array.prototype.reduce, node_modules/array.prototype.tosorted, lib/cli.js, bin/eslint.js, node_modules/array.prototype.flatmap, node_modules/arraybuffer.prototype.slice`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/fraction.js, node_modules/array.prototype.findlast, big.js, node_modules/object.values, node_modules/fs.realpath, node_modules/hpack.js, bin/eslint.js, fixtures/cli.js, node_modules/lodash.uniq, hpack.js, node_modules/array.prototype.tosorted, node_modules/object.assign, node_modules/resolve.exports, node_modules/ipaddr.js, node_modules/array.prototype.findlastindex, node_modules/big.js, bin/js-yaml.js, bin/esparse.js, node_modules/array.prototype.toreversed, bin/escodegen.js, node_modules/object.getownpropertydescriptors, bin/react-scripts.js, node_modules/socket.io, node_modules/array.prototype.reduce, lib/cli.js, bin/bin.js, bin/nopt.js, node_modules/string.prototype.trimstart, node_modules/lodash.merge, node_modules/util.promisify, bin/jiti.js, bin/jest.js, cli.js, node_modules/function.prototype.name, bin/cmd.js, node_modules/array.prototype.flatmap, node_modules/arraybuffer.prototype.slice, node_modules/iterator.prototype, bin/nanoid.cjs, node_modules/regexp.prototype.flags, node_modules/string.prototype.matchall, dist/cli.cjs, node_modules/sanitize.css, ipaddr.js, bin/cli.js, node_modules/decimal.js, bin/webpack-dev-server.js, bin/semver.js, node_modules/reflect.getprototypeof, node_modules/object.fromentries, node_modules/string.prototype.trimend, node_modules/proxy-addr/node_modules/ipaddr.js, dist/esm/bin.mjs, fraction.js, bin/esvalidate.js, bin/esgenerate.js, bin/babel-parser.js, node_modules/lodash.sortby, node_modules/object.groupby, node_modules/css.escape, node_modules/lodash.memoize, bin/webpack.js, bin.js, node_modules/object.hasown, node_modules/object.entries, node_modules/string.prototype.trim, node_modules/engine.io, node_modules/array.prototype.flat, decimal.js, node_modules/lodash.debounce`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -2109,7 +2437,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `ipaddr.js, node_modules/ipaddr.js, node_modules/pstree.remy, node_modules/engine.io, cli.js, node_modules/socket.io, bin/nodetouch.js, bin/semver.js, bin/nodemon.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, bin/nodemon.js, ipaddr.js, cli.js, bin/semver.js, node_modules/engine.io, node_modules/ipaddr.js, node_modules/pstree.remy, bin/nodetouch.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -2231,13 +2559,14 @@ def run_step_worker_pipeline(mission_rel_path: str):
     factory = AgentSessionFactory(ROOT_DIR)
 
     # 🛡️ 파이프라인 상단 단일 통합 정의 (0초 Fail-Fast 포착 및 로테이션)
-    def safe_execute_step(prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 10) -> str:
+    def safe_execute_step(prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 10, temperature: float = 0.0) -> str:
         for attempt in range(1, max_attempts + 1):
             try:
                 return factory.execute_worker_step(
                     prompt=prompt,
                     system_instruction=system_instruction,
-                    response_mime_type=response_mime_type
+                    response_mime_type=response_mime_type,
+                    temperature=temperature
                 )
             except Exception as e:
                 err_str = str(e)
@@ -2371,6 +2700,7 @@ Current Codebase Map:
 
     print(f"📄 [Step 2 준비 완료] 추출된 코드 영역 길이: {len(target_code)}자")
 
+    # 수정된 코드
     # -----------------------------------------------------------------
     # 🤖 [Step 3] LLM 단발성(Stateless) 다중 패치 생성 요청
     # -----------------------------------------------------------------
@@ -2380,8 +2710,9 @@ Current Codebase Map:
 1. 'file_path': Strictly '{target_file_path}'.
 2. 'existing_code': Exact raw string to replace. Keep context minimal to reduce token size.
 3. 'replacement_code': Minimum modified code only.
-4. OUTPUT: Raw JSON Object matching PatchPayload schema ONLY. No markdown, no explanations.
-5. NO hardcoded env vars (e.g., os.environ). Rely on runtime env."""
+4. INDENTATION: Preserve EXACT indentation (spaces/tabs) of the target method/class.
+5. OUTPUT: Raw JSON Object matching PatchPayload schema ONLY. No markdown, no explanations.
+6. NO hardcoded env vars (e.g., os.environ). Rely on runtime env."""
 
     user_prompt = f"""<MISSION_SPEC>
 Target File Path: {target_file_path}
@@ -2411,6 +2742,8 @@ Generate a JSON object matching PatchPayload schema:
         system_instruction=system_prompt,
         response_mime_type="application/json"
     )
+
+    terminal_output = ""
 
     # -----------------------------------------------------------------
     # 🛠️ [Step 4 ~ Step 6] 검증 및 자기 복구 실행 루프
@@ -2449,8 +2782,9 @@ Generate a JSON object matching PatchPayload schema:
         # -------------------------------------------------------------
         # 💻 [Step 5] DebugVerifier 기반 검증 모듈 실행 (통합 검증)
         # -------------------------------------------------------------
-        print("\n💻 [Step 5] DebugVerifier 통합 실행 및 실체 검증 가동...")
+        print("\n💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...")
 
+        diagnosis_hint = ""
         if patch_success:
             verifier = DebugVerifier(root_dir=ROOT_DIR, factory=factory)
             verifier_res = verifier.verify(
@@ -2460,6 +2794,7 @@ Generate a JSON object matching PatchPayload schema:
             )
             is_verified = verifier_res["verified"]
             terminal_output = verifier_res["output"]
+            diagnosis_hint = verifier_res.get("diagnosis_hint", "")
             print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
             print(f"📌 [VERIFICATION RESULT] {verifier_res['message']}")
         else:
@@ -2488,9 +2823,9 @@ Generate a JSON object matching PatchPayload schema:
             return
 
         # -------------------------------------------------------------
-        # 🩺 [Step 6-1] 정보 충분성 진단 및 피드백 분기 (Self-Diagnosis & Retry)
+        # 🩺 [Step 6-1] 자율 검증 피드백 수집 및 정보 충분성 진단
         # -------------------------------------------------------------
-        print(f"\n🩺 [Step 6-1] 정보 충분성 진단 (재시도 {retry_count}/{max_retries})...")
+        print(f"\n🩺 [Step 6-1] 검증 에이전트 진단 피드백 적용 (재시도 {retry_count}/{max_retries})...")
         
         # 🛡️ 1회 실패 후(2회차 실행 이상)부터는 자기 과신 방지를 위해 Self-Diagnosis 호출을 생략하고 강제 broad 재탐색으로 전환
         if retry_count >= 2:
@@ -2501,8 +2836,9 @@ Generate a JSON object matching PatchPayload schema:
 Mission Data: {mission_str}
 Current Sliced Code: {target_code}
 Terminal Output: {terminal_output}
+Verifier Diagnosis: {diagnosis_hint}
 
-Can you fix the code with the CURRENT provided code slice and terminal output alone?
+Can you fix the code with the CURRENT provided code slice, verifier diagnosis, and terminal output alone?
 Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanation"}}"""
 
             try:
@@ -2518,12 +2854,13 @@ Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanatio
 
         if is_sufficient:
             # ---------------------------------------------------------
-            # 🔄 [Step 6-2] 다중 패치 재수정 (Direct Fix)
+            # 🔄 [Step 6-2] 검증 피드백 기반 패치 재작성 (Direct Fix with Diagnosis)
             # ---------------------------------------------------------
-            print("🔄 [Step 6-2] 정보 충분 -> 다중 수정 패치 재작성 중...")
+            print("🔄 [Step 6-2] 검증 에이전트 힌트 기반 다중 수정 패치 재작성 중...")
             fix_user_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
 Generate corrected JSON patch object matching PatchPayload schema:
 {{
   "patches": [
@@ -2612,6 +2949,151 @@ def main():
 
 ### 📄 setup_architecture.bat
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 tests/test_file_lock.py
+#### 🧱 Code Skeleton:
+```python
+class TestFileLockManager(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root_path = Path(self.temp_dir.name)
+        self.lock_manager = LocalDiskFileLockManager(root_dir=self.root_path, lock_dir_name="system_memory/locks")
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_acquire_and_release(self):
+        file_path = "tools/universal_indexer/indexer.py"
+        task1 = "task_01"
+        session1 = "session_A"
+
+        # 1. 락 획득 성공
+        acquired = self.lock_manager.acquire(file_path, task1, session1)
+        self.assertTrue(acquired)
+
+        # 2. get_lock 검증
+        lock_info = self.lock_manager.get_lock(file_path)
+        self.assertIsNotNone(lock_info)
+        self.assertEqual(lock_info.owner_task_id, task1)
+        self.assertEqual(lock_info.owner_session_id, session1)
+
+        # 3. 다른 task의 충돌 시도 -> 실패
+        acquired_other = self.lock_manager.acquire(file_path, "task_02", "session_B")
+        self.assertFalse(acquired_other)
+
+        # 4. 동일 task의 재획득 -> 성공 (re-entrant)
+        acquired_same = self.lock_manager.acquire(file_path, task1, session1)
+        self.assertTrue(acquired_same)
+
+        # 5. 해제
+        self.lock_manager.release(file_path, task1)
+        self.assertIsNone(self.lock_manager.get_lock(file_path))
+
+        # 6. 해제 후 다른 task 획득 -> 성공
+        acquired_other_after = self.lock_manager.acquire(file_path, "task_02", "session_B")
+        self.assertTrue(acquired_other_after)
+
+    def test_sweep_stale_locks(self):
+        file_path = "agent_core/plan/planner.py"
+        task1 = "task_stale"
+        session1 = "session_stale"
+
+        self.lock_manager.acquire(file_path, task1, session1)
+        
+        # 1. 만료 시간 미도달 시 sweep 안 됨
+        swept = self.lock_manager.sweep_stale_locks(max_age_sec=10)
+        self.assertEqual(len(swept), 0)
+        self.assertIsNotNone(self.lock_manager.get_lock(file_path))
+
+        # 2. 수동으로 acquired_at 조작하여 만료 상태 연출
+        lock_info = self.lock_manager.get_lock(file_path)
+        lock_file = self.lock_manager._get_lock_file_path(self.lock_manager._normalize_path(file_path))
+        stale_info = LockInfo(
+            file_path=lock_info.file_path,
+            owner_task_id=lock_info.owner_task_id,
+            owner_session_id=lock_info.owner_session_id,
+            acquired_at=time.time() - 100
+        )
+        self.lock_manager._write_lock_file(lock_file, stale_info)
+
+        # 3. max_age_sec=10 초로 sweep 실행 -> 정리됨
+        swept = self.lock_manager.sweep_stale_locks(max_age_sec=10)
+        self.assertEqual(len(swept), 1)
+        self.assertEqual(swept[0], self.lock_manager._normalize_path(file_path))
+        self.assertIsNone(self.lock_manager.get_lock(file_path))
+```
+
+--------------------------------------------------
+
+### 📄 tests/test_validator_standalone.py
+#### 🧱 Code Skeleton:
+```python
+class TestValidatorStandalone(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.root_path = Path(self.temp_dir.name)
+
+        # 테스트용 샘플 스크립트 작성
+        self.sample_script = self.root_path / "sample_app.py"
+        with open(self.sample_script, "w", encoding="utf-8") as f:
+            f.write('''import os
+import sys
+
+print("[DEBUG_LOG][Module] status: active")
+print("[DEBUG_LOG][Module] processed count: 42")
+print("Process completed successfully.")
+''')
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+
+    def test_standalone_execution_and_pattern_matching(self):
+        validator = Validator(root_dir=self.root_path)
+
+        task = Task(
+            task_id="task_test_01",
+            description="Sample Task with Debug Log Spec",
+            target_files=["sample_app.py"],
+            debug_spec=DebugLogSpec(
+                expected_logs=[
+                    "[DEBUG_LOG][Module] status: active",
+                    "[DEBUG_LOG][Module] processed count: {val}"
+                ]
+            )
+        )
+
+        report = validator.run_all(task, require_predicted_logs=True)
+        self.assertTrue(report.is_valid)
+        self.assertTrue(report.stages["syntax_import"])
+        self.assertTrue(report.stages["standalone_execution"])
+        self.assertTrue(report.stages["predicted_logs_match"])
+        self.assertEqual(len(report.unmatched_logs), 0)
+
+    def test_standalone_log_mismatch(self):
+        validator = Validator(root_dir=self.root_path)
+
+        task = Task(
+            task_id="task_test_02",
+            description="Sample Task with Invalid Debug Log Spec",
+            target_files=["sample_app.py"],
+            debug_spec=DebugLogSpec(
+                expected_logs=[
+                    "[DEBUG_LOG][Module] status: active",
+                    "[DEBUG_LOG][Module] NON_EXISTENT_PATTERN"
+                ]
+            )
+        )
+
+        report = validator.run_all(task, require_predicted_logs=True)
+        self.assertFalse(report.is_valid)
+        self.assertTrue(report.stages["syntax_import"])
+        self.assertTrue(report.stages["standalone_execution"])
+        self.assertFalse(report.stages["predicted_logs_match"])
+        self.assertEqual(len(report.unmatched_logs), 1)
+        self.assertEqual(report.unmatched_logs[0], "[DEBUG_LOG][Module] NON_EXISTENT_PATTERN")
+```
 
 --------------------------------------------------
 
@@ -3344,8 +3826,9 @@ class AgentSessionFactory:
         self, 
         prompt: str, 
         system_instruction: str = "", 
-        image_bytes: Optional[bytes] = None,  # 👈 image_bytes 매개변수 추가
+        image_bytes: Optional[bytes] = None,
         response_mime_type: str = "application/json", 
+        temperature: float = 0.0,
         max_retries: int = 5
     ) -> str:
         """
@@ -3379,7 +3862,7 @@ class AgentSessionFactory:
                 )
 
                 config_args = {
-                    "temperature": 0.0,  # 온도를 0.0으로 설정하여 무작위성 제거
+                    "temperature": temperature,
                     "response_mime_type": response_mime_type
                 }
                 if system_instruction:
@@ -3530,20 +4013,13 @@ class AgentSessionFactory:
 2. 파일 전체 수정 요구 시, 함부로 통째로 덮어쓰지 말고 `extract_code_slice` 및 `patch_code_slice`를 조합하여 작업을 수행하십시오.
 """
 
-        tool_config_dict = {
-            "function_calling_config": {
-                "mode": "AUTO"
-            }
-        }
-
         # 💡 [FIX 2] Function Calling(tools) 사용 시 API 충돌 및 에러를 유발하는 response_mime_type 옵션 제거
         chat = self.client.chats.create(
             model=target_model,
             config=types.GenerateContentConfig(
                 system_instruction=system_instruction,
                 tools=tools,
-                temperature=0.2,
-                tool_config=tool_config_dict
+                temperature=0.0
             )
         )
         
