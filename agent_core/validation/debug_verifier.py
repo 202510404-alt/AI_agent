@@ -17,6 +17,7 @@ import os
 import re
 import sys
 import time
+import json
 import subprocess
 import urllib.request
 from pathlib import Path
@@ -49,16 +50,17 @@ class VerificationDiagnosisSchema(BaseModel):
 
 
 def build_log_regex_pattern(template_msg: str) -> str:
-    """미션 디버그 로그 메시지의 변수 표기({x}, {val}, {eval_score} 등)를 Regex 유연 패턴으로 자동 변환"""
-    escaped = re.escape(template_msg)
-    # 수치형 변수 (정수, 실수, 음수)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}|\\\{eval_score\\\}|\\\{nps_count\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
-    # 불리언형 변수 (true/false, 1/0)
+    """미션 디버그 로그 메시지의 변수 표기({step_id}, {eval_score} 등)를 Regex 유연 패턴으로 자동 변환"""
+    escaped = re.escape(template_msg.strip())
+    # 1. 수치형/스코어 변수 ({eval_score}, {num}, {score} 등)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*(?:num|score|val|count|x|y|id|index)[a-zA-Z0-9_]*\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
+    # 2. 불리언 변수
     escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false|1|0)', escaped)
-    # Hex/Color 변수
+    # 3. Hex/Color 변수
     escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)
-    # 기타 일반 변수
+    # 4. 와일드카드 변수 전체 및 공백 유연화
     escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
+    escaped = re.sub(r'\\\s+', r'\\s+', escaped)
     return escaped
 
 
@@ -87,7 +89,8 @@ def extract_minimal_mission_payload(mission_data: Dict[str, Any]) -> Dict[str, A
         "entrypoint": mission_data.get("entrypoint") or mission_data.get("standalone_entrypoint", ""),
         "debug_log_spec": {
             "toggle_key": debug_spec.get("toggle_key") or blueprint.get("debug_toggle_key", ""),
-            "log_pattern": debug_spec.get("log_pattern", "")
+            "log_pattern": debug_spec.get("log_pattern", ""),
+            "steps_to_verify": debug_spec.get("steps_to_verify", [])
         },
         "expected_terminal_outputs": raw_patterns,
         "interactive_inputs": interactive_inputs,
@@ -319,11 +322,11 @@ Output JSON matching VerificationDecisionSchema only."""
                     break
                 elif decision.suggested_stdin_input:
                     stdin_cmd = decision.suggested_stdin_input.strip()
-                    # echo 구문으로 입력값을 파이프라인에 주입하여 다음 실행 시도
+                    # echo 구문으로 입력값을 파이프라인에 안전하게 주입
                     if os.name == 'nt':
-                        current_command = f"cmd /c \"echo {stdin_cmd} | {base_entrypoint}\""
+                        current_command = f"cmd /c (echo {stdin_cmd}) | {base_entrypoint}"
                     else:
-                        current_command = f"echo {stdin_cmd} | {base_entrypoint}"
+                        current_command = f"echo \"{stdin_cmd}\" | {base_entrypoint}"
                     continue
 
             # 다음 입력을 제시받지 못했다면 루프 종료
@@ -390,8 +393,13 @@ Output JSON matching VerificationDecisionSchema only."""
             except Exception:
                 pass
 
+        steps_info = minimal_spec.get("debug_log_spec", {}).get("steps_to_verify", [])
+
         prompt = f"""[MISSING LOG PATTERNS]
 {missing_patterns}
+
+[STEPS TO VERIFY SPECIFICATION]
+{json.dumps(steps_info, ensure_ascii=False, indent=2)}
 
 [ENTRYPOINT CODE CONTEXT (Main Loop / CLI)]
 {entrypoint_code}
@@ -400,9 +408,9 @@ Output JSON matching VerificationDecisionSchema only."""
 {terminal_output[-2000:]}
 
 [TASK]
-Analyze why the debug log was NOT triggered. Inspect the entrypoint/main loop code.
-1. Is the CLI stuck waiting for standard input? (What command triggers the target function?)
-2. Is the target function never called in the main loop?
+Analyze why the debug log was NOT triggered based on steps_to_verify spec.
+1. Is the CLI stuck waiting for standard input?
+2. Is the target variable/step not being executed in the main loop?
 Provide diagnostic root cause and recommended action for the code patcher.
 Output JSON matching VerificationDiagnosisSchema only."""
 

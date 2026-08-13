@@ -5,10 +5,19 @@
   "target_file": "extraction_target_project/AGENT_TEST/chess_ai.py",
   "entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
   "standalone_entrypoint": "python extraction_target_project/AGENT_TEST/chess_ai.py",
+  
   "debug_log_spec": {
     "toggle_key": "CHESS_AI_DEBUG",
-    "log_pattern": "[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}"
+    "log_pattern": "[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}",
+    "steps_to_verify": [
+      {
+        "step_id": "EVAL_ENGINE",
+        "target_variable": "eval_score",
+        "description": "정적 평가 로직(evaluate) 수행 후 최종 계산된 eval_score 점수 출력"
+      }
+    ]
   },
+
   "implementation_blueprint": {
     "feature_title": "ApexChessEngine - 정적 평가 함수(evaluate) 정교화",
     "target_component": "ApexChessEngine.evaluate",
@@ -22,9 +31,11 @@
       "3. CHESS_AI_DEBUG=1 활성화 시 [DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score} 형식의 디버그 로그 출력 구문 추가"
     ]
   },
+
   "servers": [],
   "browser_test_spec": null,
+
   "expected_terminal_outputs": [
-    "[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}"
+    "[DEBUG_LOG] Step=EVAL_ENGINE | Score="
   ]
 }

@@ -27,26 +27,8 @@ from tools.multi_agent_system.project_scale_detector import ProjectScaleDetector
 from tools.multi_agent_system.agent_map_extractor import extract_targeted_ai_map
 from agent_core.validation.debug_verifier import DebugVerifier
 
-# 패치 스니펫 출력 구조 완전 강제화
-class PatchItem(BaseModel):
-    file_path: str
-    existing_code: str
-    replacement_code: str
-
-class PatchPayload(BaseModel):
-    patches: List[PatchItem]
-
-def build_log_regex_pattern(template_msg: str) -> str:
-    """미션의 디버그 로그 메시지 내 변수 표기({x}, {hex_code} 등)를 Regex 유연 패턴으로 자동 변환"""
-    escaped = re.escape(template_msg)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)  # Hex Color 지원 추가
-    escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
-    return escaped
-
 def load_mission_file(mission_rel_path: str) -> dict:
-    """JSON 미션 파일 로더 및 규격 검증 (v1.3 신규 규격 적용)"""
+    """JSON 미션 파일 로더 및 규격 검증 (v2.0 신규 규격 적용)"""
     mission_path = ROOT_DIR / mission_rel_path
     if not mission_path.exists():
         raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
@@ -54,8 +36,8 @@ def load_mission_file(mission_rel_path: str) -> dict:
     with open(mission_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     
-    # 신규 미션 JSON 규격 필수 키 검증 (task_id, target_file)
-    required_keys = ["task_id", "target_file"]
+    # 필수 규격 키 검증 (debug_log_spec 포함)
+    required_keys = ["task_id", "target_file", "debug_log_spec"]
     for key in required_keys:
         if key not in data:
             raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
@@ -226,12 +208,11 @@ Current Codebase Map:
     print("\n🤖 [Step 3] LLM 단발성 수정 패치(다중 스니펫) 생성 중...")
     
     system_prompt = f"""STRICT EXECUTION PROTOCOL:
-1. 'file_path': Strictly '{target_file_path}'.
-2. 'existing_code': Exact raw string to replace. Keep context minimal to reduce token size.
-3. 'replacement_code': Minimum modified code only.
-4. INDENTATION: Preserve EXACT indentation (spaces/tabs) of the target method/class.
-5. OUTPUT: Raw JSON Object matching PatchPayload schema ONLY. No markdown, no explanations.
-6. NO hardcoded env vars (e.g., os.environ). Rely on runtime env."""
+1. Target File: Strictly '{target_file_path}'.
+2. Output code edits using EXACTLY the SEARCH/REPLACE block format shown below.
+3. Include enough surrounding lines in SEARCH block to uniquely identify the code to change.
+4. Keep exact whitespace/indentation.
+5. Do NOT output JSON. Use raw SEARCH/REPLACE text blocks only. No markdown wrapped JSON, no explanations."""
 
     user_prompt = f"""<MISSION_SPEC>
 Target File Path: {target_file_path}
@@ -243,23 +224,20 @@ Mission Details:
 {target_code}
 </READ_ONLY_CONTEXT>
 
-<OUTPUT_INSTRUCTIONS>
-Generate a JSON object matching PatchPayload schema:
-{{
-  "patches": [
-    {{
-      "file_path": "{target_file_path}",
-      "existing_code": "exact_raw_string_to_be_replaced",
-      "replacement_code": "exact_new_code_to_apply"
-    }}
-  ]
-}}
-</OUTPUT_INSTRUCTIONS>"""
+<OUTPUT_FORMAT>
+For each code change, output exactly:
+
+<<<<<<< SEARCH
+[Exact original code snippet to replace]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE
+</OUTPUT_FORMAT>"""
 
     raw_response = safe_execute_step(
         prompt=user_prompt,
         system_instruction=system_prompt,
-        response_mime_type="application/json"
+        response_mime_type="text/plain"
     )
 
     terminal_output = ""
@@ -274,18 +252,16 @@ Generate a JSON object matching PatchPayload schema:
         print(f"\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 {retry_count + 1}/{max_retries + 1})...")
         patch_success = False
         try:
-            # Pydantic 파싱으로 스키마 틀에 박힌 정확한 객체 검증
-            payload = PatchPayload.model_validate_json(clean_json_response(raw_response))
-            patch_list = [p.model_dump() for p in payload.patches]
+            # SEARCH/REPLACE 텍스트 블록 추출
+            patch_list = factory.patcher.parse_blocks(raw_response)
 
             if patch_list:
                 all_patches_ok = True
                 for idx, item in enumerate(patch_list, 1):
-                    file_path = item["file_path"]
                     existing_code = item["existing_code"]
                     replacement_code = item["replacement_code"]
 
-                    patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
+                    patch_result = factory.patcher.apply_patch(target_file_path, existing_code, replacement_code)
                     print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
                     print(f"   ├─ [BEFORE]: {existing_code.strip()[:60]}...")
                     print(f"   └─ [AFTER] : {replacement_code.strip()[:60]}...")
@@ -293,10 +269,10 @@ Generate a JSON object matching PatchPayload schema:
                         all_patches_ok = False
                 patch_success = all_patches_ok
             else:
-                print("⚠️ [PATCH FAIL] 패치 항목(patches)이 비어 있습니다.")
+                print("⚠️ [PATCH FAIL] SEARCH/REPLACE 패치 블록이 비어 있거나 인식되지 않았습니다.")
 
         except Exception as e:
-            print(f"❌ [STEP 4 ERROR] Pydantic 스키마 검증 실패 또는 패치 적용 오류: {e}")
+            print(f"❌ [STEP 4 ERROR] 패치 파싱 또는 적용 오류: {e}")
 
         # -------------------------------------------------------------
         # 💻 [Step 5] DebugVerifier 기반 검증 모듈 실행 (통합 검증)
@@ -322,16 +298,13 @@ Generate a JSON object matching PatchPayload schema:
 
         if patch_success and is_verified:
             # 🧹 임시 생성된 검증용 테스트 파일 자동 청소 (Clean-up)
-            created_temp_files = [
-                item.get("file_path") for item in patch_list 
-                if item.get("file_path") and item.get("file_path") != target_file_path 
-                and ("test" in item.get("file_path").lower() or "temp" in item.get("file_path").lower())
-            ]
-            for temp_file in created_temp_files:
-                temp_path = (ROOT_DIR / temp_file).resolve()
-                if temp_path.exists():
-                    temp_path.unlink()
-                    print(f"🧹 [CLEANUP] 검증 완료 후 임시 테스트 파일 삭제: {temp_file}")
+            for item in patch_list:
+                file_p = item.get("file_path", target_file_path)
+                if file_p and file_p != target_file_path and ("test" in file_p.lower() or "temp" in file_p.lower()):
+                    temp_path = (ROOT_DIR / file_p).resolve()
+                    if temp_path.exists():
+                        temp_path.unlink()
+                        print(f"🧹 [CLEANUP] 검증 완료 후 임시 테스트 파일 삭제: {file_p}")
 
             print("\n🎉 [SUCCESS] 모든 디버깅 로그 및 작업 검증 완료!")
             return
@@ -380,16 +353,17 @@ Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanatio
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
 <VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
-Generate corrected JSON patch object matching PatchPayload schema:
-{{
-  "patches": [
-    {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
-  ]
-}}"""
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
             raw_response = safe_execute_step(
                 prompt=fix_user_prompt,
                 system_instruction=system_prompt,
-                response_mime_type="application/json"
+                response_mime_type="text/plain"
             )
         else:
             # ---------------------------------------------------------
@@ -431,22 +405,23 @@ Output JSON string array matching: ["path/1", "path/2"]"""
             slice_res = factory.extractor.process(dynamic_slice_prompt, auto_save=False)
             target_code = slice_res.get("markdown", "")
             
-            # 🛠️ [보완 2] 이전 실행 실패 로그(<PREVIOUS_FAILURE_LOG>)를 프롬프트에 필수 전달하여 피드백 강화
+            # 🛠️ [보완 2] 이전 실패 로그뿐만 아니라 자율 검증 에이전트 진단 힌트(<VERIFIER_AGENT_DIAGNOSIS>)까지 프롬프트에 동시 주입
             retry_fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-Generate corrected JSON patch object matching PatchPayload schema:
-{{
-  "patches": [
-    {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
-  ]
-}}"""
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
             raw_response = safe_execute_step(
                 prompt=retry_fix_prompt,
                 system_instruction=system_prompt,
-                response_mime_type="application/json"
+                response_mime_type="text/plain"
             )
-
 # =====================================================================
 # 🚀 메인 실행 진입점
 # =====================================================================

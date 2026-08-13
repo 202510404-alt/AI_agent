@@ -4,11 +4,20 @@ AI가 출력한 기존 코드(existing_code)를 대상 파일에서 100% 일치 
 수정된 코드(replacement_code)로 정밀 치환(Partial Patching)하는 도구
 """
 
+import re
 from pathlib import Path
 
 class CodePatcher:
     def __init__(self, root_dir: Path):
         self.root_dir = Path(root_dir).resolve()
+
+    def parse_blocks(self, raw_text: str) -> list[dict]:
+        """
+        LLM 출력 텍스트에서 <<<<<<< SEARCH ... ======= ... >>>>>>> REPLACE 구문을 추출합니다.
+        """
+        pattern = r"<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n>>>>>>> REPLACE"
+        matches = re.findall(pattern, raw_text, re.DOTALL)
+        return [{"existing_code": m[0], "replacement_code": m[1]} for m in matches]
 
     def apply_patch(self, rel_path: str, existing_code: str, replacement_code: str) -> dict:
         """

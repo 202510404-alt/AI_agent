@@ -23,20 +23,30 @@ class ProcessHandle:
     """subprocess.Popen을 감싸 비동기 입출력 및 상태를 관리하는 핸들러 클래스"""
     def __init__(self, proc: subprocess.Popen):
         self.proc = proc
+        self.pid = proc.pid
         self._output_queue: queue.Queue = queue.Queue()
         self._stop_event = threading.Event()
-        
-        # 백그라운드에서 stdout을 읽어 큐에 저장하는 스레드 가동
-        self._reader_thread = threading.Thread(target=self._read_stdout_loop, daemon=True)
-        self._reader_thread.start()
+        self.last_output_time = time.time()  # 마지막 출력 시간 타임스탬프 추가
 
-    def _read_stdout_loop(self):
-        if self.proc.stdout:
-            while not self._stop_event.is_set():
-                line = self.proc.stdout.readline()
-                if not line:
+        # 비동기 stdout/stderr 수집 스레드 시작
+        self._stdout_thread = threading.Thread(target=self._reader_thread, args=(self.proc.stdout,), daemon=True)
+        self._stderr_thread = threading.Thread(target=self._reader_thread, args=(self.proc.stderr,), daemon=True)
+        self._stdout_thread.start()
+        self._stderr_thread.start()
+
+    def _reader_thread(self, stream):
+        """스트림에서 실시간으로 텍스트를 읽어 큐에 적재"""
+        try:
+            for line in iter(stream.readline, ''):
+                if line:
+                    self._output_queue.put(line)
+                    self.last_output_time = time.time()  # 출력 발생 시 타임스탬프 갱신
+                if self._stop_event.is_set():
                     break
-                self._output_queue.put(line)
+        except Exception:
+            pass
+        finally:
+            stream.close()
 
     @property
     def pid(self) -> int:
@@ -189,8 +199,13 @@ class TerminalAgentRunner:
                         exit_code=proc_handle.exit_code
                     )
 
-                if self._is_kernel_waiting_stdin(proc_handle.pid):
-                    response = self._resolve_input(buffer, goal, mission_data, code_context)
+                if self._is_waiting_for_input(proc_handle, buffer):
+                    response = self._resolve_input(
+                        current_buffer=buffer,
+                        goal=goal,
+                        mission_data=mission_data,
+                        code_context=code_context
+                    )
                     if response is None:
                         self._kill_process_tree(proc_handle.pid)
                         return self._build_result(
@@ -226,14 +241,22 @@ class TerminalAgentRunner:
         except Exception as e:
             return self._build_result("DAEMON_ERROR", "", error_msg=str(e))
 
-    def _is_kernel_waiting_stdin(self, pid: int) -> bool:
-        try:
-            proc = psutil.Process(pid)
-            if proc.status() == psutil.STATUS_WAITING:
-                return True
-        except Exception:
-            pass
-        return False
+    def _is_waiting_for_input(self, proc_handle: ProcessHandle, buffer: str, quiet_time_sec: float = 0.3) -> bool:
+        """
+        Quiet Period(출력 정지 시간) + Tail Pattern(프롬프트 패턴) 기반 감지
+        """
+        if not proc_handle.is_alive():
+            return False
+
+        # 1. Quiet Period 검사: 지정된 시간(0.3초) 동안 아무 출력이 없었는지 확인
+        if time.time() - proc_handle.last_output_time < quiet_time_sec:
+            return False
+
+        # 2. Tail Pattern 검사: 버퍼의 마지막 줄이 입력 유도 패턴으로 끝나는지 확인
+        clean_tail = buffer.strip().splitlines()[-1] if buffer.strip() else ""
+        interactive_indicators = [">", ":", "?", "Turn:", "Enter", "input", "[y/n]"]
+
+        return any(clean_tail.endswith(ind) or ind in clean_tail for ind in interactive_indicators)
 
     def _resolve_input(self, current_buffer: str, goal: str, mission_data: Optional[Dict[str, Any]], code_context: Optional[str]) -> Optional[str]:
         buffer_lower = current_buffer.lower()

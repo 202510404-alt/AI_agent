@@ -9,7 +9,14 @@
 
   "debug_log_spec": {
     "toggle_key": "ENVIRONMENT_VARIABLE_KEY",
-    "log_pattern": "[DEBUG_LOG] Step=... | Pattern=..."
+    "log_pattern": "[DEBUG_LOG] Step={STEP_ID} | {VAR_NAME}={VAR_VALUE}",
+    "steps_to_verify": [
+      {
+        "step_id": "STEP_IDENTIFIER",
+        "target_variable": "variable_name",
+        "description": "추적 및 검증할 상태값/변수에 대한 명확한 설명"
+      }
+    ]
   },
 
   "implementation_blueprint": {
@@ -23,7 +30,7 @@
     "step_by_step_recipe": [
       "1. 코드 수정 또는 구현 단계 1",
       "2. 코드 수정 또는 구현 단계 2",
-      "3. 디버그 로그 출력 구문 삽입 위치 및 조건"
+      "3. CHESS_AI_DEBUG=1 활성화 시 debug_log_spec.log_pattern에 맞춘 [DEBUG_LOG] 출력 구문 삽입"
     ]
   },
 
@@ -39,6 +46,6 @@
   "browser_test_spec": null,
 
   "expected_terminal_outputs": [
-    "[DEBUG_LOG] Step=... | Pattern={variable}"
+    "[DEBUG_LOG] Step=STEP_IDENTIFIER | variable_name="
   ]
 }

@@ -286,34 +286,48 @@ class ApexChessEngine:
         eg_phase = TOTAL_GAME_PHASE - mg_phase
         eval_score = (mg_score * mg_phase + eg_score * eg_phase) // TOTAL_GAME_PHASE
 
-        # 1. Pawn Structure: Passed/Isolated/Doubled Pawn
+        # Pawn Structure: Passed/Isolated/Doubled
         pawn_bonus = 0
-        for color in [chess.WHITE, chess.BLACK]:
-            pawns = self.board.pieces(chess.PAWN, color)
-            for sq in pawns:
-                if self.board.is_passed_pawn(sq, color): pawn_bonus += (20 if color == chess.WHITE else -20)
-                if self.board.is_isolated_pawn(sq): pawn_bonus -= (10 if color == chess.WHITE else -10)
-        
-        # 2. Bishop Pair: +50 bonus
-        bishop_pair_bonus = 0
-        if self.board.pieces(chess.BISHOP, chess.WHITE).bit_count() >= 2: bishop_pair_bonus += 50
-        if self.board.pieces(chess.BISHOP, chess.BLACK).bit_count() >= 2: bishop_pair_bonus -= 50
+        for sq in chess.SQUARES:
+            piece = self.board.piece_at(sq)
+            if piece and piece.piece_type == chess.PAWN:
+                color = piece.color
+                file = sq % 8
+                rank = sq // 8
+                # Simple passed pawn check
+                is_passed = True
+                for r in (range(rank + 1, 8) if color == chess.WHITE else range(0, rank)):
+                    if self.board.piece_at(r * 8 + file) and self.board.piece_at(r * 8 + file).piece_type == chess.PAWN:
+                        is_passed = False
+                        break
+                pawn_bonus += (30 if is_passed else 5) if color == chess.WHITE else (-30 if is_passed else -5)
 
-        # 3. King Safety: Pawn Shield
+        # Bishop Pair
+        white_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.WHITE)
+        black_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.BLACK)
+        bishop_pair_bonus = (50 if white_bishops >= 2 else 0) - (50 if black_bishops >= 2 else 0)
+        
+        # King Safety (Pawn Shield)
         king_safety_bonus = 0
         for color in [chess.WHITE, chess.BLACK]:
-            k_sq = self.board.king(color)
-            if k_sq is not None:
-                shield = self.board.pieces(chess.PAWN, color) & chess.BB_KING_ATTACKS[k_sq]
-                king_safety_bonus += (shield.bit_count() * 15 if color == chess.WHITE else -shield.bit_count() * 15)
+            king_sq = next((sq for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.KING and self.board.piece_at(sq).color == color), None)
+            if king_sq is not None:
+                shield = 0
+                f, r = king_sq % 8, king_sq // 8
+                for df in [-1, 0, 1]:
+                    nf = f + df
+                    if 0 <= nf <= 7:
+                        nr = r + (1 if color == chess.WHITE else -1)
+                        if 0 <= nr <= 7:
+                            p = self.board.piece_at(nr * 8 + nf)
+                            if p and p.piece_type == chess.PAWN and p.color == color:
+                                shield += 10
+                king_safety_bonus += shield if color == chess.WHITE else -shield
 
         eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_bonus)
-        final_score = eval_score if self.board.turn == chess.WHITE else -eval_score
-
         if os.environ.get("CHESS_AI_DEBUG") == "1":
-            print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={final_score}")
-
-        return final_score
+            print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}")
+        return eval_score
 
     # -------------------------------------------------------------------------
     # Move Ordering (MVV-LVA, Killers, History, TT)

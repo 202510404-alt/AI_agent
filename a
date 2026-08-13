@@ -1,73 +1,493 @@
-[{
-	"resource": "/c:/Users/COMLAB/Desktop/AI_agent/agent_core/validation/debug_verifier.py",
-	"owner": "Pylance5",
-	"severity": 8,
-	"message": "Expected indented block",
-	"source": "Pylance",
-	"startLineNumber": 278,
-	"startColumn": 9,
-	"endLineNumber": 280,
-	"endColumn": 12,
-	"modelVersionId": 14,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/COMLAB/Desktop/AI_agent/agent_core/validation/debug_verifier.py",
-	"owner": "Pylance5",
-	"severity": 8,
-	"message": "Unexpected indentation",
-	"source": "Pylance",
-	"startLineNumber": 436,
-	"startColumn": 1,
-	"endLineNumber": 436,
-	"endColumn": 13,
-	"modelVersionId": 14,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/COMLAB/Desktop/AI_agent/agent_core/validation/debug_verifier.py",
-	"owner": "Pylance5",
-	"severity": 8,
-	"message": "\"break\" can be used only within a loop",
-	"source": "Pylance",
-	"startLineNumber": 457,
-	"startColumn": 17,
-	"endLineNumber": 457,
-	"endColumn": 22,
-	"modelVersionId": 14,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/COMLAB/Desktop/AI_agent/agent_core/validation/debug_verifier.py",
-	"owner": "Pylance5",
-	"severity": 8,
-	"message": "\"break\" can be used only within a loop",
-	"source": "Pylance",
-	"startLineNumber": 471,
-	"startColumn": 21,
-	"endLineNumber": 471,
-	"endColumn": 26,
-	"modelVersionId": 14,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/COMLAB/Desktop/AI_agent/agent_core/validation/debug_verifier.py",
-	"owner": "Pylance5",
-	"severity": 8,
-	"message": "\"continue\" can be used only within a loop",
-	"source": "Pylance",
-	"startLineNumber": 479,
-	"startColumn": 21,
-	"endLineNumber": 479,
-	"endColumn": 29,
-	"modelVersionId": 14,
-	"origin": "extHost1"
-},{
-	"resource": "/c:/Users/COMLAB/Desktop/AI_agent/agent_core/validation/debug_verifier.py",
-	"owner": "Pylance5",
-	"severity": 8,
-	"message": "\"break\" can be used only within a loop",
-	"source": "Pylance",
-	"startLineNumber": 482,
-	"startColumn": 13,
-	"endLineNumber": 482,
-	"endColumn": 18,
-	"modelVersionId": 14,
-	"origin": "extHost1"
-}]
+PS C:\Users\COMLAB\Desktop\AI_agent> & C:\Users\COMLAB\AppData\Local\Microsoft\WindowsApps\python3.12.exe c:/Users/COMLAB/Desktop/AI_agent/run_test.py
+🚀 ASE-OS v1.3 Step Worker Pipeline 테스트 가동...
+
+🚀 [WORKER PIPELINE] 파이프라인 가동: 'agent_core/tasks/task_01/checklist_01/mission_01.json'
+🔍 [.ENV DIAGNOSTIC] 경로 검사 중: C:\Users\COMLAB\Desktop\AI_agent\.env (존재 여부: True)
+✅ [.ENV DIAGNOSTIC] 타겟 .env 타깃 매핑 완료: C:\Users\COMLAB\Desktop\AI_agent\.env
+   └─ 🔑 감지된 변수: 'GEMINI_API_KEY' (값 길이: 53자)
+   └─ 🔑 감지된 변수: 'GEMINI_API_KEY1' (값 길이: 53자)
+   └─ 🔑 감지된 변수: 'GEMINI_API_KEY2' (값 길이: 53자)
+   └─ 🔑 감지된 변수: 'GEMINI_API_KEY3' (값 길이: 53자)
+   └─ 🔑 감지된 변수: 'GEMINI_API_KEY4' (값 길이: 53자)
+   └─ 🔑 감지된 변수: 'GEMINI_API_KEY5' (값 길이: 53자)
+📊 [.ENV DIAGNOSTIC] 읽은 총 라인: 6줄 / 'GEMINI_API_KEY' 매칭: 6개
+🔑 [KEY MANAGER] 총 6개의 Gemini API Key가 성공적으로 로드되었습니다.
+🎛️ [SWITCH DETECTED] 현재 탐색 스위치 모드: ROOT
+📁 [MODE: ROOT] 탐색 마스터 루트가 프로젝트 원본 루트로 설정되었습니다: C:\Users\COMLAB\Desktop\AI_agent
+
+🗺️ [Step 1] 프로젝트 규모 측정 및 코드베이스 맵 준비...
+✅ 일반 규모 프로젝트: AI 호출 없이 전체 AI 코드베이스 맵 direct 생성
+🎯 [에이전트 맵 추출기] Custom AI Map 생성 완료: C:\Users\COMLAB\Desktop\AI_agent\system_maps\CUSTOM_AI_CODEBASE_MAP.md
+
+📄 [Step 2] 미션 및 지형도 맵 기반 필요 코드 영역 동적 추출...
+🔍 [Step 2 AI 요청 슬라이스 Target] extraction_target_project/AGENT_TEST/chess_ai.py:254-315
+
+============================================================
+🚨 [EXTRACTOR ON] 멀티 슬라이싱 파이프라인 기동!!!
+📥 유저 입력 프롬프트: 'extraction_target_project/AGENT_TEST/chess_ai.py:254-315'
+⚙️ 현재 매핑 모드: ROOT (기준 경로: C:\Users\COMLAB\Desktop\AI_agent)
+============================================================
+🔍 정규식 1차 타겟 스캔 결과: [('extraction_target_project/AGENT_TEST/chess_ai.py', '254', '315')]
+
+🎯 [요청 #1] 메인 타겟 분석 시작 -> extraction_target_project/AGENT_TEST/chess_ai.py (254 ~ 315 라인)
+   🟢 [경로 확정] 디스크 실체 발견: C:\Users\COMLAB\Desktop\AI_agent\extraction_target_project\AGENT_TEST\chess_ai.py
+   📏 파일 전체 줄 수: 590 | 보정된 안전 범위: 254 ~ 315
+   🟢 1차 메인 슬라이싱 성공 (길이: 2647자)
+   📡 [2차 사냥기] 잘려 나온 텍스트 내부에서 양방향 심볼 식별 개시...
+   📦 [양방향 통합] 징집 대상 심볼 목록: ['is_insufficient_material', 'piece_at', 'square_file', 'is_stalemate', 'evaluate', 'square_mirror', 'pieces', 'Piece', 'square', 'else', 'king', 'is_checkmate', 'square_rank']
+   📚 로드된 JSON 장부 총 심볼 개수: 437개
+      🔎 [전역 심볼 대조] 이름: 'is_insufficient_material' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'piece_at' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square_file' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'is_stalemate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'evaluate' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'square_mirror' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'pieces' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Piece' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'else' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'king' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'is_checkmate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square_rank' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+
+============================================================
+🏁 최종 반환할 총 슬라이스 묶음 개수: 1개
+============================================================
+
+📄 [Step 2 준비 완료] 추출된 코드 영역 길이: 3021자
+
+🤖 [Step 3] LLM 단발성 수정 패치(다중 스니펫) 생성 중...
+
+🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 1/4)...
+📌 [PATCH RESULT 1/1] ✅ [PATCH SUCCESS] extraction_target_project/AGENT_TEST/chess_ai.py 파일의 특정 구간이 성공적으로 수정되었습니다!
+   ├─ [BEFORE]: eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+   └─ [AFTER] : eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+
+💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...
+📄 [VERIFICATION OUTPUT]
+[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0
+[DEBUG_LOG] Step=PRUNING_STAT | Pruned=0
+[DEBUG_LOG] Step=TT_STAT | Hits=0
+==========================================================
+      ApexChess AI v1.0 (Advanced Minimax Engine)
+==========================================================
+Commands:
+ - 'go': AI play for current turn
+ - 'move <SAN/UCI>' (e.g., 'e4', 'e2e4'): Make a move
+ - 'auto': AI vs AI match
+ - 'print': Display current board state
+ - 'quit': Exit game
+==========================================================
+
+Board
+
+Turn: WHITE
+
+📌 [VERIFICATION RESULT] ⚠️ 디버그 로그 패턴 불일치 (미감지: ['[DEBUG_LOG] Step=EVAL_ENGINE | Score='])
+
+
+🩺 [Step 6-1] 검증 에이전트 진단 피드백 적용 (재시도 1/3)...
+🔄 [Step 6-2] 검증 에이전트 힌트 기반 다중 수정 패치 재작성 중...
+
+🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 2/4)...
+📌 [PATCH RESULT 1/1] ✅ [PATCH SUCCESS] extraction_target_project/AGENT_TEST/chess_ai.py 파일의 특정 구간이 성공적으로 수정되었습니다!
+   ├─ [BEFORE]: eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+   └─ [AFTER] : eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+
+💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...
+📄 [VERIFICATION OUTPUT]
+[PYTHON SYNTAX ERROR]
+Sorry: IndentationError: unexpected indent (chess_ai.py, line 319)
+📌 [VERIFICATION RESULT] 파이썬 문법 검사(py_compile) 실패
+
+🩺 [Step 6-1] 검증 에이전트 진단 피드백 적용 (재시도 2/3)...
+⚠️ [강제 재탐색 발동] 2회 이상 실패 감지: LLM 자가 진단 생략 후 강제 broad 시야 확장(Retry Step 1)으로 전환합니다.
+🌐 [Retry Step 1] 정보 부족 / 2회차 실패 -> 시야 확장 및 다중 경로 재탐색 진행...
+
+============================================================
+🚨 [EXTRACTOR ON] 멀티 슬라이싱 파이프라인 기동!!!
+📥 유저 입력 프롬프트: 'extraction_target_project/AGENT_TEST/chess_ai.py:1-594'
+⚙️ 현재 매핑 모드: ROOT (기준 경로: C:\Users\COMLAB\Desktop\AI_agent)
+============================================================
+🔍 정규식 1차 타겟 스캔 결과: [('extraction_target_project/AGENT_TEST/chess_ai.py', '1', '594')]
+
+🎯 [요청 #1] 메인 타겟 분석 시작 -> extraction_target_project/AGENT_TEST/chess_ai.py (1 ~ 594 라인)
+   🟢 [경로 확정] 디스크 실체 발견: C:\Users\COMLAB\Desktop\AI_agent\extraction_target_project\AGENT_TEST\chess_ai.py
+   📏 파일 전체 줄 수: 594 | 보정된 안전 범위: 1 ~ 594
+   🟢 1차 메인 슬라이싱 성공 (길이: 22022자)
+   📡 [2차 사냥기] 잘려 나온 텍스트 내부에서 양방향 심볼 식별 개시...
+   📦 [양방향 통합] 징집 대상 심볼 목록: ['result', 'from_uci', 'main', '__init__', 'TimeoutError', 'int', 'Tables', '_transposition_key', 'Move', 'probe', 'is_check', 'Ordering', 'MockChess', 'ApexChessEngine', '0', 'sleep', 'king', 'time', 'is_insufficient_material', 'piece_at', 'square_file', 'Reduction', 'startswith', 'is_stalemate', 'pvs', 'square_mirror', 'Board', 'null', 'push', 'square_rank', '__str__', 'sorted', 'parse_san', 'getrandbits', '_get_index', 'clear', 'pieces', 'str', 'order_moves', 'is_capture', 'Piece', 'square', 'else', 'input', 'store', 'Search', 'Pruning', 'pop', 'search', 'is_game_over', 'TranspositionTable', 'enumerate', 'legal_moves', 'evaluate', 'TABLES', 'get_mvv_lva_score', 'quiescence', 'score_move', 'is_checkmate']
+   📚 로드된 JSON 장부 총 심볼 개수: 437개
+      🔎 [전역 심볼 대조] 이름: 'result' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'from_uci' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'main' -> 장부 전체 스캔 중...
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> run_test.py (453~462라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> start.py (82~201라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> extraction_target_project/package.json (6~6라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/create_ai_map.py (187~318라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_retriever.py (139~147라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_watcher.py (128~154라인)
+      🔎 [전역 심볼 대조] 이름: '__init__' -> 장부 전체 스캔 중...
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/file_lock.py (71~77라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/standalone_runner.py (38~41라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/step_worker.py (22~26라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/step_worker.py (43~46라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/llm/gemini_client.py (114~122라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/llm/gemini_client.py (172~175라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/plan/prompt_builder.py (25~33라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/validation/validator.py (19~23라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/validation/validator.py (35~39라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_code_extractor.py (22~48라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_map_extractor.py (49~50라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_session.py (22~80라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_session.py (99~113라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/browser_agent_runner.py (14~15라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/browser_tester.py (30~32라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/code_patcher.py (10~11라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/project_scale_detector.py (32~47라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_agent_runner.py (24~35라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_agent_runner.py (91~94라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_runner.py (24~31라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_runner.py (80~83라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/agent_navigator.py (23~46라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/agent_navigator.py (289~339라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/context_builder.py (17~20라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/indexer.py (31~41라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_retriever.py (16~21라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_watcher.py (82~84라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/core_parsers/gitignore_parser.py (11~13라인)
+      🔎 [전역 심볼 대조] 이름: 'TimeoutError' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'int' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Tables' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: '_transposition_key' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Move' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'probe' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_check' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Ordering' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'MockChess' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'ApexChessEngine' -> 장부 전체 스캔 중...
+         ⬅️ [역방향] 나를 부르는 전역 호출처 목록(used_by): ['extraction_target_project/AGENT_TEST/chess_ai.py::main']
+      🔎 [전역 심볼 대조] 이름: '0' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'sleep' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'king' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'time' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'is_insufficient_material' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'piece_at' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square_file' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Reduction' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'startswith' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'is_stalemate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'pvs' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'square_mirror' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'Board' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'null' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'push' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square_rank' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: '__str__' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'sorted' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'parse_san' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'getrandbits' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: '_get_index' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'clear' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'pieces' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'str' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'order_moves' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_capture' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Piece' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'else' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'input' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'store' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'Search' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Pruning' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'pop' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'search' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_game_over' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'TranspositionTable' -> 장부 전체 스캔 중...
+         ⬅️ [역방향] 나를 부르는 전역 호출처 목록(used_by): ['extraction_target_project/AGENT_TEST/chess_ai.py::ApexChessEngine.__init__']
+      🔎 [전역 심볼 대조] 이름: 'enumerate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'legal_moves' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'evaluate' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'TABLES' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'get_mvv_lva_score' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'quiescence' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'score_move' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_checkmate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+
+============================================================
+🏁 최종 반환할 총 슬라이스 묶음 개수: 38개
+============================================================
+
+
+🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 3/4)...
+📌 [PATCH RESULT 1/1] ✅ [PATCH SUCCESS] extraction_target_project/AGENT_TEST/chess_ai.py 파일의 특정 구간이 성공적으로 수정되었습니다!
+   ├─ [BEFORE]: eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+   └─ [AFTER] : eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+
+💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...
+📄 [VERIFICATION OUTPUT]
+[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0
+[DEBUG_LOG] Step=PRUNING_STAT | Pruned=0
+[DEBUG_LOG] Step=TT_STAT | Hits=0
+==========================================================
+      ApexChess AI v1.0 (Advanced Minimax Engine)
+==========================================================
+Commands:
+ - 'go': AI play for current turn
+ - 'move <SAN/UCI>' (e.g., 'e4', 'e2e4'): Make a move
+ - 'auto': AI vs AI match
+ - 'print': Display current board state
+ - 'quit': Exit game
+==========================================================
+
+Board
+
+Turn: WHITE
+
+📌 [VERIFICATION RESULT] ⚠️ 디버그 로그 패턴 불일치 (미감지: ['[DEBUG_LOG] Step=EVAL_ENGINE | Score='])
+
+
+🩺 [Step 6-1] 검증 에이전트 진단 피드백 적용 (재시도 3/3)...
+⚠️ [강제 재탐색 발동] 2회 이상 실패 감지: LLM 자가 진단 생략 후 강제 broad 시야 확장(Retry Step 1)으로 전환합니다.
+🌐 [Retry Step 1] 정보 부족 / 2회차 실패 -> 시야 확장 및 다중 경로 재탐색 진행...
+
+============================================================
+🚨 [EXTRACTOR ON] 멀티 슬라이싱 파이프라인 기동!!!
+📥 유저 입력 프롬프트: 'extraction_target_project/AGENT_TEST/chess_ai.py:1-590'
+⚙️ 현재 매핑 모드: ROOT (기준 경로: C:\Users\COMLAB\Desktop\AI_agent)
+============================================================
+🔍 정규식 1차 타겟 스캔 결과: [('extraction_target_project/AGENT_TEST/chess_ai.py', '1', '590')]
+
+🎯 [요청 #1] 메인 타겟 분석 시작 -> extraction_target_project/AGENT_TEST/chess_ai.py (1 ~ 590 라인)
+   🟢 [경로 확정] 디스크 실체 발견: C:\Users\COMLAB\Desktop\AI_agent\extraction_target_project\AGENT_TEST\chess_ai.py
+   📏 파일 전체 줄 수: 590 | 보정된 안전 범위: 1 ~ 590
+   🟢 1차 메인 슬라이싱 성공 (길이: 21834자)
+   📡 [2차 사냥기] 잘려 나온 텍스트 내부에서 양방향 심볼 식별 개시...
+   📦 [양방향 통합] 징집 대상 심볼 목록: ['result', 'from_uci', 'main', '__init__', 'TimeoutError', 'int', 'Tables', '_transposition_key', 'Move', 'probe', 'is_check', 'Ordering', 'MockChess', 'ApexChessEngine', '0', 'sleep', 'king', 'time', 'is_insufficient_material', 'piece_at', 'square_file', 'Reduction', 'startswith', 'is_stalemate', 'pvs', 'square_mirror', 'Board', 'null', 'push', 'square_rank', '__str__', 'sorted', 'parse_san', 'getrandbits', '_get_index', 'clear', 'pieces', 'str', 'order_moves', 'is_capture', 'Piece', 'square', 'else', 'input', 'store', 'Search', 'Pruning', 'pop', 'search', 'is_game_over', 'TranspositionTable', 'enumerate', 'legal_moves', 'evaluate', 'TABLES', 'get_mvv_lva_score', 'quiescence', 'score_move', 'is_checkmate']
+   📚 로드된 JSON 장부 총 심볼 개수: 437개
+      🔎 [전역 심볼 대조] 이름: 'result' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'from_uci' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'main' -> 장부 전체 스캔 중...
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> run_test.py (453~462라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> start.py (82~201라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> extraction_target_project/package.json (6~6라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/create_ai_map.py (187~318라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_retriever.py (139~147라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_watcher.py (128~154라인)
+      🔎 [전역 심볼 대조] 이름: '__init__' -> 장부 전체 스캔 중...
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/file_lock.py (71~77라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/standalone_runner.py (38~41라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/step_worker.py (22~26라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/execution/step_worker.py (43~46라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/llm/gemini_client.py (114~122라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/llm/gemini_client.py (172~175라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/plan/prompt_builder.py (25~33라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/validation/validator.py (19~23라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> agent_core/validation/validator.py (35~39라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_code_extractor.py (22~48라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_map_extractor.py (49~50라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_session.py (22~80라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/agent_session.py (99~113라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/browser_agent_runner.py (14~15라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/browser_tester.py (30~32라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/code_patcher.py (10~11라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/project_scale_detector.py (32~47라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_agent_runner.py (24~35라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_agent_runner.py (91~94라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_runner.py (24~31라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/multi_agent_system/terminal_runner.py (80~83라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/agent_navigator.py (23~46라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/agent_navigator.py (289~339라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/context_builder.py (17~20라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/indexer.py (31~41라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_retriever.py (16~21라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/jjap_watcher.py (82~84라인)
+         ➡️ [정방향] 내가 불러온 함수 본체 포착 -> tools/universal_indexer/core_parsers/gitignore_parser.py (11~13라인)
+      🔎 [전역 심볼 대조] 이름: 'TimeoutError' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'int' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Tables' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: '_transposition_key' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Move' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'probe' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_check' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Ordering' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'MockChess' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'ApexChessEngine' -> 장부 전체 스캔 중...
+         ⬅️ [역방향] 나를 부르는 전역 호출처 목록(used_by): ['extraction_target_project/AGENT_TEST/chess_ai.py::main']
+      🔎 [전역 심볼 대조] 이름: '0' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'sleep' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'king' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'time' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'is_insufficient_material' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'piece_at' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square_file' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Reduction' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'startswith' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'is_stalemate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'pvs' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'square_mirror' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'Board' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'null' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'push' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square_rank' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: '__str__' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'sorted' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'parse_san' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'getrandbits' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: '_get_index' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'clear' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'pieces' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'str' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'order_moves' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_capture' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Piece' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'square' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'else' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'input' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'store' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'Search' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'Pruning' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'pop' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'search' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_game_over' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'TranspositionTable' -> 장부 전체 스캔 중...
+         ⬅️ [역방향] 나를 부르는 전역 호출처 목록(used_by): ['extraction_target_project/AGENT_TEST/chess_ai.py::ApexChessEngine.__init__']
+      🔎 [전역 심볼 대조] 이름: 'enumerate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'legal_moves' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'evaluate' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'TABLES' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+      🔎 [전역 심볼 대조] 이름: 'get_mvv_lva_score' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'quiescence' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'score_move' -> 장부 전체 스캔 중...
+      🔎 [전역 심볼 대조] 이름: 'is_checkmate' -> 장부 전체 스캔 중...
+      ❓ [NOT FOUND] 코드엔 찍혀있는데 JSON 장부(extraction_target_project/AGENT_TEST/chess_ai.py)엔 등록 안 된 심볼입니다.
+
+============================================================
+🏁 최종 반환할 총 슬라이스 묶음 개수: 38개
+============================================================
+
+
+🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 4/4)...
+📌 [PATCH RESULT 1/1] ✅ [PATCH SUCCESS] extraction_target_project/AGENT_TEST/chess_ai.py 파일의 특정 구간이 성공적으로 수정되었습니다!
+   ├─ [BEFORE]: eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+   └─ [AFTER] : eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_...
+
+💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...
+📄 [VERIFICATION OUTPUT]
+[DEBUG_LOG] Step=SEARCH_BENCHMARK | NPS=0
+[DEBUG_LOG] Step=PRUNING_STAT | Pruned=0
+[DEBUG_LOG] Step=TT_STAT | Hits=0
+==========================================================
+      ApexChess AI v1.0 (Advanced Minimax Engine)
+==========================================================
+Commands:
+ - 'go': AI play for current turn
+ - 'move <SAN/UCI>' (e.g., 'e4', 'e2e4'): Make a move
+ - 'auto': AI vs AI match
+ - 'print': Display current board state
+ - 'quit': Exit game
+==========================================================
+
+Board
+
+Turn: WHITE
+
+📌 [VERIFICATION RESULT] ⚠️ 디버그 로그 패턴 불일치 (미감지: ['[DEBUG_LOG] Step=EVAL_ENGINE | Score='])
+
+
+🚨 [FAIL] 최대 재시도 횟수를 초과하여 작업을 중단합니다.
+PS C:\Users\COMLAB\Desktop\AI_agent> 
