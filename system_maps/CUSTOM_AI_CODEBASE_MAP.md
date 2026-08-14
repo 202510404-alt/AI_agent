@@ -37,14 +37,14 @@ project_root/
 ├── agent_core/
 │   ├── __init__.py [📂 agent_core/__init__.py]
 │   ├── debug_agent/
-│   │   ├── __init__.py [📂 agent_core/debug_agent/__init__.py] -> [💡 📦 imp: agent_core.debug_agent.collectors.base, agent_core.debug_agent.collectors.file_collector, agent_core.debug_agent.collectors.stdio_collector, agent_core.debug_agent.runner, agent_core.debug_agent.schemas, agent_core.debug_agent.verifier]
+│   │   ├── __init__.py [📂 agent_core/debug_agent/__init__.py] -> [💡 📦 imp: agent_core.debug_agent.collectors.base, agent_core.debug_agent.collectors.file_collector, agent_core.debug_agent.collectors.stdio_collector, agent_core.debug_agent.schemas, agent_core.debug_agent.verifier]
 │   │   ├── cli/
-│   │   │   ├── cli_agent.py [📂 agent_core/debug_agent/cli/cli_agent.py] -> [💡 📦 imp: agent_core.debug_agent.schemas, os, pathlib, sys, tools.multi_agent_system.terminal_agent_runner, traceback, typing | 🧬 class CliPipelineAgent [L18-97] |     └─ def __init__(root_dir, factory, max_retries) [L23-31] |     └─ def execute_and_collect(mission_data, entrypoint_cmd, target_code) [L33-97]]
+│   │   │   ├── cli_agent.py [📂 agent_core/debug_agent/cli/cli_agent.py] -> [💡 📦 imp: agent_core.debug_agent.schemas, os, pathlib, sys, tools.multi_agent_system.terminal_runner, traceback, typing | 🧬 class CliPipelineAgent [L18-97] |     └─ def __init__(root_dir, factory, max_retries) [L23-31] |     └─ def execute_and_collect(mission_data, entrypoint_cmd, target_code) [L33-97]]
 │   │   │   │     ├── 🔑 [REGISTRY]: "CliPipelineAgent"
 │   │   │   │   ├── 🧬 class CliPipelineAgent [L18-L97]
 │   │   │   │   ├── 🎯 def __init__() [L23-L31]
 │   │   │   │   ├── 🎯 def execute_and_collect() [L33-L97]
-│   │   │   ├── cli_runner.py [📂 agent_core/debug_agent/cli/cli_runner.py] -> [💡 📦 imp: agent_core.debug_agent.cli.handlers, argparse, pathlib, sys | 🎯 def main() [L13-41]]
+│   │   │   ├── cli_runner.py [📂 agent_core/debug_agent/cli/cli_runner.py] -> [💡 📦 imp: agent_core.debug_agent.runner, argparse, pathlib, sys | 🎯 def main() [L13-41]]
 │   │   │   │   ├── 🎯 def main() [L13-L41]
 │   │   ├── collectors/
 │   │   │   ├── __init__.py [📂 agent_core/debug_agent/collectors/__init__.py] -> [💡 📦 imp: agent_core.debug_agent.collectors.base, agent_core.debug_agent.collectors.file_collector, agent_core.debug_agent.collectors.stdio_collector]
@@ -58,24 +58,6 @@ project_root/
 │   │   │   ├── stdio_collector.py [📂 agent_core/debug_agent/collectors/stdio_collector.py] -> [💡 📦 imp: agent_core.debug_agent.collectors.base, agent_core.debug_agent.schemas, os, pathlib, subprocess, sys | 🧬 class StdioCollector [L15-83] |     └─ def collect(spec, entrypoint_cmd, env) [L20-83]]
 │   │   │   │   ├── 🧬 class StdioCollector [L15-L83]
 │   │   │   │   ├── 🎯 def collect() [L20-L83]
-│   │   ├── pipeline/
-│   │   │   ├── context_builder.py [📂 agent_core/debug_agent/pipeline/context_builder.py] -> [💡 📦 imp: agent_core.debug_agent.pipeline.mission_loader, json, pathlib, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.project_scale_detector | 🎯 def build_codebase_map(root_dir, factory, mission_data) [L13-59] | 🎯 def extract_target_code(root_dir, factory, mission_data, codebase_map) [L61-106] | 🎯 def _fallback_full_extract(root_dir, factory, target_file_path) [L108-117]]
-│   │   │   │   ├── 🎯 def build_codebase_map() [L13-L59]
-│   │   │   │   ├── 🎯 def extract_target_code() [L61-L106]
-│   │   │   │   │   ├── 📞 [CALLS]: _fallback_full_extract
-│   │   │   │   ├── 🎯 def _fallback_full_extract() [L108-L117]
-│   │   │   │   │   ├── 🔗 [USED BY]: ::extract_target_code
-│   │   │   ├── mission_loader.py [📂 agent_core/debug_agent/pipeline/mission_loader.py] -> [💡 📦 imp: json, pathlib, re | 🎯 def load_mission_file(root_dir, mission_rel_path) [L11-25] | 🎯 def clean_json_response(raw_response) [L27-33] | 🎯 def safe_execute_step(factory, prompt, system_instruction, response_mime_type, max_attempts, temperature) [L35-53]]
-│   │   │   │   ├── 🎯 def load_mission_file() [L11-L25]
-│   │   │   │   ├── 🎯 def clean_json_response() [L27-L33]
-│   │   │   │   ├── 🎯 def safe_execute_step() [L35-L53]
-│   │   │   │   │   ├── 🔗 [USED BY]: run_test.py::run_step_worker_pipeline
-│   │   │   ├── patch_runner.py [📂 agent_core/debug_agent/pipeline/patch_runner.py] -> [💡 📦 imp: agent_core.debug_agent.pipeline.mission_loader, json, pathlib | 🎯 def generate_patch(factory, mission_data, target_code) [L11-44] | 🎯 def apply_patch_blocks(factory, target_file_path, raw_response) [L46-66] | 🎯 def cleanup_temp_files(root_dir, patch_list, target_file_path) [L68-76]]
-│   │   │   │   ├── 🎯 def generate_patch() [L11-L44]
-│   │   │   │   ├── 🎯 def apply_patch_blocks() [L46-L66]
-│   │   │   │   ├── 🎯 def cleanup_temp_files() [L68-L76]
-│   │   │   ├── recovery_strategy.py [📂 agent_core/debug_agent/pipeline/recovery_strategy.py] -> [💡 📦 imp: agent_core.debug_agent.pipeline.mission_loader, json, pathlib, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.project_scale_detector | 🎯 def evaluate_and_recover(root_dir, factory, mission_data, target_code, terminal_output, diagnosis_hint, retry_count) [L13-101]]
-│   │   │   │   ├── 🎯 def evaluate_and_recover() [L13-L101]
 │   │   ├── runner.py [📂 agent_core/debug_agent/runner.py] -> [💡 📦 imp: agent_core.debug_agent.pipeline.context_builder, agent_core.debug_agent.pipeline.mission_loader, agent_core.debug_agent.pipeline.patch_runner, agent_core.debug_agent.pipeline.recovery_strategy, agent_core.debug_agent.verifier, agent_core.plan.schemas, pathlib, tools.multi_agent_system.agent_session | 🎯 def run_debug_pipeline(root_dir, mission_rel_path, max_retries) [L17-75]]
 │   │   │   ├── 🎯 def run_debug_pipeline() [L17-L75]
 │   │   ├── schemas.py [📂 agent_core/debug_agent/schemas.py] -> [💡 📦 imp: pydantic, typing | 🧬 class DebugLogSpec [L11-17] | 🧬 class CapturedLogResult [L20-26] | 🧬 class VerificationResult [L29-37]]
@@ -218,13 +200,13 @@ project_root/
 │   │   │   │   ├── mission_012.json [📂 agent_core/tasks/task_01/checklist_01/mission_012.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "task_id" [str] | 🔑 "target_file" [str] | 🔑 "entrypoint" [str] | 🔑 "test_type" [str] | 🔑 "use_browser_test" [bool] | ...외 2개]
 │   │   │   │   │   ├── 🔑 key "task_id" [L2]
 │   │   │   │   │   ├── 🔑 key "target_file" [L3]
-│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/chess_game.py, chess_game.py
+│   │   │   │   │   │   ├── 📞 [CALLS]: chess_game.py, extraction_target_project/chess_game.py
 │   │   │   │   │   ├── 🔑 key "entrypoint" [L4]
-│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/chess_game.py, chess_game.py
+│   │   │   │   │   │   ├── 📞 [CALLS]: chess_game.py, extraction_target_project/chess_game.py
 │   │   │   │   │   ├── 🔑 key "test_type" [L6]
 │   │   │   │   │   ├── 🔑 key "use_browser_test" [L7]
 │   │   │   │   │   ├── 🔑 key "implementation_blueprint" [L9]
-│   │   │   │   │   │   ├── 📞 [CALLS]: extraction_target_project/chess_game.py, chess_game.py
+│   │   │   │   │   │   ├── 📞 [CALLS]: chess_game.py, extraction_target_project/chess_game.py
 │   │   │   │   │   ├── 🔑 key "expected_terminal_outputs" [L26]
 │   │   │   │   ├── mission_013.json [📂 agent_core/tasks/task_01/checklist_01/mission_013.json] -> [💡 📦 json_keys: 11개 포착 | 🔑 "task_id" [str] | 🔑 "test_type" [str] | 🔑 "use_browser_test" [bool] | 🔑 "target_file" [str] | 🔑 "entrypoint" [str] | ...외 6개]
 │   │   │   │   │   ├── 🔑 key "task_id" [L2]
@@ -328,6 +310,23 @@ project_root/
 │   │   │   ├── 🎯 def validate_syntax_and_import() [L41-L56]
 │   │   │   ├── 🎯 def run_all() [L58-L107]
 │   │   │   │   ├── 📞 [CALLS]: ValidationReport
+│   ├── worker/
+│   │   ├── __init__.py [📂 agent_core/worker/__init__.py] -> [💡 📦 imp: agent_core.worker.pipeline, agent_core.worker.utils]
+│   │   ├── pipeline.py [📂 agent_core/worker/pipeline.py] -> [💡 📦 imp: agent_core.debug_agent.verifier, agent_core.worker.pipeline_steps, agent_core.worker.utils, json, pathlib, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.project_scale_detector | 🧬 class StepWorkerPipeline [L14-206] |     └─ def __init__(root_dir) [L15-17] |     └─ def run(mission_rel_path, max_retries) [L19-206]]
+│   │   │   ├── 🧬 class StepWorkerPipeline [L14-L206]
+│   │   │   ├── 🎯 def __init__() [L15-L17]
+│   │   │   ├── 🎯 def run() [L19-L206]
+│   │   ├── pipeline_steps.py [📂 agent_core/worker/pipeline_steps.py] -> [💡 📦 imp: agent_core.worker.utils, json, pathlib, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.project_scale_detector | 🎯 def execute_step1_map_building(root_dir, factory, mission_data, target_file_path) [L7-57] | 🎯 def execute_step2_code_slicing(root_dir, factory, mission_data, target_file_path, codebase_map) [L60-109] | 🎯 def fallback_extract_full_target(root_dir, factory, target_file_path) [L112-122] | 🎯 def execute_step3_patch_generation(factory, mission_data, target_file_path, target_code) [L125-162]]
+│   │   │   ├── 🎯 def execute_step1_map_building() [L7-L57]
+│   │   │   ├── 🎯 def execute_step2_code_slicing() [L60-L109]
+│   │   │   │   ├── 📞 [CALLS]: fallback_extract_full_target
+│   │   │   ├── 🎯 def fallback_extract_full_target() [L112-L122]
+│   │   │   │   ├── 🔗 [USED BY]: ::execute_step2_code_slicing
+│   │   │   ├── 🎯 def execute_step3_patch_generation() [L125-L162]
+│   │   ├── utils.py [📂 agent_core/worker/utils.py] -> [💡 📦 imp: json, pathlib, re | 🎯 def load_mission_file(root_dir, mission_rel_path) [L5-19] | 🎯 def clean_json_response(raw_response) [L22-28] | 🎯 def safe_execute_step(factory, prompt, system_instruction, response_mime_type, max_attempts, temperature) [L31-53]]
+│   │   │   ├── 🎯 def load_mission_file() [L5-L19]
+│   │   │   ├── 🎯 def clean_json_response() [L22-L28]
+│   │   │   ├── 🎯 def safe_execute_step() [L31-L53]
 ├── agent_debug.log [📂 agent_debug.log] -> [General File (3 lines)]
 ├── agent_plan.md [📂 agent_plan.md] -> [General File (1101 lines)]
 ├── debug_module_cleanup_plan.md [📂 debug_module_cleanup_plan.md] -> [General File (175 lines)]
@@ -367,7 +366,7 @@ project_root/
 │   │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   │   ├── 🔑 key "requires" [L5]
 │   │   │   ├── 🔑 key "packages" [L6]
-│   │   │   │   ├── 📞 [CALLS]: bin/eslint.js, node_modules/string.prototype.trimstart, bin/babel-parser.js, bin/semver.js, node_modules/big.js, big.js, cli.js, dist/esm/bin.mjs, node_modules/resolve.exports, bin/webpack.js, ipaddr.js, bin/jest.js, node_modules/lodash.memoize, node_modules/array.prototype.toreversed, node_modules/object.assign, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/sanitize.css, fixtures/cli.js, decimal.js, bin/nopt.js, bin/nanoid.cjs, bin/cli.js, node_modules/engine.io, node_modules/decimal.js, node_modules/lodash.merge, bin/react-scripts.js, bin.js, node_modules/regexp.prototype.flags, fraction.js, bin/webpack-dev-server.js, node_modules/hpack.js, bin/escodegen.js, node_modules/iterator.prototype, lib/cli.js, node_modules/function.prototype.name, bin/bin.js, node_modules/array.prototype.flatmap, node_modules/string.prototype.matchall, hpack.js, node_modules/array.prototype.flat, node_modules/array.prototype.findlastindex, node_modules/array.prototype.tosorted, node_modules/object.values, bin/js-yaml.js, bin/esparse.js, node_modules/array.prototype.findlast, node_modules/fraction.js, node_modules/lodash.debounce, bin/cmd.js, node_modules/string.prototype.trim, node_modules/arraybuffer.prototype.slice, node_modules/object.groupby, node_modules/socket.io, node_modules/array.prototype.reduce, node_modules/object.getownpropertydescriptors, node_modules/util.promisify, bin/jiti.js, node_modules/fs.realpath, node_modules/ipaddr.js, dist/cli.cjs, node_modules/css.escape, bin/esgenerate.js, bin/esvalidate.js, node_modules/lodash.uniq, node_modules/object.fromentries, node_modules/object.hasown, node_modules/reflect.getprototypeof, node_modules/string.prototype.trimend, node_modules/object.entries, node_modules/lodash.sortby
+│   │   │   │   ├── 📞 [CALLS]: bin/nanoid.cjs, bin/semver.js, node_modules/decimal.js, node_modules/big.js, bin/esgenerate.js, bin/eslint.js, bin/nopt.js, bin/babel-parser.js, bin/bin.js, node_modules/lodash.debounce, node_modules/object.assign, node_modules/lodash.merge, bin/esparse.js, node_modules/array.prototype.reduce, node_modules/array.prototype.findlastindex, node_modules/ipaddr.js, node_modules/arraybuffer.prototype.slice, bin/esvalidate.js, bin/jest.js, node_modules/array.prototype.toreversed, node_modules/lodash.memoize, bin/js-yaml.js, ipaddr.js, node_modules/string.prototype.trimend, bin/react-scripts.js, node_modules/fraction.js, lib/cli.js, node_modules/object.groupby, node_modules/css.escape, node_modules/regexp.prototype.flags, dist/esm/bin.mjs, bin/cli.js, decimal.js, node_modules/fs.realpath, node_modules/function.prototype.name, node_modules/object.getownpropertydescriptors, node_modules/hpack.js, node_modules/object.hasown, node_modules/resolve.exports, node_modules/sanitize.css, dist/cli.cjs, bin/jiti.js, node_modules/engine.io, node_modules/object.fromentries, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/object.values, bin.js, node_modules/string.prototype.trim, bin/webpack-dev-server.js, fixtures/cli.js, hpack.js, bin/escodegen.js, node_modules/object.entries, big.js, node_modules/lodash.sortby, node_modules/reflect.getprototypeof, node_modules/string.prototype.trimstart, node_modules/array.prototype.tosorted, node_modules/util.promisify, node_modules/socket.io, bin/cmd.js, node_modules/iterator.prototype, node_modules/array.prototype.flatmap, node_modules/lodash.uniq, node_modules/array.prototype.flat, cli.js, node_modules/array.prototype.findlast, bin/webpack.js, fraction.js, node_modules/string.prototype.matchall
 │   │   ├── package.json [📂 extraction_target_project/client/package.json] -> [💡 📦 json_keys: 7개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "private" [bool] | 🔑 "dependencies" [dict] | 🔑 "scripts" [dict] | ...외 2개]
 │   │   │   ├── 🔑 key "name" [L2]
 │   │   │   ├── 🔑 key "version" [L3]
@@ -446,7 +445,7 @@ project_root/
 │   │   ├── 🔑 key "lockfileVersion" [L4]
 │   │   ├── 🔑 key "requires" [L5]
 │   │   ├── 🔑 key "packages" [L6]
-│   │   │   ├── 📞 [CALLS]: bin/nodemon.js, bin/semver.js, node_modules/pstree.remy, node_modules/socket.io, cli.js, node_modules/ipaddr.js, ipaddr.js, node_modules/engine.io, bin/nodetouch.js
+│   │   │   ├── 📞 [CALLS]: bin/semver.js, node_modules/engine.io, bin/nodemon.js, ipaddr.js, node_modules/socket.io, node_modules/ipaddr.js, cli.js, node_modules/pstree.remy, bin/nodetouch.js
 │   ├── package.json [📂 extraction_target_project/package.json] -> [💡 📦 json_keys: 8개 포착 | 🔑 "name" [str] | 🔑 "version" [str] | 🔑 "type" [str] | 🔑 "description" [str] | 🔑 "main" [str] | ...외 3개]
 │   │   ├── 🔑 key "name" [L2]
 │   │   ├── 🔑 key "version" [L3]
@@ -467,14 +466,8 @@ project_root/
 │   ├── agent_plan3.md [📂 oldplan/agent_plan3.md] -> [General File (980 lines)]
 ├── prompt.md [📂 prompt.md] -> [General File (113 lines)]
 ├── README.md [📂 README.md] -> [General File (220 lines)]
-├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.debug_agent.verifier, agent_core.plan.schemas, json, os, pathlib, pydantic, re, subprocess, sys, time, tools.multi_agent_system.agent_map_extractor, tools.multi_agent_system.agent_session, tools.multi_agent_system.project_scale_detector, typing, urllib.request | 🎯 def load_mission_file(mission_rel_path) [L30-45] | 🎯 def clean_json_response(raw_response) [L47-53] | 🎯 def run_step_worker_pipeline(mission_rel_path) [L58-428] | 🎯 def main() [L432-441]]
-│   ├── 🎯 def load_mission_file() [L30-L45]
-│   ├── 🎯 def clean_json_response() [L47-L53]
-│   ├── 🎯 def run_step_worker_pipeline() [L58-L428]
-│   │   ├── 📞 [CALLS]: load_mission_file, clean_json_response, safe_execute_step
-│   │   ├── 🔗 [USED BY]: ::main
-│   ├── 🎯 def main() [L432-L441]
-│   │   ├── 📞 [CALLS]: run_step_worker_pipeline
+├── run_test.py [📂 run_test.py] -> [💡 📦 imp: agent_core.plan.schemas, agent_core.worker, pathlib, subprocess, sys | 🎯 def main() [L20-31]]
+│   ├── 🎯 def main() [L20-L31]
 ├── run_test_cli.py [📂 run_test_cli.py] -> [💡 📦 imp: agent_core.debug_agent.runner, pathlib, sys | 🎯 def main() [L9-19]]
 │   ├── 🎯 def main() [L9-L19]
 ├── scan_debug.txt [📂 scan_debug.txt] -> [General File (296 lines)]
@@ -652,7 +645,7 @@ project_root/
 │   │   │   │   ├── 🎯 def _find_matching_curly_brace() [L15-L37]
 │   │   │   │   │   ├── 🔗 [USED BY]: ::extract_symbols
 │   │   │   │   ├── 🎯 def extract_symbols() [L39-L194]
-│   │   │   │   │   ├── 📞 [CALLS]: _find_matching_curly_brace, log
+│   │   │   │   │   ├── 📞 [CALLS]: log, _find_matching_curly_brace
 │   │   │   ├── js_parser.py [📂 tools/universal_indexer/core_parsers/js_parser.py] -> [💡 📦 imp: hashlib, pathlib, re, sys | 🎯 def debug_log(message) [L12-14] | 🎯 def find_end_line_by_braces(lines, start_line_idx, max_search_range) [L17-47] | 🎯 def extract_symbols(file_path, project_root) [L50-171]]
 │   │   │   │   ├── 🎯 def debug_log() [L12-L14]
 │   │   │   │   ├── 🎯 def find_end_line_by_braces() [L17-L47]
@@ -681,7 +674,7 @@ project_root/
 │   │   │   ├── 🎯 def load_all_symbols() [L163-L184]
 │   │   │   │   ├── 🔗 [USED BY]: ::main
 │   │   │   ├── 🎯 def main() [L187-L318]
-│   │   │   │   ├── 📞 [CALLS]: parse_protocols_and_registries, load_all_symbols, load_jjap_context, collect_target_files
+│   │   │   │   ├── 📞 [CALLS]: parse_protocols_and_registries, load_jjap_context, load_all_symbols, collect_target_files
 │   │   │   ├── 🎯 def generate_ai_optimized_map() [L321-L322]
 │   │   │   │   ├── 📞 [CALLS]: main
 │   │   ├── indexer.py [📂 tools/universal_indexer/indexer.py] -> [💡 📦 imp: collections, config, hashlib, importlib.util, json, os, pathlib, typing | 🎯 def log(message) [L22-24] | 🧬 class AdvancedIndexerV2 [L26-217] |     └─ def __init__(project_root) [L31-41] |     └─ def _auto_load_parsers() [L43-74] |     └─ def scan_project() [L78-152] |     └─ def index_file(file_path, ext) [L154-194] |     └─ def save_index_data() [L196-217]]
@@ -725,7 +718,7 @@ project_root/
 │   │   │   ├── 🎯 def dispatch() [L86-L126]
 │   │   │   │   ├── 📞 [CALLS]: run_pipeline
 │   │   │   ├── 🎯 def main() [L128-L154]
-│   │   │   │   ├── 📞 [CALLS]: run_pipeline, CodeChangeHandler
+│   │   │   │   ├── 📞 [CALLS]: CodeChangeHandler, run_pipeline
 │   │   ├── map_formatter.py [📂 tools/universal_indexer/map_formatter.py] -> [💡 📦 imp: pathlib, typing | 🎯 def get_file_symbols_summary(file_meta) [L4-8] | 🎯 def format_symbol_node(sym, symbol_by_id, current_posix_path, indent) [L10-73]]
 │   │   │   ├── 🎯 def get_file_symbols_summary() [L4-L8]
 │   │   │   ├── 🎯 def format_symbol_node() [L10-L73]

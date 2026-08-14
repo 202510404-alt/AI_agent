@@ -23,10 +23,6 @@
 - `agent_core/debug_agent/collectors/base.py`
 - `agent_core/debug_agent/collectors/file_collector.py`
 - `agent_core/debug_agent/collectors/stdio_collector.py`
-- `agent_core/debug_agent/pipeline/context_builder.py`
-- `agent_core/debug_agent/pipeline/mission_loader.py`
-- `agent_core/debug_agent/pipeline/patch_runner.py`
-- `agent_core/debug_agent/pipeline/recovery_strategy.py`
 - `agent_core/debug_agent/runner.py`
 - `agent_core/debug_agent/schemas.py`
 - `agent_core/debug_agent/verifier.py`
@@ -56,6 +52,10 @@
 - `agent_core/tasks/task_01/checklist_01/misson_.json`
 - `agent_core/validation/__init__.py`
 - `agent_core/validation/validator.py`
+- `agent_core/worker/__init__.py`
+- `agent_core/worker/pipeline.py`
+- `agent_core/worker/pipeline_steps.py`
+- `agent_core/worker/utils.py`
 - `agent_debug.log`
 - `agent_plan.md`
 - `debug_module_cleanup_plan.md`
@@ -313,7 +313,7 @@ class CliPipelineAgent:
                 code_context=target_code
             )
 
-            raw_logs = run_result.get("buffer", "")
+            raw_logs = run_result.get("clean_output") or run_result.get("raw_output", "")
             status = run_result.get("status", "FAIL")
             success = (status == "SUCCESS")
             exit_code = run_result.get("exit_code", 0 if success else -1)
@@ -342,8 +342,8 @@ class CliPipelineAgent:
 ```python
 def main():
     parser = argparse.ArgumentParser(
-        prog="python -m agent_core.debug_agent.cli.cli_runner", # ⭕ 끝에 콤마(,) 추가 필수
-        description="ASE-OS Debug Agent CLI Runner"
+        prog="python -m agent_core.debug_agent.cli.cli_runner",
+        description="ASE-OS Debug Agent CLI Runner",
     )
     
     parser.add_argument(
@@ -550,337 +550,6 @@ class StdioCollector(BaseLogCollector):
                 returncode=-1,
                 error_message=f"Stdio 수집 도중 예외 발생: {str(e)}"
             )
-```
-
---------------------------------------------------
-
-### 📄 agent_core/debug_agent/pipeline/context_builder.py
-#### 🧱 Code Skeleton:
-```python
-def build_codebase_map(root_dir: Path, factory, mission_data: dict) -> str:
-    """[Step 1] 프로젝트 규모 측정 및 코드베이스 지형도 생성"""
-    target_file_path = mission_data["target_file"]
-    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
-
-    scale_detector = ProjectScaleDetector(project_root=root_dir)
-    scale_info = scale_detector.analyze_project_scale()
-
-    if scale_info["is_oversized"]:
-        print(f"⚠️ 대형 프로젝트 감지 ({scale_info['file_count']}개 파일, {scale_info['total_lines']}줄): 2단계 지형도 탐색 진행")
-        shallow_map = scale_detector.generate_shallow_structure_map(
-            max_depth=scale_info["recommended_depth"]
-        )
-        
-        select_sys_instruction = (
-            "STRICT PROTOCOL: Output raw JSON string array only. No commentary. "
-            "Select ONLY minimum directories directly related to mission target."
-        )
-
-        select_prompt = f"""[1. CURRENT STATE & CONTEXT]
-Target File: {target_file_path}
-Mission Data:
-{mission_str}
-
-Project Shallow Structure Map:
-{shallow_map}
-
-[2. OUTPUT CONSTRAINTS]
-- Extract ONLY the absolute minimum relative directory/file paths directly required for the mission.
-- NO extra explanations, markdown tags, or conversational fluff.
-
-[3. REQUIRED FORMAT]
-["path/to/dir_or_file"]"""
-        
-        try:
-            raw_dirs = safe_execute_step(factory, prompt=select_prompt, system_instruction=select_sys_instruction)
-            target_dirs = json.loads(clean_json_response(raw_dirs))
-            if not isinstance(target_dirs, list):
-                target_dirs = [target_dirs]
-            print(f"🎯 [Step 1 AI 선택 경로] {target_dirs}")
-            return extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
-        except Exception as e:
-            print(f"⚠️ [Step 1 Warning] AI 경로 선택 중 예외({e}), 전체 기본 맵으로 대체")
-            return extract_targeted_ai_map(save_to_file=False)
-    else:
-        print("✅ 일반 규모 프로젝트: 전체 AI 코드베이스 맵 생성")
-        return extract_targeted_ai_map(save_to_file=True)
-
-def extract_target_code(root_dir: Path, factory, mission_data: dict, codebase_map: str) -> str:
-    """[Step 2] 필요 코드 영역 동적 추론 및 Extractor 구동"""
-    target_file_path = mission_data["target_file"]
-    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
-
-    extract_sys_instruction = (
-        "STRICT PROTOCOL: Output JSON string array matching [\"relative/path.py:start-end\"] only. "
-        "Strictly limit targets to the mission's designated Target File or mandatory reference files. "
-        "Do NOT slice unrequested system files."
-    )
-
-    extract_target_prompt = f"""[1. CURRENT STATE & CONTEXT]
-Target File: {target_file_path}
-Mission Data:
-{mission_str}
-
-Current Codebase Map:
-{codebase_map}
-
-[2. OUTPUT CONSTRAINTS]
-- Specify target relative file paths and line ranges required to fulfill the mission.
-
-[3. REQUIRED FORMAT]
-["{target_file_path}:start_line-end_line"]"""
-
-    try:
-        raw_slice_targets = safe_execute_step(
-            factory, prompt=extract_target_prompt, system_instruction=extract_sys_instruction
-        )
-        slice_target_list = json.loads(clean_json_response(raw_slice_targets))
-        
-        if isinstance(slice_target_list, list) and len(slice_target_list) > 0:
-            slice_prompt_str = " ".join(slice_target_list)
-            print(f"🔍 [Step 2 AI 요청 슬라이스 Target] {slice_prompt_str}")
-            slice_res = factory.extractor.process(slice_prompt_str, auto_save=False)
-            target_code = slice_res.get("markdown", "")
-        else:
-            target_code = ""
-
-        if not target_code.strip():
-            target_code = _fallback_full_extract(root_dir, factory, target_file_path)
-    except Exception as e:
-        print(f"⚠️ [Step 2 Warning] 필요 코드 영역 추출 예외 발생({e}), Fallback 추적 시도")
-        target_code = _fallback_full_extract(root_dir, factory, target_file_path)
-
-    return target_code
-
-def _fallback_full_extract(root_dir: Path, factory, target_file_path: str) -> str:
-    actual_target = root_dir / target_file_path
-    if actual_target.exists():
-        with open(actual_target, "r", encoding="utf-8") as f:
-            total_lines = len(f.readlines())
-        fallback_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
-        print(f"⚠️ [Fallback] Target File 전체 범위({fallback_prompt})로 Extractor 재추적 가동")
-        slice_res = factory.extractor.process(fallback_prompt, auto_save=False)
-        return slice_res.get("markdown", "")
-    return "(Target File을 찾을 수 없어 코드 추출에 실패했습니다.)"
-```
-
---------------------------------------------------
-
-### 📄 agent_core/debug_agent/pipeline/mission_loader.py
-#### 🧱 Code Skeleton:
-```python
-def load_mission_file(root_dir: Path, mission_rel_path: str) -> dict:
-    """JSON 미션 파일 로더 및 규격 검증"""
-    mission_path = root_dir / mission_rel_path
-    if not mission_path.exists():
-        raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
-    
-    with open(mission_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    
-    required_keys = ["task_id", "target_file", "debug_log_spec"]
-    for key in required_keys:
-        if key not in data:
-            raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
-            
-    return data
-
-def clean_json_response(raw_response: str) -> str:
-    """LLM 응답 마크다운 블록 제거 및 JSON 텍스트 정제"""
-    text = raw_response.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\n?", "", text)
-        text = re.sub(r"\n?```$", "", text)
-    return text.strip()
-
-def safe_execute_step(factory, prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 10, temperature: float = 0.0) -> str:
-    """Fail-Fast 포착 및 Key/Model 스위칭 기반 안전 실행 래퍼"""
-    if not hasattr(factory, "execute_worker_step"):
-        raise AttributeError("제공된 factory 객체에 'execute_worker_step' 메서드가 존재하지 않습니다.")
-
-    for attempt in range(1, max_attempts + 1):
-        try:
-            return factory.execute_worker_step(
-                prompt=prompt,
-                system_instruction=system_instruction,
-                response_mime_type=response_mime_type,
-                temperature=temperature
-            )
-        except Exception as e:
-            err_str = str(e)
-            print(f"⚡ [Fail-Fast 감지] ({err_str[:80]}...) | 즉시 다음 Key/Model 스위칭 ({attempt}/{max_attempts})")
-            if hasattr(factory, "switch_to_next_key"):
-                factory.switch_to_next_key(last_error_msg=err_str)
-    raise RuntimeError("🚨 모든 Gemini API Key/Model 조합이 소진되었습니다.")
-```
-
---------------------------------------------------
-
-### 📄 agent_core/debug_agent/pipeline/patch_runner.py
-#### 🧱 Code Skeleton:
-```python
-def generate_patch(factory, mission_data: dict, target_code: str) -> str:
-    """[Step 3] LLM 기반 SEARCH/REPLACE 패치 생성"""
-    target_file_path = mission_data["target_file"]
-    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
-
-    system_prompt = f"""STRICT EXECUTION PROTOCOL:
-1. Target File: Strictly '{target_file_path}'.
-2. Output code edits using EXACTLY the SEARCH/REPLACE block format shown below.
-3. Include enough surrounding lines in SEARCH block to uniquely identify the code to change.
-4. Keep exact whitespace/indentation.
-5. Do NOT output JSON. Use raw SEARCH/REPLACE text blocks only. No markdown wrapped JSON, no explanations.
-6. CLI Interaction Rule: If target code uses interactive `input()`, handle EOFError gracefully or separate main logic so background execution does not fail."""
-
-    user_prompt = f"""<MISSION_SPEC>
-Target File Path: {target_file_path}
-Mission Details:
-{mission_str}
-</MISSION_SPEC>
-
-<READ_ONLY_CONTEXT>
-{target_code}
-</READ_ONLY_CONTEXT>
-
-<OUTPUT_FORMAT>
-<<<<<<< SEARCH
-[Exact original code snippet to replace]
-=======
-[New replacement code snippet]
->>>>>>> REPLACE
-</OUTPUT_FORMAT>"""
-
-    return safe_execute_step(
-        factory, prompt=user_prompt, system_instruction=system_prompt, response_mime_type="text/plain"
-    )
-
-def apply_patch_blocks(factory, target_file_path: str, raw_response: str) -> tuple[bool, list]:
-    """[Step 4] SEARCH/REPLACE 패치 적용"""
-    try:
-        patch_list = factory.patcher.parse_blocks(raw_response)
-        if not patch_list:
-            print("⚠️ [PATCH FAIL] SEARCH/REPLACE 패치 블록이 비어있음")
-            return False, []
-
-        all_patches_ok = True
-        for idx, item in enumerate(patch_list, 1):
-            existing_code = item["existing_code"]
-            replacement_code = item["replacement_code"]
-            patch_result = factory.patcher.apply_patch(target_file_path, existing_code, replacement_code)
-            
-            print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
-            if not patch_result.get("success", False):
-                all_patches_ok = False
-        return all_patches_ok, patch_list
-    except Exception as e:
-        print(f"❌ [STEP 4 ERROR] 패치 파싱/적용 오류: {e}")
-        return False, []
-
-def cleanup_temp_files(root_dir: Path, patch_list: list, target_file_path: str):
-    """검증 성공 후 생성된 임시 테스트 파일 정리"""
-    for item in patch_list:
-        file_p = item.get("file_path", target_file_path)
-        if file_p and file_p != target_file_path and ("test" in file_p.lower() or "temp" in file_p.lower()):
-            temp_path = (root_dir / file_p).resolve()
-            if temp_path.exists():
-                temp_path.unlink()
-                print(f"🧹 [CLEANUP] 임시 테스트 파일 삭제: {file_p}")
-```
-
---------------------------------------------------
-
-### 📄 agent_core/debug_agent/pipeline/recovery_strategy.py
-#### 🧱 Code Skeleton:
-```python
-def evaluate_and_recover(root_dir: Path, factory, mission_data: dict, target_code: str, terminal_output: str, diagnosis_hint: str, retry_count: int) -> tuple[str, str]:
-    """[Step 6] 실패 원인 진단 및 복구용 패치 재생성 (수정된 raw_response, target_code 반환)"""
-    target_file_path = mission_data["target_file"]
-    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
-
-    system_prompt = f"STRICT EXECUTION PROTOCOL:\nTarget File: Strictly '{target_file_path}'. Output raw SEARCH/REPLACE blocks."
-
-    # 2회 이상 실패 시 자가 진단 생략 후 바로 broad 탐색
-    if retry_count >= 2:
-        print("⚠️ [강제 재탐색] 2회 이상 실패: 강제 broad 시야 확장으로 전환합니다.")
-        is_sufficient = False
-    else:
-        diag_prompt = f"""Target File: {target_file_path}
-Mission Data: {mission_str}
-Current Sliced Code: {target_code}
-Terminal Output: {terminal_output}
-Verifier Diagnosis: {diagnosis_hint}
-
-Can you fix the code with the CURRENT provided code slice, verifier diagnosis, and terminal output alone?
-Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanation"}}"""
-
-        try:
-            diag_res = safe_execute_step(
-                factory, prompt=diag_prompt, system_instruction="STRICT PROTOCOL: Output raw JSON object with 'is_sufficient' boolean field only."
-            )
-            diag_data = json.loads(clean_json_response(diag_res))
-            is_sufficient = diag_data.get("is_sufficient", False)
-        except Exception:
-            is_sufficient = False
-
-    if is_sufficient:
-        print("🔄 [Step 6-2] 진단 힌트 기반 패치 재작성...")
-        fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
-<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
-<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
-
-Output corrected SEARCH/REPLACE blocks:
-<<<<<<< SEARCH
-[Exact original code snippet]
-=======
-[New replacement code snippet]
->>>>>>> REPLACE"""
-        raw_response = safe_execute_step(factory, prompt=fix_prompt, system_instruction=system_prompt, response_mime_type="text/plain")
-        return raw_response, target_code
-    else:
-        print("🌐 [Retry Step 1] Broad 시야 확장 및 다중 경로 재탐색...")
-        scale_detector = ProjectScaleDetector(project_root=root_dir)
-        shallow_map = scale_detector.generate_shallow_structure_map()
-        
-        broad_prompt = f"""Target File: {target_file_path}
-Mission Data: {mission_str}
-Project Structure: {shallow_map}
-Previous Error Log: {terminal_output}
-
-Select ALL relevant directory/file relative paths to inspect.
-Output JSON string array matching: ["path/1", "path/2"]"""
-        try:
-            raw_dirs = safe_execute_step(factory, prompt=broad_prompt, system_instruction="STRICT PROTOCOL: Output JSON string array.")
-            target_dirs = json.loads(clean_json_response(raw_dirs))
-            if not isinstance(target_dirs, list):
-                target_dirs = [target_dirs]
-            extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
-        except Exception:
-            extract_targeted_ai_map(save_to_file=False)
-
-        actual_target = root_dir / target_file_path
-        if actual_target.exists():
-            with open(actual_target, "r", encoding="utf-8") as f:
-                total_lines = len(f.readlines())
-            slice_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
-        else:
-            slice_prompt = f"{target_file_path}:1-500"
-
-        new_target_code = factory.extractor.process(slice_prompt, auto_save=False).get("markdown", "")
-
-        retry_fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
-<READ_ONLY_CONTEXT>\n{new_target_code}\n</READ_ONLY_CONTEXT>
-<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
-
-Output corrected SEARCH/REPLACE blocks:
-<<<<<<< SEARCH
-[Exact original code snippet]
-=======
-[New replacement code snippet]
->>>>>>> REPLACE"""
-        raw_response = safe_execute_step(factory, prompt=retry_fix_prompt, system_instruction=system_prompt, response_mime_type="text/plain")
-        return raw_response, new_target_code
 ```
 
 --------------------------------------------------
@@ -2418,13 +2087,13 @@ def run_interactive_chat():
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `task_id` (Line: 2~2)
 - **[JSON_KEY]** `target_file` (Line: 3~3)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
 - **[JSON_KEY]** `entrypoint` (Line: 4~4)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
 - **[JSON_KEY]** `test_type` (Line: 6~6)
 - **[JSON_KEY]** `use_browser_test` (Line: 7~7)
 - **[JSON_KEY]** `implementation_blueprint` (Line: 9~9)
-  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/chess_game.py, chess_game.py`
+  - 🔗 *Calls (호출하는 것)*: `chess_game.py, extraction_target_project/chess_game.py`
 - **[JSON_KEY]** `expected_terminal_outputs` (Line: 26~26)
 
 #### 🧱 Code Skeleton:
@@ -2752,6 +2421,425 @@ class Validator:
             stages=stages,
             message="모든 검증 단계(Syntax, Standalone Run, Predicted Logs Match)를 완벽히 통과했습니다!"
         )
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/worker/__init__.py
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/worker/pipeline.py
+#### 🧱 Code Skeleton:
+```python
+class StepWorkerPipeline:
+    def __init__(self, root_dir: Path):
+        self.root_dir = root_dir
+        self.factory = AgentSessionFactory(root_dir)
+
+    def run(self, mission_rel_path: str, max_retries: int = 3):
+        print(f"\n🚀 [WORKER PIPELINE] 파이프라인 가동: '{mission_rel_path}'")
+        
+        mission_data = load_mission_file(self.root_dir, mission_rel_path)
+        target_file_path = mission_data["target_file"]
+        mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+        # Step 1: 지형도 분석
+        codebase_map = execute_step1_map_building(self.root_dir, self.factory, mission_data, target_file_path)
+
+        # Step 2: 필요 영역 슬라이싱
+        target_code = execute_step2_code_slicing(self.root_dir, self.factory, mission_data, target_file_path, codebase_map)
+
+        # Step 3: 초기 패치 생성
+        raw_response = execute_step3_patch_generation(self.factory, mission_data, target_file_path, target_code)
+
+        # Step 4 ~ 6: 검증 및 자율 복구 루프
+        retry_count = 0
+        system_prompt = f"""STRICT EXECUTION PROTOCOL:
+1. Target File: Strictly '{target_file_path}'.
+2. Output code edits using EXACTLY the SEARCH/REPLACE block format shown below.
+3. Include enough surrounding lines in SEARCH block to uniquely identify the code to change.
+4. Keep exact whitespace/indentation.
+5. Do NOT output JSON. Use raw SEARCH/REPLACE text blocks only. No markdown wrapped JSON, no explanations."""
+
+        while retry_count <= max_retries:
+            print(f"\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 {retry_count + 1}/{max_retries + 1})...")
+            patch_success = False
+            patch_list = []
+
+            try:
+                patch_list = self.factory.patcher.parse_blocks(raw_response)
+                if patch_list:
+                    all_patches_ok = True
+                    for idx, item in enumerate(patch_list, 1):
+                        existing_code = item["existing_code"]
+                        replacement_code = item["replacement_code"]
+
+                        patch_result = self.factory.patcher.apply_patch(target_file_path, existing_code, replacement_code)
+                        print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
+                        print(f"   ├─ [BEFORE]: {existing_code.strip()[:60]}...")
+                        print(f"   └─ [AFTER] : {replacement_code.strip()[:60]}...")
+                        if not patch_result.get("success", False):
+                            all_patches_ok = False
+                    patch_success = all_patches_ok
+                else:
+                    print("⚠️ [PATCH FAIL] SEARCH/REPLACE 패치 블록이 비어 있거나 인식되지 않았습니다.")
+            except Exception as e:
+                print(f"❌ [STEP 4 ERROR] 패치 파싱 또는 적용 오류: {e}")
+
+            # Step 5: 실행 및 로그 검증
+            print("\n💻 [Step 5] DebugVerifier 실행 및 로그 패턴 검증 중...")
+            diagnosis_hint = ""
+            if patch_success:
+                verifier = DebugVerifier(self.root_dir, self.factory)
+                ver_res = verifier.verify(mission_data, target_file_path, target_code)
+
+                is_verified = ver_res.get("verified", False)
+                terminal_output = ver_res.get("output", "")
+                diagnosis_hint = ver_res.get("message", "")
+
+                print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
+                print(f"📌 [VERIFICATION RESULT] {'검증 성공' if is_verified else '검증 실패'}: {diagnosis_hint}")
+            else:
+                is_verified = False
+                terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 실행 검증을 스킵합니다."
+                diagnosis_hint = "SEARCH/REPLACE 패치 블록 적용 실패"
+
+            if patch_success and is_verified:
+                created_temp_files = [
+                    item.get("file_path") for item in patch_list 
+                    if item.get("file_path") and item.get("file_path") != target_file_path 
+                    and ("test" in item.get("file_path").lower() or "temp" in item.get("file_path").lower())
+                ]
+                for temp_file in created_temp_files:
+                    temp_path = (self.root_dir / temp_file).resolve()
+                    if temp_path.exists():
+                        temp_path.unlink()
+                        print(f"🧹 [CLEANUP] 검증 완료 후 임시 테스트 파일 삭제: {temp_file}")
+
+                print("\n🎉 [SUCCESS] 모든 디버깅 로그 및 작업 검증 완료!")
+                return
+
+            retry_count += 1
+            if retry_count > max_retries:
+                print("\n🚨 [FAIL] 최대 재시도 횟수를 초과하여 작업을 중단합니다.")
+                return
+
+            # Step 6: 피드백 수집 및 복구 전략
+            print(f"\n🩺 [Step 6-1] 검증 에이전트 진단 피드백 적용 (재시도 {retry_count}/{max_retries})...")
+            
+            if retry_count >= 2:
+                print("⚠️ [강제 재탐색 발동] 2회 이상 실패 감지: LLM 자가 진단 생략 후 강제 broad 시야 확장(Retry Step 1)으로 전환합니다.")
+                is_sufficient = False
+            else:
+                diag_prompt = f"""Target File: {target_file_path}
+Mission Data: {mission_str}
+Current Sliced Code: {target_code}
+Terminal Output: {terminal_output}
+Verifier Diagnosis: {diagnosis_hint}
+
+Can you fix the code with the CURRENT provided code slice, verifier diagnosis, and terminal output alone?
+Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanation"}}"""
+                try:
+                    diag_res = safe_execute_step(
+                        self.factory,
+                        prompt=diag_prompt,
+                        system_instruction="STRICT PROTOCOL: Output raw JSON object with 'is_sufficient' boolean field only.",
+                        response_mime_type="application/json"
+                    )
+                    diag_data = json.loads(clean_json_response(diag_res))
+                    is_sufficient = diag_data.get("is_sufficient", False)
+                except Exception:
+                    is_sufficient = False
+
+            if is_sufficient:
+                print("🔄 [Step 6-2] 검증 에이전트 힌트 기반 다중 수정 패치 재작성 중...")
+                fix_user_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
+<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
+<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
+                raw_response = safe_execute_step(
+                    self.factory,
+                    prompt=fix_user_prompt,
+                    system_instruction=system_prompt,
+                    response_mime_type="text/plain"
+                )
+            else:
+                print("🌐 [Retry Step 1] 정보 부족 / 2회차 실패 -> 시야 확장 및 다중 경로 재탐색 진행...")
+                scale_detector = ProjectScaleDetector(project_root=self.root_dir)
+                shallow_map = scale_detector.generate_shallow_structure_map()
+                
+                broad_prompt = f"""Target File: {target_file_path}
+Mission Data: {mission_str}
+Project Structure: {shallow_map}
+Previous Error Log: {terminal_output}
+
+Select ALL relevant directory/file relative paths to inspect.
+Output JSON string array matching: ["path/1", "path/2"]"""
+                try:
+                    raw_dirs = safe_execute_step(
+                        self.factory,
+                        prompt=broad_prompt,
+                        system_instruction="STRICT PROTOCOL: Output JSON string array of multiple target paths only.",
+                        response_mime_type="application/json"
+                    )
+                    target_dirs = json.loads(clean_json_response(raw_dirs))
+                    if not isinstance(target_dirs, list):
+                        target_dirs = [target_dirs]
+                    codebase_map = extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
+                except Exception:
+                    codebase_map = extract_targeted_ai_map(save_to_file=False)
+
+                actual_target = self.root_dir / target_file_path
+                if actual_target.exists():
+                    with open(actual_target, "r", encoding="utf-8") as f:
+                        total_lines = len(f.readlines())
+                    dynamic_slice_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
+                else:
+                    dynamic_slice_prompt = f"{target_file_path}:1-500"
+
+                slice_res = self.factory.extractor.process(dynamic_slice_prompt, auto_save=False)
+                target_code = slice_res.get("markdown", "")
+                
+                retry_fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
+<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
+<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
+                raw_response = safe_execute_step(
+                    self.factory,
+                    prompt=retry_fix_prompt,
+                    system_instruction=system_prompt,
+                    response_mime_type="text/plain"
+                )
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/worker/pipeline_steps.py
+#### 🧱 Code Skeleton:
+```python
+def execute_step1_map_building(root_dir: Path, factory, mission_data: dict, target_file_path: str) -> str:
+    """[Step 1] 프로젝트 규모 진단 및 동적 지형도 생성"""
+    print("\n🗺️ [Step 1] 프로젝트 규모 측정 및 코드베이스 맵 준비...")
+    scale_detector = ProjectScaleDetector(project_root=root_dir)
+    scale_info = scale_detector.analyze_project_scale()
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+    if scale_info["is_oversized"]:
+        print(f"⚠️ 대형 프로젝트 감지 ({scale_info['file_count']}개 파일, {scale_info['total_lines']}줄): 2단계 지형도 탐색 진행")
+        shallow_map = scale_detector.generate_shallow_structure_map(
+            max_depth=scale_info["recommended_depth"]
+        )
+        
+        select_sys_instruction = (
+            "STRICT PROTOCOL: Output raw JSON string array only. No commentary. "
+            "Select ONLY minimum directories directly related to mission target."
+        )
+        select_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Project Shallow Structure Map:
+{shallow_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Extract ONLY the absolute minimum relative directory/file paths directly required for the mission.
+- NO extra explanations, markdown tags, or conversational fluff.
+
+[3. REQUIRED FORMAT]
+["path/to/dir_or_file"]"""
+        
+        try:
+            raw_dirs = safe_execute_step(
+                factory,
+                prompt=select_prompt,
+                system_instruction=select_sys_instruction,
+                response_mime_type="application/json"
+            )
+            target_dirs = json.loads(clean_json_response(raw_dirs))
+            if not isinstance(target_dirs, list):
+                target_dirs = [target_dirs]
+                
+            print(f"🎯 [Step 1 AI 선택 경로] {target_dirs}")
+            return extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
+        except Exception as e:
+            print(f"⚠️ [Step 1 Warning] AI 경로 선택 처리 중 예외 발생({e}), 전체 기본 맵으로 대체 진행")
+            return extract_targeted_ai_map(save_to_file=False)
+    else:
+        print("✅ 일반 규모 프로젝트: AI 호출 없이 전체 AI 코드베이스 맵 direct 생성")
+        return extract_targeted_ai_map(save_to_file=True)
+
+def execute_step2_code_slicing(root_dir: Path, factory, mission_data: dict, target_file_path: str, codebase_map: str) -> str:
+    """[Step 2] 미션 기반 동적 필요 코드 영역 추론 및 추출"""
+    print("\n📄 [Step 2] 미션 및 지형도 맵 기반 필요 코드 영역 동적 추출...")
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+    
+    extract_sys_instruction = (
+        "STRICT PROTOCOL: Output JSON string array matching [\"relative/path.py:start-end\"] only. "
+        "Strictly limit targets to the mission's designated Target File or mandatory reference files. "
+        "Do NOT slice unrequested system files."
+    )
+    extract_target_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Current Codebase Map:
+{codebase_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Specify target relative file paths and line ranges required to fulfill the mission.
+- Do NOT request code slices for unreferenced system architecture files.
+
+[3. REQUIRED FORMAT]
+["{target_file_path}:start_line-end_line"]"""
+
+    try:
+        raw_slice_targets = safe_execute_step(
+            factory,
+            prompt=extract_target_prompt,
+            system_instruction=extract_sys_instruction,
+            response_mime_type="application/json"
+        )
+        slice_target_list = json.loads(clean_json_response(raw_slice_targets))
+        
+        if isinstance(slice_target_list, list) and len(slice_target_list) > 0:
+            slice_prompt_str = " ".join(slice_target_list)
+            print(f"🔍 [Step 2 AI 요청 슬라이스 Target] {slice_prompt_str}")
+            slice_res = factory.extractor.process(slice_prompt_str, auto_save=False)
+            target_code = slice_res.get("markdown", "")
+        else:
+            target_code = ""
+
+        if not target_code.strip():
+            target_code = fallback_extract_full_target(root_dir, factory, target_file_path)
+    except Exception as e:
+        print(f"⚠️ [Step 2 Warning] 필요 코드 영역 동적 추출 예외 발생({e}), Fallback 전체 파일 추적 시도")
+        target_code = fallback_extract_full_target(root_dir, factory, target_file_path)
+
+    print(f"📄 [Step 2 준비 완료] 추출된 코드 영역 길이: {len(target_code)}자")
+    return target_code
+
+def fallback_extract_full_target(root_dir: Path, factory, target_file_path: str) -> str:
+    """Target File 전체 범위를 재추적하는 Fallback 함수"""
+    actual_target = root_dir / target_file_path
+    if actual_target.exists():
+        with open(actual_target, "r", encoding="utf-8") as f:
+            total_lines = len(f.readlines())
+        fallback_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
+        print(f"⚠️ [Step 2 Fallback] Target File 전체 범위({fallback_prompt})로 Extractor 재추적 가동")
+        slice_res = factory.extractor.process(fallback_prompt, auto_save=False)
+        return slice_res.get("markdown", "")
+    return "(Target File을 찾을 수 없어 코드 추출에 실패했습니다.)"
+
+def execute_step3_patch_generation(factory, mission_data: dict, target_file_path: str, target_code: str) -> str:
+    """[Step 3] LLM 단발성 수정 패치 생성 요청"""
+    print("\n🤖 [Step 3] LLM 단발성 수정 패치(다중 스니펫) 생성 중...")
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+    system_prompt = f"""STRICT EXECUTION PROTOCOL:
+1. Target File: Strictly '{target_file_path}'.
+2. Output code edits using EXACTLY the SEARCH/REPLACE block format shown below.
+3. Include enough surrounding lines in SEARCH block to uniquely identify the code to change.
+4. Keep exact whitespace/indentation.
+5. Do NOT output JSON. Use raw SEARCH/REPLACE text blocks only. No markdown wrapped JSON, no explanations."""
+
+    user_prompt = f"""<MISSION_SPEC>
+Target File Path: {target_file_path}
+Mission Details:
+{mission_str}
+</MISSION_SPEC>
+
+<READ_ONLY_CONTEXT>
+{target_code}
+</READ_ONLY_CONTEXT>
+
+<OUTPUT_FORMAT>
+For each code change, output exactly:
+
+<<<<<<< SEARCH
+[Exact original code snippet to replace]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE
+</OUTPUT_FORMAT>"""
+
+    return safe_execute_step(
+        factory,
+        prompt=user_prompt,
+        system_instruction=system_prompt,
+        response_mime_type="text/plain"
+    )
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/worker/utils.py
+#### 🧱 Code Skeleton:
+```python
+def load_mission_file(root_dir: Path, mission_rel_path: str) -> dict:
+    """JSON 미션 파일 로더 및 규격 검증"""
+    mission_path = root_dir / mission_rel_path
+    if not mission_path.exists():
+        raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
+    
+    with open(mission_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    required_keys = ["task_id", "target_file", "debug_log_spec"]
+    for key in required_keys:
+        if key not in data:
+            raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
+            
+    return data
+
+def clean_json_response(raw_response: str) -> str:
+    """LLM 응답에서 마크다운 코드 블록(```json ...)을 제거하고 순수 JSON 문자열 추출"""
+    text = raw_response.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\n?", "", text)
+        text = re.sub(r"\n?```$", "", text)
+    return text.strip()
+
+def safe_execute_step(
+    factory, 
+    prompt: str, 
+    system_instruction: str, 
+    response_mime_type: str = "application/json", 
+    max_attempts: int = 10, 
+    temperature: float = 0.0
+) -> str:
+    """Fail-Fast 감지 및 API Key/Model 자동 스위칭 실행기"""
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return factory.execute_worker_step(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                response_mime_type=response_mime_type,
+                temperature=temperature
+            )
+        except Exception as e:
+            err_str = str(e)
+            print(f"⚡ [Fail-Fast 감지] 0초 만에 예외 포착 -> ({err_str[:80]}...) | 즉시 다음 Key/Model 조합 스위칭 ({attempt}/{max_attempts})")
+            if hasattr(factory, "switch_to_next_key"):
+                factory.switch_to_next_key(last_error_msg=err_str)
+    raise RuntimeError("🚨 모든 Gemini API Key/Model 조합이 소진되었거나 오류로 인해 중단되었습니다.")
 ```
 
 --------------------------------------------------
@@ -3235,7 +3323,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `bin/eslint.js, node_modules/string.prototype.trimstart, bin/babel-parser.js, bin/semver.js, node_modules/big.js, big.js, cli.js, dist/esm/bin.mjs, node_modules/resolve.exports, bin/webpack.js, ipaddr.js, bin/jest.js, node_modules/lodash.memoize, node_modules/array.prototype.toreversed, node_modules/object.assign, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/sanitize.css, fixtures/cli.js, decimal.js, bin/nopt.js, bin/nanoid.cjs, bin/cli.js, node_modules/engine.io, node_modules/decimal.js, node_modules/lodash.merge, bin/react-scripts.js, bin.js, node_modules/regexp.prototype.flags, fraction.js, bin/webpack-dev-server.js, node_modules/hpack.js, bin/escodegen.js, node_modules/iterator.prototype, lib/cli.js, node_modules/function.prototype.name, bin/bin.js, node_modules/array.prototype.flatmap, node_modules/string.prototype.matchall, hpack.js, node_modules/array.prototype.flat, node_modules/array.prototype.findlastindex, node_modules/array.prototype.tosorted, node_modules/object.values, bin/js-yaml.js, bin/esparse.js, node_modules/array.prototype.findlast, node_modules/fraction.js, node_modules/lodash.debounce, bin/cmd.js, node_modules/string.prototype.trim, node_modules/arraybuffer.prototype.slice, node_modules/object.groupby, node_modules/socket.io, node_modules/array.prototype.reduce, node_modules/object.getownpropertydescriptors, node_modules/util.promisify, bin/jiti.js, node_modules/fs.realpath, node_modules/ipaddr.js, dist/cli.cjs, node_modules/css.escape, bin/esgenerate.js, bin/esvalidate.js, node_modules/lodash.uniq, node_modules/object.fromentries, node_modules/object.hasown, node_modules/reflect.getprototypeof, node_modules/string.prototype.trimend, node_modules/object.entries, node_modules/lodash.sortby`
+  - 🔗 *Calls (호출하는 것)*: `bin/nanoid.cjs, bin/semver.js, node_modules/decimal.js, node_modules/big.js, bin/esgenerate.js, bin/eslint.js, bin/nopt.js, bin/babel-parser.js, bin/bin.js, node_modules/lodash.debounce, node_modules/object.assign, node_modules/lodash.merge, bin/esparse.js, node_modules/array.prototype.reduce, node_modules/array.prototype.findlastindex, node_modules/ipaddr.js, node_modules/arraybuffer.prototype.slice, bin/esvalidate.js, bin/jest.js, node_modules/array.prototype.toreversed, node_modules/lodash.memoize, bin/js-yaml.js, ipaddr.js, node_modules/string.prototype.trimend, bin/react-scripts.js, node_modules/fraction.js, lib/cli.js, node_modules/object.groupby, node_modules/css.escape, node_modules/regexp.prototype.flags, dist/esm/bin.mjs, bin/cli.js, decimal.js, node_modules/fs.realpath, node_modules/function.prototype.name, node_modules/object.getownpropertydescriptors, node_modules/hpack.js, node_modules/object.hasown, node_modules/resolve.exports, node_modules/sanitize.css, dist/cli.cjs, bin/jiti.js, node_modules/engine.io, node_modules/object.fromentries, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/object.values, bin.js, node_modules/string.prototype.trim, bin/webpack-dev-server.js, fixtures/cli.js, hpack.js, bin/escodegen.js, node_modules/object.entries, big.js, node_modules/lodash.sortby, node_modules/reflect.getprototypeof, node_modules/string.prototype.trimstart, node_modules/array.prototype.tosorted, node_modules/util.promisify, node_modules/socket.io, bin/cmd.js, node_modules/iterator.prototype, node_modules/array.prototype.flatmap, node_modules/lodash.uniq, node_modules/array.prototype.flat, cli.js, node_modules/array.prototype.findlast, bin/webpack.js, fraction.js, node_modules/string.prototype.matchall`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -3489,7 +3577,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `bin/nodemon.js, bin/semver.js, node_modules/pstree.remy, node_modules/socket.io, cli.js, node_modules/ipaddr.js, ipaddr.js, node_modules/engine.io, bin/nodetouch.js`
+  - 🔗 *Calls (호출하는 것)*: `bin/semver.js, node_modules/engine.io, bin/nodemon.js, ipaddr.js, node_modules/socket.io, node_modules/ipaddr.js, cli.js, node_modules/pstree.remy, bin/nodetouch.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -3564,403 +3652,6 @@ def main():
 ### 📄 run_test.py
 #### 🧱 Code Skeleton:
 ```python
-def load_mission_file(mission_rel_path: str) -> dict:
-    """JSON 미션 파일 로더 및 규격 검증 (v2.0 신규 규격 적용)"""
-    mission_path = ROOT_DIR / mission_rel_path
-    if not mission_path.exists():
-        raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
-    
-    with open(mission_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    
-    # 필수 규격 키 검증 (debug_log_spec 포함)
-    required_keys = ["task_id", "target_file", "debug_log_spec"]
-    for key in required_keys:
-        if key not in data:
-            raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
-            
-    return data
-
-def clean_json_response(raw_response: str) -> str:
-    """LLM 응답에서 마크다운 코드 블록(```json ... ```)을 제거하고 순수 JSON 문자열 추출"""
-    text = raw_response.strip()
-    if text.startswith("```"):
-        text = re.sub(r"^```(?:json)?\n?", "", text)
-        text = re.sub(r"\n?```$", "", text)
-    return text.strip()
-
-def run_step_worker_pipeline(mission_rel_path: str):
-    print(f"\n🚀 [WORKER PIPELINE] 파이프라인 가동: '{mission_rel_path}'")
-    factory = AgentSessionFactory(ROOT_DIR)
-
-    # 🛡️ 파이프라인 상단 단일 통합 정의 (0초 Fail-Fast 포착 및 로테이션)
-    def safe_execute_step(prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 10, temperature: float = 0.0) -> str:
-        for attempt in range(1, max_attempts + 1):
-            try:
-                return factory.execute_worker_step(
-                    prompt=prompt,
-                    system_instruction=system_instruction,
-                    response_mime_type=response_mime_type,
-                    temperature=temperature
-                )
-            except Exception as e:
-                err_str = str(e)
-                print(f"⚡ [Fail-Fast 감지] 0초 만에 예외 포착 -> ({err_str[:80]}...) | 즉시 다음 Key/Model 조합 스위칭 ({attempt}/{max_attempts})")
-                if hasattr(factory, "switch_to_next_key"):
-                    # 💡 발생한 예외 문자열(err_str)을 전달하여 403/429/503 분기 처리 유도
-                    factory.switch_to_next_key(last_error_msg=err_str)
-        raise RuntimeError("🚨 모든 Gemini API Key/Model 조합이 소진되었거나 오류로 인해 중단되었습니다.")
-
-    # JSON 미션 데이터 로드
-    mission_data = load_mission_file(mission_rel_path)
-    target_file_path = mission_data["target_file"]
-    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
-
-    # -----------------------------------------------------------------
-    # 🔍 [Step 1] 프로젝트 규모 진단 및 동적 지형도 생성 (1-Step / 2-Step 분기)
-    # -----------------------------------------------------------------
-    print("\n🗺️ [Step 1] 프로젝트 규모 측정 및 코드베이스 맵 준비...")
-    scale_detector = ProjectScaleDetector(project_root=ROOT_DIR)
-    scale_info = scale_detector.analyze_project_scale()
-
-    if scale_info["is_oversized"]:
-        print(f"⚠️ 대형 프로젝트 감지 ({scale_info['file_count']}개 파일, {scale_info['total_lines']}줄): 2단계 지형도 탐색 진행")
-        shallow_map = scale_detector.generate_shallow_structure_map(
-            max_depth=scale_info["recommended_depth"]
-        )
-        
-        select_sys_instruction = (
-            "STRICT PROTOCOL: Output raw JSON string array only. No commentary. "
-            "Select ONLY minimum directories directly related to mission target."
-        )
-
-        select_prompt = f"""[1. CURRENT STATE & CONTEXT]
-Target File: {target_file_path}
-Mission Data:
-{mission_str}
-
-Project Shallow Structure Map:
-{shallow_map}
-
-[2. OUTPUT CONSTRAINTS]
-- Extract ONLY the absolute minimum relative directory/file paths directly required for the mission.
-- NO extra explanations, markdown tags, or conversational fluff.
-
-[3. REQUIRED FORMAT]
-["path/to/dir_or_file"]"""
-        
-        try:
-            raw_dirs = safe_execute_step(
-                prompt=select_prompt,
-                system_instruction=select_sys_instruction,
-                response_mime_type="application/json"
-            )
-            target_dirs = json.loads(clean_json_response(raw_dirs))
-            if not isinstance(target_dirs, list):
-                target_dirs = [target_dirs]
-                
-            print(f"🎯 [Step 1 AI 선택 경로] {target_dirs}")
-            codebase_map = extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
-        except Exception as e:
-            print(f"⚠️ [Step 1 Warning] AI 경로 선택 처리 중 예외 발생({e}), 전체 기본 맵으로 대체 진행")
-            codebase_map = extract_targeted_ai_map(save_to_file=False)
-    else:
-        print("✅ 일반 규모 프로젝트: AI 호출 없이 전체 AI 코드베이스 맵 direct 생성")
-        # 🛡️ [수정] 실제 target_file이 읽을 수 있도록 디스크에 codebase_map.json 파일 생성 보장
-        codebase_map = extract_targeted_ai_map(save_to_file=True)
-
-    # -----------------------------------------------------------------
-    # 📄 [Step 2] 미션 기반 동적 필요 코드 영역 추론 및 추출 (하드코딩 제거)
-    # -----------------------------------------------------------------
-    print("\n📄 [Step 2] 미션 및 지형도 맵 기반 필요 코드 영역 동적 추출...")
-    
-    extract_sys_instruction = (
-        "STRICT PROTOCOL: Output JSON string array matching [\"relative/path.py:start-end\"] only. "
-        "Strictly limit targets to the mission's designated Target File or mandatory reference files. "
-        "Do NOT slice unrequested system files."
-    )
-
-    extract_target_prompt = f"""[1. CURRENT STATE & CONTEXT]
-Target File: {target_file_path}
-Mission Data:
-{mission_str}
-
-Current Codebase Map:
-{codebase_map}
-
-[2. OUTPUT CONSTRAINTS]
-- Specify target relative file paths and line ranges required to fulfill the mission.
-- Do NOT request code slices for unreferenced system architecture files.
-
-[3. REQUIRED FORMAT]
-["{target_file_path}:start_line-end_line"]"""
-
-    try:
-        raw_slice_targets = safe_execute_step(
-            prompt=extract_target_prompt,
-            system_instruction=extract_sys_instruction,
-            response_mime_type="application/json"
-        )
-        slice_target_list = json.loads(clean_json_response(raw_slice_targets))
-        
-        if isinstance(slice_target_list, list) and len(slice_target_list) > 0:
-            slice_prompt_str = " ".join(slice_target_list)
-            print(f"🔍 [Step 2 AI 요청 슬라이스 Target] {slice_prompt_str}")
-            slice_res = factory.extractor.process(slice_prompt_str, auto_save=False)
-            target_code = slice_res.get("markdown", "")
-        else:
-            target_code = ""
-
-        # ⚠️ 추출 결과가 비어있다면 Target File 전체 범위로 Extractor를 재호출하여 used_by/callee 심볼 추적 강제 가동
-        if not target_code.strip():
-            actual_target = ROOT_DIR / target_file_path
-            if actual_target.exists():
-                with open(actual_target, "r", encoding="utf-8") as f:
-                    total_lines = len(f.readlines())
-                fallback_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
-                print(f"⚠️ [Step 2 Fallback] Target File 전체 범위({fallback_prompt})로 Extractor 재추적 가동")
-                slice_res = factory.extractor.process(fallback_prompt, auto_save=False)
-                target_code = slice_res.get("markdown", "")
-    except Exception as e:
-        print(f"⚠️ [Step 2 Warning] 필요 코드 영역 동적 추출 예외 발생({e}), Fallback 전체 파일 추적 시도")
-        actual_target = ROOT_DIR / target_file_path
-        if actual_target.exists():
-            with open(actual_target, "r", encoding="utf-8") as f:
-                total_lines = len(f.readlines())
-            fallback_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
-            slice_res = factory.extractor.process(fallback_prompt, auto_save=False)
-            target_code = slice_res.get("markdown", "")
-        else:
-            target_code = "(Target File을 찾을 수 없어 코드 추출에 실패했습니다.)"
-
-    print(f"📄 [Step 2 준비 완료] 추출된 코드 영역 길이: {len(target_code)}자")
-
-    # 수정된 코드
-    # -----------------------------------------------------------------
-    # 🤖 [Step 3] LLM 단발성(Stateless) 다중 패치 생성 요청
-    # -----------------------------------------------------------------
-    print("\n🤖 [Step 3] LLM 단발성 수정 패치(다중 스니펫) 생성 중...")
-    
-    system_prompt = f"""STRICT EXECUTION PROTOCOL:
-1. Target File: Strictly '{target_file_path}'.
-2. Output code edits using EXACTLY the SEARCH/REPLACE block format shown below.
-3. Include enough surrounding lines in SEARCH block to uniquely identify the code to change.
-4. Keep exact whitespace/indentation.
-5. Do NOT output JSON. Use raw SEARCH/REPLACE text blocks only. No markdown wrapped JSON, no explanations."""
-
-    user_prompt = f"""<MISSION_SPEC>
-Target File Path: {target_file_path}
-Mission Details:
-{mission_str}
-</MISSION_SPEC>
-
-<READ_ONLY_CONTEXT>
-{target_code}
-</READ_ONLY_CONTEXT>
-
-<OUTPUT_FORMAT>
-For each code change, output exactly:
-
-<<<<<<< SEARCH
-[Exact original code snippet to replace]
-=======
-[New replacement code snippet]
->>>>>>> REPLACE
-</OUTPUT_FORMAT>"""
-
-    raw_response = safe_execute_step(
-        prompt=user_prompt,
-        system_instruction=system_prompt,
-        response_mime_type="text/plain"
-    )
-
-    terminal_output = ""
-
-    # -----------------------------------------------------------------
-    # 🛠️ [Step 4 ~ Step 6] 검증 및 자기 복구 실행 루프
-    # -----------------------------------------------------------------
-    max_retries = 3
-    retry_count = 0
-
-    while retry_count <= max_retries:
-        print(f"\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 {retry_count + 1}/{max_retries + 1})...")
-        patch_success = False
-        try:
-            # SEARCH/REPLACE 텍스트 블록 추출
-            patch_list = factory.patcher.parse_blocks(raw_response)
-
-            if patch_list:
-                all_patches_ok = True
-                for idx, item in enumerate(patch_list, 1):
-                    existing_code = item["existing_code"]
-                    replacement_code = item["replacement_code"]
-
-                    patch_result = factory.patcher.apply_patch(target_file_path, existing_code, replacement_code)
-                    print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
-                    print(f"   ├─ [BEFORE]: {existing_code.strip()[:60]}...")
-                    print(f"   └─ [AFTER] : {replacement_code.strip()[:60]}...")
-                    if not patch_result.get("success", False):
-                        all_patches_ok = False
-                patch_success = all_patches_ok
-            else:
-                print("⚠️ [PATCH FAIL] SEARCH/REPLACE 패치 블록이 비어 있거나 인식되지 않았습니다.")
-
-        except Exception as e:
-            print(f"❌ [STEP 4 ERROR] 패치 파싱 또는 적용 오류: {e}")
-
-        # -------------------------------------------------------------
-        # 💻 [Step 5] DebugVerifier 기반 실제 실행 및 로그 패턴 검증
-        # -------------------------------------------------------------
-        print("\n💻 [Step 5] DebugVerifier 실행 및 로그 패턴 검증 중...")
-
-        diagnosis_hint = ""
-        if patch_success:
-            # 실제 검증기(DebugVerifier) 객체 생성 및 검증 수행
-            verifier = DebugVerifier(ROOT_DIR, factory)
-            ver_res = verifier.verify(mission_data, target_file_path, target_code)
-
-            # 검증 결과 바인딩
-            is_verified = ver_res.get("verified", False)
-            terminal_output = ver_res.get("output", "")
-            diagnosis_hint = ver_res.get("message", "")
-
-            print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
-            print(f"📌 [VERIFICATION RESULT] {'검증 성공' if is_verified else '검증 실패'}: {diagnosis_hint}")
-        else:
-            is_verified = False
-            terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 실행 검증을 스킵합니다."
-            diagnosis_hint = "SEARCH/REPLACE 패치 블록 적용 실패"
-
-        if patch_success and is_verified:
-            # 🧹 임시 생성된 검증용 테스트 파일 자동 청소 (Clean-up)
-            created_temp_files = [
-                item.get("file_path") for item in patch_list 
-                if item.get("file_path") and item.get("file_path") != target_file_path 
-                and ("test" in item.get("file_path").lower() or "temp" in item.get("file_path").lower())
-            ]
-            for temp_file in created_temp_files:
-                temp_path = (ROOT_DIR / temp_file).resolve()
-                if temp_path.exists():
-                    temp_path.unlink()
-                    print(f"🧹 [CLEANUP] 검증 완료 후 임시 테스트 파일 삭제: {temp_file}")
-
-            print("\n🎉 [SUCCESS] 모든 디버깅 로그 및 작업 검증 완료!")
-            return
-        
-        retry_count += 1
-        if retry_count > max_retries:
-            print("\n🚨 [FAIL] 최대 재시도 횟수를 초과하여 작업을 중단합니다.")
-            return
-
-        # -------------------------------------------------------------
-        # 🩺 [Step 6-1] 자율 검증 피드백 수집 및 정보 충분성 진단
-        # -------------------------------------------------------------
-        print(f"\n🩺 [Step 6-1] 검증 에이전트 진단 피드백 적용 (재시도 {retry_count}/{max_retries})...")
-        
-        # 🛡️ 1회 실패 후(2회차 실행 이상)부터는 자기 과신 방지를 위해 Self-Diagnosis 호출을 생략하고 강제 broad 재탐색으로 전환
-        if retry_count >= 2:
-            print("⚠️ [강제 재탐색 발동] 2회 이상 실패 감지: LLM 자가 진단 생략 후 강제 broad 시야 확장(Retry Step 1)으로 전환합니다.")
-            is_sufficient = False
-        else:
-            diag_prompt = f"""Target File: {target_file_path}
-Mission Data: {mission_str}
-Current Sliced Code: {target_code}
-Terminal Output: {terminal_output}
-Verifier Diagnosis: {diagnosis_hint}
-
-Can you fix the code with the CURRENT provided code slice, verifier diagnosis, and terminal output alone?
-Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanation"}}"""
-
-            try:
-                diag_res = safe_execute_step(
-                    prompt=diag_prompt,
-                    system_instruction="STRICT PROTOCOL: Output raw JSON object with 'is_sufficient' boolean field only.",
-                    response_mime_type="application/json"
-                )
-                diag_data = json.loads(clean_json_response(diag_res))
-                is_sufficient = diag_data.get("is_sufficient", False)
-            except Exception:
-                is_sufficient = False
-
-        if is_sufficient:
-            # ---------------------------------------------------------
-            # 🔄 [Step 6-2] 검증 피드백 기반 패치 재작성 (Direct Fix with Diagnosis)
-            # ---------------------------------------------------------
-            print("🔄 [Step 6-2] 검증 에이전트 힌트 기반 다중 수정 패치 재작성 중...")
-            fix_user_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
-<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
-<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
-
-Output corrected SEARCH/REPLACE blocks:
-<<<<<<< SEARCH
-[Exact original code snippet]
-=======
-[New replacement code snippet]
->>>>>>> REPLACE"""
-            raw_response = safe_execute_step(
-                prompt=fix_user_prompt,
-                system_instruction=system_prompt,
-                response_mime_type="text/plain"
-            )
-        else:
-            # ---------------------------------------------------------
-            # 🌐 [Retry Step 1] 시야 확장 재탐색 및 피드백 강화 (Broad Re-exploration)
-            # ---------------------------------------------------------
-            print("🌐 [Retry Step 1] 정보 부족 / 2회차 실패 -> 시야 확장 및 다중 경로 재탐색 진행...")
-            scale_detector = ProjectScaleDetector(project_root=ROOT_DIR)
-            shallow_map = scale_detector.generate_shallow_structure_map()
-            
-            broad_prompt = f"""Target File: {target_file_path}
-Mission Data: {mission_str}
-Project Structure: {shallow_map}
-Previous Error Log: {terminal_output}
-
-Select ALL relevant directory/file relative paths to inspect.
-Output JSON string array matching: ["path/1", "path/2"]"""
-            try:
-                raw_dirs = safe_execute_step(
-                    prompt=broad_prompt,
-                    system_instruction="STRICT PROTOCOL: Output JSON string array of multiple target paths only.",
-                    response_mime_type="application/json"
-                )
-                target_dirs = json.loads(clean_json_response(raw_dirs))
-                if not isinstance(target_dirs, list):
-                    target_dirs = [target_dirs]
-                codebase_map = extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
-            except Exception:
-                codebase_map = extract_targeted_ai_map(save_to_file=False)
-
-            # 🛠️ [보완 1] 하드코딩된 '1-200' 삭제 -> 타깃 파일 전체 라인 수 동적 계측 후 Extractor 추적 실행
-            actual_target = ROOT_DIR / target_file_path
-            if actual_target.exists():
-                with open(actual_target, "r", encoding="utf-8") as f:
-                    total_lines = len(f.readlines())
-                dynamic_slice_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
-            else:
-                dynamic_slice_prompt = f"{target_file_path}:1-500"
-
-            slice_res = factory.extractor.process(dynamic_slice_prompt, auto_save=False)
-            target_code = slice_res.get("markdown", "")
-            
-            # 🛠️ [보완 2] 이전 실패 로그뿐만 아니라 자율 검증 에이전트 진단 힌트(<VERIFIER_AGENT_DIAGNOSIS>)까지 프롬프트에 동시 주입
-            retry_fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
-<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
-<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
-
-Output corrected SEARCH/REPLACE blocks:
-<<<<<<< SEARCH
-[Exact original code snippet]
-=======
-[New replacement code snippet]
->>>>>>> REPLACE"""
-            raw_response = safe_execute_step(
-                prompt=retry_fix_prompt,
-                system_instruction=system_prompt,
-                response_mime_type="text/plain"
-            )
-
 def main():
     print("🚀 ASE-OS v1.3 Step Worker Pipeline 테스트 가동...")
 
@@ -3968,9 +3659,11 @@ def main():
         with open(LOG_FILE_PATH, "w", encoding="utf-8") as f:
             f.write("=== [Step Worker Pipeline Debug Log Initialized] ===\n")
 
-    # Target File이 'a'로 정상 수정된 JSON 규격 미션 파일 지정
     mission_file_path = "agent_core/tasks/task_01/checklist_01/mission_01.json"
-    run_step_worker_pipeline(mission_file_path)
+    
+    # 모듈화된 일꾼 파이프라인 가동
+    pipeline = StepWorkerPipeline(root_dir=ROOT_DIR)
+    pipeline.run(mission_file_path)
 ```
 
 --------------------------------------------------
@@ -6182,11 +5875,11 @@ class ProcessHandle:
         self._stderr_thread.start()
 
     def _reader_thread(self, stream):
-        """스트림에서 실시간으로 텍스트를 읽어 큐에 적재"""
+        """스트림에서 실시간으로 텍스트를 읽어 큐에 적재 (개행 없는 프롬프트 즉시 대응)"""
         try:
-            for line in iter(stream.readline, ''):
-                if line:
-                    self._output_queue.put(line)
+            for char in iter(lambda: stream.read(1), ''):
+                if char:
+                    self._output_queue.put(char)
                     self.last_output_time = time.time()  # 출력 발생 시 타임스탬프 갱신
                 if self._stop_event.is_set():
                     break

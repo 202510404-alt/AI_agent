@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from agent_core.debug_agent.schemas import CapturedLogResult
-from tools.multi_agent_system.terminal_agent_runner import TerminalAgentRunner
+from tools.multi_agent_system.terminal_runner import TerminalAgentRunner
 
 
 class CliPipelineAgent:
@@ -75,10 +75,14 @@ class CliPipelineAgent:
                 code_context=target_code
             )
 
-            raw_logs = run_result.get("buffer", "")
+            raw_logs = run_result.get("clean_output") or run_result.get("raw_output", "")
             status = run_result.get("status", "FAIL")
             success = (status == "SUCCESS")
-            exit_code = run_result.get("exit_code", 0 if success else -1)
+            
+            # 🛡️ dict.get() 사용 시 None 값이 그대로 전달되어 Pydantic ValidationError를 일으키는 현상 방지
+            raw_exit_code = run_result.get("exit_code")
+            exit_code = raw_exit_code if isinstance(raw_exit_code, int) else (0 if success else -1)
+
             error_msg = run_result.get("error_msg", "")
 
         except Exception as e:

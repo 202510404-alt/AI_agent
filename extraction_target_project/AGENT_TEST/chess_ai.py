@@ -361,6 +361,8 @@ class ApexChessEngine:
 
         return int(eval_score)
 
+        return final_score
+
     # -------------------------------------------------------------------------
     # Move Ordering (MVV-LVA, Killers, History, TT)
     # -------------------------------------------------------------------------

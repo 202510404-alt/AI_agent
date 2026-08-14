@@ -23,7 +23,7 @@ class ProcessHandle:
     """subprocess.Popen을 감싸 비동기 입출력 및 상태를 관리하는 핸들러 클래스"""
     def __init__(self, proc: subprocess.Popen):
         self.proc = proc
-        self.pid = proc.pid
+        # self.pid = proc.pid  <-- 해당 줄을 삭제합니다.
         self._output_queue: queue.Queue = queue.Queue()
         self._stop_event = threading.Event()
         self.last_output_time = time.time()  # 마지막 출력 시간 타임스탬프 추가
@@ -35,18 +35,24 @@ class ProcessHandle:
         self._stderr_thread.start()
 
     def _reader_thread(self, stream):
-        """스트림에서 실시간으로 텍스트를 읽어 큐에 적재"""
+        """스트림에서 실시간으로 청크 단위로 읽어 큐에 적재하여 CPU 연산 최적화"""
+        if stream is None:
+            return
+
         try:
-            for line in iter(stream.readline, ''):
-                if line:
-                    self._output_queue.put(line)
-                    self.last_output_time = time.time()  # 출력 발생 시 타임스탬프 갱신
-                if self._stop_event.is_set():
+            while not self._stop_event.is_set():
+                # 1글자 단위가 아닌 128자 청크 단위로 읽기 처리
+                chunk = stream.read(128) if hasattr(stream, 'read') else ""
+                if not chunk:
                     break
+                
+                self._output_queue.put(chunk)
+                self.last_output_time = time.time()
         except Exception:
             pass
         finally:
-            stream.close()
+            if stream:
+                stream.close()
 
     @property
     def pid(self) -> int:
@@ -177,6 +183,7 @@ class TerminalAgentRunner:
             while True:
                 time.sleep(0.1)
 
+                # 절대 시간 기준 타임아웃 검사
                 if time.time() - start_time > self.default_timeout:
                     self._kill_process_tree(proc_handle.pid)
                     return self._build_result(
@@ -188,7 +195,6 @@ class TerminalAgentRunner:
                 new_data = proc_handle.read_stdout()
                 if new_data:
                     buffer += new_data
-                    start_time = time.time()
 
                 if not proc_handle.is_alive():
                     buffer += proc_handle.read_stdout()
@@ -243,7 +249,7 @@ class TerminalAgentRunner:
 
     def _is_waiting_for_input(self, proc_handle: ProcessHandle, buffer: str, quiet_time_sec: float = 0.3) -> bool:
         """
-        Quiet Period(출력 정지 시간) + Tail Pattern(프롬프트 패턴) 기반 감지
+        Quiet Period(출력 정지 시간) + Tail Pattern(프롬프트 패턴) 기반 감지 (에러 트레이스백 제외)
         """
         if not proc_handle.is_alive():
             return False
@@ -252,10 +258,15 @@ class TerminalAgentRunner:
         if time.time() - proc_handle.last_output_time < quiet_time_sec:
             return False
 
-        # 2. Tail Pattern 검사: 버퍼의 마지막 줄이 입력 유도 패턴으로 끝나는지 확인
         clean_tail = buffer.strip().splitlines()[-1] if buffer.strip() else ""
-        interactive_indicators = [">", ":", "?", "Turn:", "Enter", "input", "[y/n]"]
+        
+        # 🛡️ 가드레일: 예외 트레이스백 및 에러 로그 줄인 경우 입력 대기 상태로 판단하지 않음
+        error_signals = ["traceback", "error", "exception", "file \"", "line "]
+        if any(err_kw in clean_tail.lower() for err_kw in error_signals):
+            return False
 
+        # 2. Tail Pattern 검사
+        interactive_indicators = ["?>", ">>>", "? ", "Turn:", "Enter ", "input(", "[y/n]"]
         return any(clean_tail.endswith(ind) or ind in clean_tail for ind in interactive_indicators)
 
     def _resolve_input(self, current_buffer: str, goal: str, mission_data: Optional[Dict[str, Any]], code_context: Optional[str]) -> Optional[str]:
@@ -281,6 +292,11 @@ class TerminalAgentRunner:
 
     def _build_result(self, status: str, buffer: str, exit_code: Optional[int] = None, error_msg: str = "", debug_payload: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         clean_buffer = re.sub(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])', '', buffer)
+        
+        # 🛡️ exit_code가 None으로 누출되어 외부 Pydantic 타입 검증을 깨뜨리는 현상 방지 (정수 규격화)
+        if exit_code is None:
+            exit_code = 0 if status in ["SUCCESS", "DAEMON_RUNNING"] else -1
+
         return {
             "status": status,
             "exit_code": exit_code,
