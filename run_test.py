@@ -25,7 +25,7 @@ from agent_core.plan.schemas import LOG_FILE_PATH, DEBUG_MODE
 from tools.multi_agent_system.agent_session import AgentSessionFactory
 from tools.multi_agent_system.project_scale_detector import ProjectScaleDetector
 from tools.multi_agent_system.agent_map_extractor import extract_targeted_ai_map
-from agent_core.validation.debug_verifier import DebugVerifier
+from agent_core.debug_agent.verifier import DebugVerifier
 
 def load_mission_file(mission_rel_path: str) -> dict:
     """JSON 미션 파일 로더 및 규격 검증 (v2.0 신규 규격 적용)"""
@@ -275,36 +275,40 @@ For each code change, output exactly:
             print(f"❌ [STEP 4 ERROR] 패치 파싱 또는 적용 오류: {e}")
 
         # -------------------------------------------------------------
-        # 💻 [Step 5] DebugVerifier 기반 검증 모듈 실행 (통합 검증)
+        # 💻 [Step 5] DebugVerifier 기반 실제 실행 및 로그 패턴 검증
         # -------------------------------------------------------------
-        print("\n💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...")
+        print("\n💻 [Step 5] DebugVerifier 실행 및 로그 패턴 검증 중...")
 
         diagnosis_hint = ""
         if patch_success:
-            verifier = DebugVerifier(root_dir=ROOT_DIR, factory=factory)
-            verifier_res = verifier.verify(
-                mission_data=mission_data,
-                target_file_path=target_file_path,
-                target_code=target_code
-            )
-            is_verified = verifier_res["verified"]
-            terminal_output = verifier_res["output"]
-            diagnosis_hint = verifier_res.get("diagnosis_hint", "")
+            # 실제 검증기(DebugVerifier) 객체 생성 및 검증 수행
+            verifier = DebugVerifier(ROOT_DIR, factory)
+            ver_res = verifier.verify(mission_data, target_file_path, target_code)
+
+            # 검증 결과 바인딩
+            is_verified = ver_res.get("verified", False)
+            terminal_output = ver_res.get("output", "")
+            diagnosis_hint = ver_res.get("message", "")
+
             print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
-            print(f"📌 [VERIFICATION RESULT] {verifier_res['message']}")
+            print(f"📌 [VERIFICATION RESULT] {'검증 성공' if is_verified else '검증 실패'}: {diagnosis_hint}")
         else:
             is_verified = False
-            terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 검증을 스킵합니다."
+            terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 실행 검증을 스킵합니다."
+            diagnosis_hint = "SEARCH/REPLACE 패치 블록 적용 실패"
 
         if patch_success and is_verified:
             # 🧹 임시 생성된 검증용 테스트 파일 자동 청소 (Clean-up)
-            for item in patch_list:
-                file_p = item.get("file_path", target_file_path)
-                if file_p and file_p != target_file_path and ("test" in file_p.lower() or "temp" in file_p.lower()):
-                    temp_path = (ROOT_DIR / file_p).resolve()
-                    if temp_path.exists():
-                        temp_path.unlink()
-                        print(f"🧹 [CLEANUP] 검증 완료 후 임시 테스트 파일 삭제: {file_p}")
+            created_temp_files = [
+                item.get("file_path") for item in patch_list 
+                if item.get("file_path") and item.get("file_path") != target_file_path 
+                and ("test" in item.get("file_path").lower() or "temp" in item.get("file_path").lower())
+            ]
+            for temp_file in created_temp_files:
+                temp_path = (ROOT_DIR / temp_file).resolve()
+                if temp_path.exists():
+                    temp_path.unlink()
+                    print(f"🧹 [CLEANUP] 검증 완료 후 임시 테스트 파일 삭제: {temp_file}")
 
             print("\n🎉 [SUCCESS] 모든 디버깅 로그 및 작업 검증 완료!")
             return

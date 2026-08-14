@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **112개**
+현재 인덱싱된 총 파일 수: **132개**
 
 ## 🗂️ [Module Index]
 - `.env`
@@ -16,6 +16,23 @@
 - `a`
 - `agent.md`
 - `agent_core/__init__.py`
+- `agent_core/debug_agent/__init__.py`
+- `agent_core/debug_agent/cli/cli_agent.py`
+- `agent_core/debug_agent/cli/cli_runner.py`
+- `agent_core/debug_agent/collectors/__init__.py`
+- `agent_core/debug_agent/collectors/base.py`
+- `agent_core/debug_agent/collectors/file_collector.py`
+- `agent_core/debug_agent/collectors/stdio_collector.py`
+- `agent_core/debug_agent/pipeline/context_builder.py`
+- `agent_core/debug_agent/pipeline/mission_loader.py`
+- `agent_core/debug_agent/pipeline/patch_runner.py`
+- `agent_core/debug_agent/pipeline/recovery_strategy.py`
+- `agent_core/debug_agent/runner.py`
+- `agent_core/debug_agent/schemas.py`
+- `agent_core/debug_agent/verifier.py`
+- `agent_core/debug_agent/verifiers/__init__.py`
+- `agent_core/debug_agent/verifiers/fast_verifier.py`
+- `agent_core/debug_agent/verifiers/log_verifier.py`
 - `agent_core/execution/__init__.py`
 - `agent_core/execution/file_lock.py`
 - `agent_core/execution/standalone_runner.py`
@@ -41,6 +58,7 @@
 - `agent_core/validation/validator.py`
 - `agent_debug.log`
 - `agent_plan.md`
+- `debug_module_cleanup_plan.md`
 - `extraction_target_project/AGENT_TEST/chess_ai.py`
 - `extraction_target_project/AI_agent.code-workspace`
 - `extraction_target_project/README.md`
@@ -80,7 +98,9 @@
 - `oldplan/agent_plan3.md`
 - `prompt.md`
 - `run_test.py`
+- `run_test_cli.py`
 - `scan_debug.txt`
+- `scratch/test_debug_agent.py`
 - `setup_architecture.bat`
 - `tests/test_file_lock.py`
 - `tests/test_validator_standalone.py`
@@ -222,6 +242,986 @@
 
 ### 📄 agent_core/__init__.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/__init__.py
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/cli/cli_agent.py
+#### 🧱 Code Skeleton:
+```python
+class CliPipelineAgent:
+    """
+    어떠한 CLI 프로젝트(단순 인자, 대화형 stdin, 다중 명령 등)에도 
+    동적으로 대응 가능한 터미널 실행 서브 에이전트
+    """
+    def __init__(self, root_dir: Path, factory: Any = None, max_retries: int = 3):
+        self.root_dir = Path(root_dir).resolve()
+        self.factory = factory
+        self.max_retries = max_retries
+        self.terminal_runner = TerminalAgentRunner(
+            factory=factory,
+            max_retries=max_retries,
+            default_timeout=30.0
+        )
+
+    def execute_and_collect(
+        self, 
+        mission_data: Dict[str, Any], 
+        entrypoint_cmd: str,
+        target_code: str = ""
+    ) -> CapturedLogResult:
+        """
+        TerminalAgentRunner를 호출하여 대화형 CLI 세션을 구동하고 최종 로그를 수집
+        """
+        debug_spec = mission_data.get("debug_log_spec", {})
+        blueprint = mission_data.get("implementation_blueprint", {})
+        
+        # 1. 환경변수 구성 (시스템 환경변수 + 미션 지정 env + 디버그 토글 주입)
+        env = dict(os.environ)
+        mission_env = mission_data.get("env", {})
+        if isinstance(mission_env, dict):
+            env.update(mission_env)
+
+        toggle_key = debug_spec.get("toggle_key") or blueprint.get("debug_toggle_key")
+        if toggle_key:
+            env[toggle_key] = "1"
+            env[f"{toggle_key}_ENABLE"] = "true"
+
+        # 2. LLM 의사결정 맥락(Goal Context) 상세화
+        expected_outputs = mission_data.get("expected_terminal_outputs", [])
+        goal_context = (
+            f"Target Task: {mission_data.get('task_id', 'CLI Task')}\n"
+            f"Expected Terminal Patterns: {expected_outputs}\n"
+            f"Mission Spec: {mission_data.get('description', '')}\n"
+            f"Instruction: Interact with the CLI prompt intelligently to satisfy expected output patterns."
+        )
+
+        print(f"🖥️ [CliPipelineAgent] 대화형 PTY 터미널 세션 가동: '{entrypoint_cmd}'")
+
+        # 3. TerminalAgentRunner 실행 및 예외 안전망 적용
+        try:
+            run_result = self.terminal_runner.execute(
+                command=entrypoint_cmd,
+                goal_context=goal_context,
+                cwd=str(self.root_dir),
+                env=env,
+                mission_data=mission_data,
+                code_context=target_code
+            )
+
+            raw_logs = run_result.get("buffer", "")
+            status = run_result.get("status", "FAIL")
+            success = (status == "SUCCESS")
+            exit_code = run_result.get("exit_code", 0 if success else -1)
+            error_msg = run_result.get("error_msg", "")
+
+        except Exception as e:
+            print(f"❌ [CliPipelineAgent] 실행 중 예외 발생: {e}")
+            raw_logs = f"[CLI EXECUTION EXCEPTION]\n{traceback.format_exc()}"
+            success = False
+            exit_code = -1
+            error_msg = str(e)
+
+        return CapturedLogResult(
+            channel_type="cli",
+            raw_logs=raw_logs,
+            returncode=exit_code,
+            error_message=error_msg,
+            success=success
+        )
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/cli/cli_runner.py
+#### 🧱 Code Skeleton:
+```python
+def main():
+    parser = argparse.ArgumentParser(
+        prog="python -m agent_core.debug_agent.cli.cli_runner", # ⭕ 끝에 콤마(,) 추가 필수
+        description="ASE-OS Debug Agent CLI Runner"
+    )
+    
+    parser.add_argument(
+        "--mission", "-m",
+        type=str,
+        required=True,
+        help="실행할 미션 JSON 파일의 상대 경로 (예: agent_core/tasks/task_01/checklist_01/mission_01.json)"
+    )
+    parser.add_argument(
+        "--max-retries", "-r",
+        type=int,
+        default=3,
+        help="실패 시 자기 복구 루프 최대 시도 횟수 (기본값: 3)"
+    )
+
+    args = parser.parse_args()
+    root_dir = Path(__file__).resolve().parents[3]
+
+    success = run_debug_pipeline(
+        root_dir=root_dir,
+        mission_rel_path=args.mission,
+        max_retries=args.max_retries
+    )
+    
+    sys.exit(0 if success else 1)
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/collectors/__init__.py
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/collectors/base.py
+#### 🧱 Code Skeleton:
+```python
+class BaseLogCollector(ABC):
+    def __init__(self, root_dir: Path):
+        self.root_dir = Path(root_dir).resolve()
+
+    @abstractmethod
+    def collect(
+        self,
+        spec: DebugLogSpec,
+        entrypoint_cmd: str,
+        env: dict = None
+    ) -> CapturedLogResult:
+        """
+        주어진 entrypoint_cmd 명령어를 실행하거나 감시하여 로그를 캡처한다.
+        """
+        pass
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/collectors/file_collector.py
+#### 🧱 Code Skeleton:
+```python
+class FileCollector(BaseLogCollector):
+    """
+    명령어를 실행하거나 지정된 log_file_path 파일을 읽어들여
+    디버그 텍스트 로그를 수집하는 수집기
+    """
+    def collect(
+        self,
+        spec: DebugLogSpec,
+        entrypoint_cmd: str = None,
+        env: dict = None
+    ) -> CapturedLogResult:
+        if not spec.log_file_path:
+            return CapturedLogResult(
+                success=False,
+                channel_type="file",
+                raw_logs="",
+                error_message="log_file_path 가 지정되지 않았습니다."
+            )
+
+        log_path = self.root_dir / spec.log_file_path
+        
+        # 엔트리포인트 명령어가 명시적으로 주어졌고, 대상 파일이 없는 경우에만 1회 실행
+        if entrypoint_cmd and not log_path.exists():
+            exec_env = os.environ.copy()
+            if env:
+                exec_env.update(env)
+            for k, v in spec.env_toggles.items():
+                exec_env[k] = str(v)
+
+            cmd = f'cmd.exe /c "{entrypoint_cmd}"' if (isinstance(entrypoint_cmd, str) and os.name == 'nt') else entrypoint_cmd
+
+            try:
+                subprocess.run(
+                    cmd,
+                    shell=False if isinstance(cmd, list) else True,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=spec.timeout_seconds or 15,
+                    cwd=str(self.root_dir),
+                    env=exec_env
+                )
+            except Exception:
+                pass
+
+        # 파일 존재 및 내용 수집
+        if not log_path.exists():
+            return CapturedLogResult(
+                success=False,
+                channel_type="file",
+                raw_logs="",
+                error_message=f"지정된 로그 파일을 찾을 수 없습니다: {spec.log_file_path}"
+            )
+
+        try:
+            with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                content = f.read()
+
+            return CapturedLogResult(
+                success=True,
+                channel_type="file",
+                raw_logs=content.strip(),
+                returncode=0
+            )
+        except Exception as e:
+            return CapturedLogResult(
+                success=False,
+                channel_type="file",
+                raw_logs="",
+                error_message=f"로그 파일 읽기 실패 ({spec.log_file_path}): {str(e)}"
+            )
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/collectors/stdio_collector.py
+#### 🧱 Code Skeleton:
+```python
+class StdioCollector(BaseLogCollector):
+    """
+    Subprocess를 사용하여 엔트리포인트 명령어를 실행하고,
+    stdout/stderr 스트림을 캡처하는 표준 콘솔 로그 수집기
+    """
+    def collect(
+        self,
+        spec: DebugLogSpec,
+        entrypoint_cmd: str,
+        env: dict = None
+    ) -> CapturedLogResult:
+        exec_env = os.environ.copy()
+        exec_env["PYTHONUNBUFFERED"] = "1"
+        exec_env["PYTHONIOENCODING"] = "utf-8"
+        if env:
+            exec_env.update(env)
+
+        # 디버그 토글 환경변수 주입
+        for k, v in spec.env_toggles.items():
+            exec_env[k] = str(v)
+
+        timeout = spec.timeout_seconds or 15
+
+        # 윈도우 환경에서 cmd.exe를 거치되 stdin 대기 블로킹 차단
+        if isinstance(entrypoint_cmd, str) and os.name == 'nt':
+            cmd = f'cmd.exe /c "{entrypoint_cmd}"'
+        else:
+            cmd = entrypoint_cmd
+
+        try:
+            res = subprocess.run(
+                cmd,
+                shell=False if isinstance(cmd, list) else True,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout,
+                cwd=str(self.root_dir),
+                env=exec_env
+            )
+            raw_logs = (res.stdout or "") + "\n" + (res.stderr or "")
+            return CapturedLogResult(
+                success=True,
+                channel_type="stdio",
+                raw_logs=raw_logs.strip(),
+                returncode=res.returncode
+            )
+        except subprocess.TimeoutExpired as e:
+            stdout_str = e.stdout.decode("utf-8", errors="replace") if isinstance(e.stdout, bytes) else (e.stdout or "")
+            stderr_str = e.stderr.decode("utf-8", errors="replace") if isinstance(e.stderr, bytes) else (e.stderr or "")
+            partial_logs = (stdout_str + "\n" + stderr_str).strip()
+            return CapturedLogResult(
+                success=False,
+                channel_type="stdio",
+                raw_logs=partial_logs,
+                returncode=-1,
+                error_message=f"프로세스 실행 타임아웃 초과 ({timeout}초)"
+            )
+        except Exception as e:
+            return CapturedLogResult(
+                success=False,
+                channel_type="stdio",
+                raw_logs="",
+                returncode=-1,
+                error_message=f"Stdio 수집 도중 예외 발생: {str(e)}"
+            )
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/pipeline/context_builder.py
+#### 🧱 Code Skeleton:
+```python
+def build_codebase_map(root_dir: Path, factory, mission_data: dict) -> str:
+    """[Step 1] 프로젝트 규모 측정 및 코드베이스 지형도 생성"""
+    target_file_path = mission_data["target_file"]
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+    scale_detector = ProjectScaleDetector(project_root=root_dir)
+    scale_info = scale_detector.analyze_project_scale()
+
+    if scale_info["is_oversized"]:
+        print(f"⚠️ 대형 프로젝트 감지 ({scale_info['file_count']}개 파일, {scale_info['total_lines']}줄): 2단계 지형도 탐색 진행")
+        shallow_map = scale_detector.generate_shallow_structure_map(
+            max_depth=scale_info["recommended_depth"]
+        )
+        
+        select_sys_instruction = (
+            "STRICT PROTOCOL: Output raw JSON string array only. No commentary. "
+            "Select ONLY minimum directories directly related to mission target."
+        )
+
+        select_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Project Shallow Structure Map:
+{shallow_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Extract ONLY the absolute minimum relative directory/file paths directly required for the mission.
+- NO extra explanations, markdown tags, or conversational fluff.
+
+[3. REQUIRED FORMAT]
+["path/to/dir_or_file"]"""
+        
+        try:
+            raw_dirs = safe_execute_step(factory, prompt=select_prompt, system_instruction=select_sys_instruction)
+            target_dirs = json.loads(clean_json_response(raw_dirs))
+            if not isinstance(target_dirs, list):
+                target_dirs = [target_dirs]
+            print(f"🎯 [Step 1 AI 선택 경로] {target_dirs}")
+            return extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
+        except Exception as e:
+            print(f"⚠️ [Step 1 Warning] AI 경로 선택 중 예외({e}), 전체 기본 맵으로 대체")
+            return extract_targeted_ai_map(save_to_file=False)
+    else:
+        print("✅ 일반 규모 프로젝트: 전체 AI 코드베이스 맵 생성")
+        return extract_targeted_ai_map(save_to_file=True)
+
+def extract_target_code(root_dir: Path, factory, mission_data: dict, codebase_map: str) -> str:
+    """[Step 2] 필요 코드 영역 동적 추론 및 Extractor 구동"""
+    target_file_path = mission_data["target_file"]
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+    extract_sys_instruction = (
+        "STRICT PROTOCOL: Output JSON string array matching [\"relative/path.py:start-end\"] only. "
+        "Strictly limit targets to the mission's designated Target File or mandatory reference files. "
+        "Do NOT slice unrequested system files."
+    )
+
+    extract_target_prompt = f"""[1. CURRENT STATE & CONTEXT]
+Target File: {target_file_path}
+Mission Data:
+{mission_str}
+
+Current Codebase Map:
+{codebase_map}
+
+[2. OUTPUT CONSTRAINTS]
+- Specify target relative file paths and line ranges required to fulfill the mission.
+
+[3. REQUIRED FORMAT]
+["{target_file_path}:start_line-end_line"]"""
+
+    try:
+        raw_slice_targets = safe_execute_step(
+            factory, prompt=extract_target_prompt, system_instruction=extract_sys_instruction
+        )
+        slice_target_list = json.loads(clean_json_response(raw_slice_targets))
+        
+        if isinstance(slice_target_list, list) and len(slice_target_list) > 0:
+            slice_prompt_str = " ".join(slice_target_list)
+            print(f"🔍 [Step 2 AI 요청 슬라이스 Target] {slice_prompt_str}")
+            slice_res = factory.extractor.process(slice_prompt_str, auto_save=False)
+            target_code = slice_res.get("markdown", "")
+        else:
+            target_code = ""
+
+        if not target_code.strip():
+            target_code = _fallback_full_extract(root_dir, factory, target_file_path)
+    except Exception as e:
+        print(f"⚠️ [Step 2 Warning] 필요 코드 영역 추출 예외 발생({e}), Fallback 추적 시도")
+        target_code = _fallback_full_extract(root_dir, factory, target_file_path)
+
+    return target_code
+
+def _fallback_full_extract(root_dir: Path, factory, target_file_path: str) -> str:
+    actual_target = root_dir / target_file_path
+    if actual_target.exists():
+        with open(actual_target, "r", encoding="utf-8") as f:
+            total_lines = len(f.readlines())
+        fallback_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
+        print(f"⚠️ [Fallback] Target File 전체 범위({fallback_prompt})로 Extractor 재추적 가동")
+        slice_res = factory.extractor.process(fallback_prompt, auto_save=False)
+        return slice_res.get("markdown", "")
+    return "(Target File을 찾을 수 없어 코드 추출에 실패했습니다.)"
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/pipeline/mission_loader.py
+#### 🧱 Code Skeleton:
+```python
+def load_mission_file(root_dir: Path, mission_rel_path: str) -> dict:
+    """JSON 미션 파일 로더 및 규격 검증"""
+    mission_path = root_dir / mission_rel_path
+    if not mission_path.exists():
+        raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
+    
+    with open(mission_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    
+    required_keys = ["task_id", "target_file", "debug_log_spec"]
+    for key in required_keys:
+        if key not in data:
+            raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
+            
+    return data
+
+def clean_json_response(raw_response: str) -> str:
+    """LLM 응답 마크다운 블록 제거 및 JSON 텍스트 정제"""
+    text = raw_response.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\n?", "", text)
+        text = re.sub(r"\n?```$", "", text)
+    return text.strip()
+
+def safe_execute_step(factory, prompt: str, system_instruction: str, response_mime_type: str = "application/json", max_attempts: int = 10, temperature: float = 0.0) -> str:
+    """Fail-Fast 포착 및 Key/Model 스위칭 기반 안전 실행 래퍼"""
+    if not hasattr(factory, "execute_worker_step"):
+        raise AttributeError("제공된 factory 객체에 'execute_worker_step' 메서드가 존재하지 않습니다.")
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return factory.execute_worker_step(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                response_mime_type=response_mime_type,
+                temperature=temperature
+            )
+        except Exception as e:
+            err_str = str(e)
+            print(f"⚡ [Fail-Fast 감지] ({err_str[:80]}...) | 즉시 다음 Key/Model 스위칭 ({attempt}/{max_attempts})")
+            if hasattr(factory, "switch_to_next_key"):
+                factory.switch_to_next_key(last_error_msg=err_str)
+    raise RuntimeError("🚨 모든 Gemini API Key/Model 조합이 소진되었습니다.")
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/pipeline/patch_runner.py
+#### 🧱 Code Skeleton:
+```python
+def generate_patch(factory, mission_data: dict, target_code: str) -> str:
+    """[Step 3] LLM 기반 SEARCH/REPLACE 패치 생성"""
+    target_file_path = mission_data["target_file"]
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+    system_prompt = f"""STRICT EXECUTION PROTOCOL:
+1. Target File: Strictly '{target_file_path}'.
+2. Output code edits using EXACTLY the SEARCH/REPLACE block format shown below.
+3. Include enough surrounding lines in SEARCH block to uniquely identify the code to change.
+4. Keep exact whitespace/indentation.
+5. Do NOT output JSON. Use raw SEARCH/REPLACE text blocks only. No markdown wrapped JSON, no explanations.
+6. CLI Interaction Rule: If target code uses interactive `input()`, handle EOFError gracefully or separate main logic so background execution does not fail."""
+
+    user_prompt = f"""<MISSION_SPEC>
+Target File Path: {target_file_path}
+Mission Details:
+{mission_str}
+</MISSION_SPEC>
+
+<READ_ONLY_CONTEXT>
+{target_code}
+</READ_ONLY_CONTEXT>
+
+<OUTPUT_FORMAT>
+<<<<<<< SEARCH
+[Exact original code snippet to replace]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE
+</OUTPUT_FORMAT>"""
+
+    return safe_execute_step(
+        factory, prompt=user_prompt, system_instruction=system_prompt, response_mime_type="text/plain"
+    )
+
+def apply_patch_blocks(factory, target_file_path: str, raw_response: str) -> tuple[bool, list]:
+    """[Step 4] SEARCH/REPLACE 패치 적용"""
+    try:
+        patch_list = factory.patcher.parse_blocks(raw_response)
+        if not patch_list:
+            print("⚠️ [PATCH FAIL] SEARCH/REPLACE 패치 블록이 비어있음")
+            return False, []
+
+        all_patches_ok = True
+        for idx, item in enumerate(patch_list, 1):
+            existing_code = item["existing_code"]
+            replacement_code = item["replacement_code"]
+            patch_result = factory.patcher.apply_patch(target_file_path, existing_code, replacement_code)
+            
+            print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
+            if not patch_result.get("success", False):
+                all_patches_ok = False
+        return all_patches_ok, patch_list
+    except Exception as e:
+        print(f"❌ [STEP 4 ERROR] 패치 파싱/적용 오류: {e}")
+        return False, []
+
+def cleanup_temp_files(root_dir: Path, patch_list: list, target_file_path: str):
+    """검증 성공 후 생성된 임시 테스트 파일 정리"""
+    for item in patch_list:
+        file_p = item.get("file_path", target_file_path)
+        if file_p and file_p != target_file_path and ("test" in file_p.lower() or "temp" in file_p.lower()):
+            temp_path = (root_dir / file_p).resolve()
+            if temp_path.exists():
+                temp_path.unlink()
+                print(f"🧹 [CLEANUP] 임시 테스트 파일 삭제: {file_p}")
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/pipeline/recovery_strategy.py
+#### 🧱 Code Skeleton:
+```python
+def evaluate_and_recover(root_dir: Path, factory, mission_data: dict, target_code: str, terminal_output: str, diagnosis_hint: str, retry_count: int) -> tuple[str, str]:
+    """[Step 6] 실패 원인 진단 및 복구용 패치 재생성 (수정된 raw_response, target_code 반환)"""
+    target_file_path = mission_data["target_file"]
+    mission_str = json.dumps(mission_data, ensure_ascii=False, indent=2)
+
+    system_prompt = f"STRICT EXECUTION PROTOCOL:\nTarget File: Strictly '{target_file_path}'. Output raw SEARCH/REPLACE blocks."
+
+    # 2회 이상 실패 시 자가 진단 생략 후 바로 broad 탐색
+    if retry_count >= 2:
+        print("⚠️ [강제 재탐색] 2회 이상 실패: 강제 broad 시야 확장으로 전환합니다.")
+        is_sufficient = False
+    else:
+        diag_prompt = f"""Target File: {target_file_path}
+Mission Data: {mission_str}
+Current Sliced Code: {target_code}
+Terminal Output: {terminal_output}
+Verifier Diagnosis: {diagnosis_hint}
+
+Can you fix the code with the CURRENT provided code slice, verifier diagnosis, and terminal output alone?
+Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanation"}}"""
+
+        try:
+            diag_res = safe_execute_step(
+                factory, prompt=diag_prompt, system_instruction="STRICT PROTOCOL: Output raw JSON object with 'is_sufficient' boolean field only."
+            )
+            diag_data = json.loads(clean_json_response(diag_res))
+            is_sufficient = diag_data.get("is_sufficient", False)
+        except Exception:
+            is_sufficient = False
+
+    if is_sufficient:
+        print("🔄 [Step 6-2] 진단 힌트 기반 패치 재작성...")
+        fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
+<READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
+<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
+        raw_response = safe_execute_step(factory, prompt=fix_prompt, system_instruction=system_prompt, response_mime_type="text/plain")
+        return raw_response, target_code
+    else:
+        print("🌐 [Retry Step 1] Broad 시야 확장 및 다중 경로 재탐색...")
+        scale_detector = ProjectScaleDetector(project_root=root_dir)
+        shallow_map = scale_detector.generate_shallow_structure_map()
+        
+        broad_prompt = f"""Target File: {target_file_path}
+Mission Data: {mission_str}
+Project Structure: {shallow_map}
+Previous Error Log: {terminal_output}
+
+Select ALL relevant directory/file relative paths to inspect.
+Output JSON string array matching: ["path/1", "path/2"]"""
+        try:
+            raw_dirs = safe_execute_step(factory, prompt=broad_prompt, system_instruction="STRICT PROTOCOL: Output JSON string array.")
+            target_dirs = json.loads(clean_json_response(raw_dirs))
+            if not isinstance(target_dirs, list):
+                target_dirs = [target_dirs]
+            extract_targeted_ai_map(target_paths=target_dirs, save_to_file=False)
+        except Exception:
+            extract_targeted_ai_map(save_to_file=False)
+
+        actual_target = root_dir / target_file_path
+        if actual_target.exists():
+            with open(actual_target, "r", encoding="utf-8") as f:
+                total_lines = len(f.readlines())
+            slice_prompt = f"{target_file_path}:1-{max(1, total_lines)}"
+        else:
+            slice_prompt = f"{target_file_path}:1-500"
+
+        new_target_code = factory.extractor.process(slice_prompt, auto_save=False).get("markdown", "")
+
+        retry_fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
+<READ_ONLY_CONTEXT>\n{new_target_code}\n</READ_ONLY_CONTEXT>
+<PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
+        raw_response = safe_execute_step(factory, prompt=retry_fix_prompt, system_instruction=system_prompt, response_mime_type="text/plain")
+        return raw_response, new_target_code
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/runner.py
+#### 🧱 Code Skeleton:
+```python
+def run_debug_pipeline(root_dir: Path, mission_rel_path: str, max_retries: int = 3) -> bool:
+    """디버그 에이전트 메인 실행 엔진"""
+    print(f"\n🚀 [DEBUG WORKER PIPELINE] 가동 시작: '{mission_rel_path}'")
+    
+    if LOG_FILE_PATH.exists():
+        with open(LOG_FILE_PATH, "w", encoding="utf-8") as f:
+            f.write("=== [Debug Agent Pipeline Log Initialized] ===\n")
+
+    factory = AgentSessionFactory(root_dir)
+    mission_data = load_mission_file(root_dir, mission_rel_path)
+    target_file_path = mission_data["target_file"]
+
+    # 1. Context Build
+    codebase_map = build_codebase_map(root_dir, factory, mission_data)
+    target_code = extract_target_code(root_dir, factory, mission_data, codebase_map)
+
+    # 2. Patch Generation
+    raw_response = generate_patch(factory, mission_data, target_code)
+
+    # 3. Apply, Verify & Self-Healing Loop
+    retry_count = 0
+    while retry_count <= max_retries:
+        print(f"\n🛠️ [Step 4] 패치 검증 및 적용 (시도 {retry_count + 1}/{max_retries + 1})...")
+        patch_success, patch_list = apply_patch_blocks(factory, target_file_path, raw_response)
+
+        # Step 5: Verification
+        terminal_output = ""
+        diagnosis_hint = ""
+        if patch_success:
+            verifier = DebugVerifier(root_dir, factory)
+            ver_res = verifier.verify(mission_data, target_file_path, target_code)
+            is_verified = ver_res.get("verified", False)
+            terminal_output = ver_res.get("output", "")
+            diagnosis_hint = ver_res.get("message", "")
+        else:
+            is_verified = False
+            terminal_output = "[PATCH FAIL] 패치 적용 실패로 실행 검증 스킵"
+            diagnosis_hint = "SEARCH/REPLACE 패치 블록 적용 실패"
+
+        print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
+        print(f"📌 [RESULT] {'성공' if is_verified else '실패'}: {diagnosis_hint}")
+
+        if patch_success and is_verified:
+            cleanup_temp_files(root_dir, patch_list, target_file_path)
+            print("\n🎉 [SUCCESS] 미션 수행 및 디버그 검증 성공!")
+            return True
+
+        retry_count += 1
+        if retry_count > max_retries:
+            print("\n🚨 [FAIL] 최대 재시도 횟수를 초과하였습니다.")
+            return False
+
+        # Step 6: Recovery
+        print(f"\n🩺 [Step 6] 실패 진단 및 피드백 적용 중 (재시도 {retry_count}/{max_retries})...")
+        raw_response, target_code = evaluate_and_recover(
+            root_dir, factory, mission_data, target_code, terminal_output, diagnosis_hint, retry_count
+        )
+
+    return False
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/schemas.py
+#### 🧱 Code Skeleton:
+```python
+class DebugLogSpec(BaseModel):
+    """미션 파일 및 Worker Task에 정의되는 디버그 검증 스펙"""
+    channel_type: str = Field(default="stdio", description="로그 수집 채널 ('stdio' | 'file')")
+    log_file_path: Optional[str] = Field(default=None, description="channel_type이 'file'일 때 감시/읽기 대상 파일 경로")
+    expected_patterns: List[str] = Field(default_factory=list, description="출력되어야 하는 정규식 또는 문자열 패턴 목록")
+    env_toggles: Dict[str, str] = Field(default_factory=dict, description="디버그 활성화를 위해 실행 시 주입할 환경변수")
+    timeout_seconds: int = Field(default=15, description="수집 및 실행 타임아웃(초)")
+
+class CapturedLogResult(BaseModel):
+    """수집기(Collector)가 실행/감시를 통해 캡처해온 표준 로그 결과 데이터"""
+    success: bool = Field(description="로그 수집 및 프로세스 실행 성공 여부")
+    channel_type: str = Field(description="사용된 수집 채널 ('stdio' | 'file')")
+    raw_logs: str = Field(default="", description="수집된 원본 텍스트 로그")
+    returncode: int = Field(default=0, description="프로세스 종료 코드 (stdio일 경우)")
+    error_message: Optional[str] = Field(default=None, description="수집 중 발생한 예외/오류 메시지")
+
+class VerificationResult(BaseModel):
+    """DebugVerifier가 패턴 대조 및 검증 후 반환하는 최종 리포트"""
+    verified: bool = Field(description="모든 기댓값이 정상 매칭되었는지 여부")
+    failure_type: str = Field(default="NONE", description="실패 원인 구분 ('NONE' | 'FAST_CHECK_ERROR' | 'COLLECTION_ERROR' | 'LOG_PATTERN_MISMATCH' | 'RUNTIME_ERROR')")
+    matched_patterns: List[str] = Field(default_factory=list, description="매칭 성공한 패턴 목록")
+    missing_patterns: List[str] = Field(default_factory=list, description="매칭 실패한 패턴 목록")
+    output: str = Field(default="", description="수집된 텍스트 로그")
+    message: str = Field(default="", description="사용자 친화적 요약 메시지")
+    execution_steps: List[str] = Field(default_factory=list, description="수행 단계별 추적 로그")
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/verifier.py
+#### 🧱 Code Skeleton:
+```python
+class DebugVerifier:
+    """
+    체계화된 디버그 로그 검증 오케스트레이터 (Debug Agent Engine)
+    - Fast-Check 정적 문법 검사 (0.1초 포착)
+    - 수집기 바인딩 (Stdio / File Collector 선택 실행)
+    - 정규식 매칭 및 런타임 예외 트레이스 포착
+    """
+    def __init__(self, root_dir: Path, factory: Any = None):
+        self.root_dir = Path(root_dir).resolve()
+        self.factory = factory
+        self.collectors: Dict[str, BaseLogCollector] = {
+            "stdio": StdioCollector(self.root_dir),
+            "file": FileCollector(self.root_dir)
+        }
+        self.cli_agent = CliPipelineAgent(self.root_dir, factory=self.factory)
+
+    def verify(
+        self,
+        mission_data: Dict[str, Any],
+        target_file_path: str,
+        target_code: str = ""
+    ) -> Dict[str, Any]:
+        """
+        통합 디버그 검증 진입점 (하위 호환성 dict 형태 반환)
+        """
+        execution_steps = []
+        spec = parse_mission_to_debug_spec(mission_data)
+        execution_steps.append(f"[STAGE 0] DebugLogSpec 정제 완료 (채널: {spec.channel_type}, 패턴 수: {len(spec.expected_patterns)})")
+
+        # -------------------------------------------------------------
+        # Stage 1: Fast-Check (정적 문법 검사)
+        # -------------------------------------------------------------
+        execution_steps.append(f"[STAGE 1] Fast-Check 문법 검사 수행 중: {target_file_path}")
+        fast_res = run_fast_check(self.root_dir, target_file_path)
+        if not fast_res["success"]:
+            execution_steps.append(f"[STAGE 1 FAIL] 문법 검사 실패: {fast_res['failure_type']}")
+            return VerificationResult(
+                verified=False,
+                failure_type=fast_res["failure_type"],
+                output=fast_res["output"],
+                message=fast_res["message"],
+                execution_steps=execution_steps,
+                missing_patterns=spec.expected_patterns
+            ).model_dump()
+
+        execution_steps.append("[STAGE 1 PASSED] 문법 검사 통과")
+
+        # -------------------------------------------------------------
+        # Stage 2: 수집기 선택 및 실행 (Log Collection)
+        # -------------------------------------------------------------
+        entrypoint_cmd = mission_data.get("entrypoint") or mission_data.get("standalone_entrypoint") or f"python {target_file_path}"
+
+        # CLI 프로젝트 판별 조건 및 서브 에이전트 분기
+        is_cli_project = (
+            mission_data.get("test_type") in ["cli_test", "cli", "interactive_cli"] or
+            mission_data.get("is_cli", False) or
+            "input(" in target_code
+        )
+
+        if is_cli_project:
+            execution_steps.append(f"[STAGE 2] 🤖 CliPipelineAgent 서브 에이전트 가동 (명령어: '{entrypoint_cmd}')")
+            captured: CapturedLogResult = self.cli_agent.execute_and_collect(
+                mission_data=mission_data,
+                entrypoint_cmd=entrypoint_cmd,
+                target_code=target_code
+            )
+        else:
+            collector = self.collectors.get(spec.channel_type, self.collectors["stdio"])
+            execution_steps.append(f"[STAGE 2] {collector.__class__.__name__} 가동 (명령어: '{entrypoint_cmd}')")
+            captured: CapturedLogResult = collector.collect(spec, entrypoint_cmd)
+
+        if not captured.success and captured.returncode == -1:
+            execution_steps.append(f"[STAGE 2 FAIL] 수집 실패: {captured.error_message}")
+            return VerificationResult(
+                verified=False,
+                failure_type="COLLECTION_ERROR",
+                output=captured.raw_logs,
+                message=captured.error_message or "로그 수집 중 오류 발생",
+                execution_steps=execution_steps,
+                missing_patterns=spec.expected_patterns
+            ).model_dump()
+
+        # -------------------------------------------------------------
+        # Stage 3: 패턴 매칭 & 런타임 예외 트레이스 검증
+        # -------------------------------------------------------------
+        execution_steps.append("[STAGE 3] 정규식 패턴 대조 및 예외 트레이스 검사")
+        raw_logs = captured.raw_logs
+
+        # 1. 런타임 예외 감지
+        failure_keywords = ["Traceback (most recent call last):", "SyntaxError:", "ImportError:", "ModuleNotFoundError:", "npm ERR!"]
+        has_runtime_error = any(kw in raw_logs for kw in failure_keywords)
+
+        matched_patterns = []
+        missing_patterns = []
+
+        if spec.expected_patterns:
+            for p in spec.expected_patterns:
+                regex_pat = build_log_regex_pattern(p)
+                if re.search(regex_pat, raw_logs, re.MULTILINE):
+                    matched_patterns.append(p)
+                else:
+                    missing_patterns.append(p)
+
+        is_verified = (len(spec.expected_patterns) > 0 and len(missing_patterns) == 0 and not has_runtime_error)
+
+        if has_runtime_error:
+            failure_type = "RUNTIME_ERROR"
+            msg = "[ERROR] Runtime Exception Detected (Traceback/Error captured)"
+        elif not is_verified:
+            failure_type = "LOG_PATTERN_MISMATCH"
+            msg = f"[WARNING] Debug log pattern mismatch (Missing {len(missing_patterns)} patterns: {missing_patterns})"
+        else:
+            failure_type = "NONE"
+            msg = f"[SUCCESS] Debug log & execution verification passed ({len(matched_patterns)}/{len(spec.expected_patterns)} matched)"
+
+        execution_steps.append(f"[FINAL] 검증 결과: {'통과' if is_verified else '실패'} ({failure_type})")
+
+        return VerificationResult(
+            verified=is_verified,
+            failure_type=failure_type,
+            matched_patterns=matched_patterns,
+            missing_patterns=missing_patterns,
+            output=raw_logs,
+            message=msg,
+            execution_steps=execution_steps
+        ).model_dump()
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/verifiers/__init__.py
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/verifiers/fast_verifier.py
+#### 🧱 Code Skeleton:
+```python
+def run_fast_check(root_dir: Path, target_file_path: str) -> Dict[str, Any]:
+    """정적 문법 오류 빠른 포착"""
+    full_target = root_dir / target_file_path
+    if not full_target.exists():
+        return {
+            "success": False,
+            "failure_type": "FILE_NOT_FOUND",
+            "output": f"[FILE NOT FOUND] 대상 파일을 찾을 수 없습니다: {target_file_path}",
+            "message": "대상 파일 부재"
+        }
+
+    if target_file_path.endswith(('.js', '.jsx', '.ts', '.tsx')):
+        fast_cmd = f"npx --yes esbuild \"{full_target}\" --loader:.js=jsx"
+        try:
+            res = subprocess.run(
+                fast_cmd, shell=True, capture_output=True, text=True, input="", timeout=10, cwd=str(root_dir)
+            )
+            if res.returncode != 0:
+                return {
+                    "success": False,
+                    "failure_type": "FAST_CHECK_SYNTAX_ERROR",
+                    "output": f"[FAST-CHECK SYNTAX ERROR]\n{res.stderr.strip()}",
+                    "message": "정적 문법 검사(Fast-Check) 실패"
+                }
+        except Exception:
+            pass
+    elif target_file_path.endswith('.py'):
+        try:
+            with open(full_target, "r", encoding="utf-8", errors="replace") as f:
+                ast.parse(f.read(), filename=str(full_target))
+        except SyntaxError as e:
+            return {
+                "success": False,
+                "failure_type": "FAST_CHECK_SYNTAX_ERROR",
+                "output": f"[PYTHON SYNTAX ERROR]\n{e}",
+                "message": "파이썬 문법 검사(ast.parse) 실패"
+            }
+
+    return {"success": True, "output": "", "message": "Fast-Check 통과"}
+```
+
+--------------------------------------------------
+
+### 📄 agent_core/debug_agent/verifiers/log_verifier.py
+#### 🧱 Code Skeleton:
+```python
+def build_log_regex_pattern(template_msg: str) -> str:
+    """미션 디버그 로그 메시지의 변수 표기({step_id}, {eval_score} 등)를 Regex 유연 패턴으로 변환"""
+    escaped = re.escape(template_msg.strip())
+    # 1. 수치형/스코어 변수 ({eval_score}, {num}, {score} 등)
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*(?:num|score|val|count|x|y|id|index)[a-zA-Z0-9_]*\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
+    # 2. 불리언 변수
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false|1|0)', escaped)
+    # 3. Hex/Color 변수
+    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)
+    # 4. 와일드카드 변수 및 공백 유연화
+    escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
+    escaped = re.sub(r'\\\s+', r'\\s+', escaped)
+    return escaped
+
+def parse_mission_to_debug_spec(mission_data: Dict[str, Any]) -> DebugLogSpec:
+    """
+    다양한 레거시 미션 JSON 키(debug_log_spec, expected_terminal_outputs, log_pattern 등)를
+    표준 DebugLogSpec 타입으로 파싱/자동 변환해주는 어댑터 함수
+    """
+    debug_spec = mission_data.get("debug_log_spec", {})
+    blueprint = mission_data.get("implementation_blueprint", {})
+
+    # 1. 수집 채널 판단 ('stdio' or 'file')
+    channel_type = debug_spec.get("channel_type") or mission_data.get("channel_type", "stdio")
+    log_file_path = debug_spec.get("log_file_path") or mission_data.get("log_file_path")
+
+    # 2. 패턴 통합 수집
+    patterns: List[str] = []
+    if mission_data.get("expected_terminal_outputs"):
+        patterns.extend(mission_data["expected_terminal_outputs"])
+    if debug_spec.get("log_pattern") and debug_spec["log_pattern"] not in patterns:
+        patterns.append(debug_spec["log_pattern"])
+    if debug_spec.get("expected_patterns"):
+        for p in debug_spec["expected_patterns"]:
+            if p not in patterns:
+                patterns.append(p)
+
+    # 3. 환경변수 토글 주입
+    env_toggles = {}
+    toggle_key = debug_spec.get("toggle_key") or blueprint.get("debug_toggle_key")
+    if toggle_key:
+        env_toggles[toggle_key] = "1"
+        env_toggles[f"{toggle_key}_ENABLE"] = "true"
+
+    return DebugLogSpec(
+        channel_type=channel_type,
+        log_file_path=log_file_path,
+        expected_patterns=patterns,
+        env_toggles=env_toggles,
+        timeout_seconds=debug_spec.get("timeout_seconds", 15)
+    )
+```
 
 --------------------------------------------------
 
@@ -1356,10 +2356,10 @@ def run_interactive_chat():
 - **[JSON_KEY]** `entrypoint` (Line: 7~7)
 - **[JSON_KEY]** `standalone_entrypoint` (Line: 8~8)
 - **[JSON_KEY]** `debug_log_spec` (Line: 10~10)
-- **[JSON_KEY]** `implementation_blueprint` (Line: 15~15)
-- **[JSON_KEY]** `servers` (Line: 30~30)
-- **[JSON_KEY]** `browser_test_spec` (Line: 39~39)
-- **[JSON_KEY]** `expected_terminal_outputs` (Line: 41~41)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 22~22)
+- **[JSON_KEY]** `servers` (Line: 37~37)
+- **[JSON_KEY]** `browser_test_spec` (Line: 46~46)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 48~48)
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1370,7 +2370,7 @@ def run_interactive_chat():
   ├── "target_file": str (val: relative/path/to/target_file.e)
   ├── "entrypoint": str (val: command to run or start main t)
   ├── "standalone_entrypoint": str (val: command to run standalone test)
-  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern', 'steps_to_verify']...)
   ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
   ├── "servers": List (len: 1)
   ├── "browser_test_spec": NoneType (val: None)
@@ -1390,11 +2390,11 @@ def run_interactive_chat():
   - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
 - **[JSON_KEY]** `standalone_entrypoint` (Line: 7~7)
   - 🔗 *Calls (호출하는 것)*: `extraction_target_project/AGENT_TEST/chess_ai.py`
-- **[JSON_KEY]** `debug_log_spec` (Line: 8~8)
-- **[JSON_KEY]** `implementation_blueprint` (Line: 12~12)
-- **[JSON_KEY]** `servers` (Line: 25~25)
-- **[JSON_KEY]** `browser_test_spec` (Line: 26~26)
-- **[JSON_KEY]** `expected_terminal_outputs` (Line: 27~27)
+- **[JSON_KEY]** `debug_log_spec` (Line: 9~9)
+- **[JSON_KEY]** `implementation_blueprint` (Line: 21~21)
+- **[JSON_KEY]** `servers` (Line: 35~35)
+- **[JSON_KEY]** `browser_test_spec` (Line: 36~36)
+- **[JSON_KEY]** `expected_terminal_outputs` (Line: 38~38)
 
 #### 🧱 Code Skeleton:
 ```python
@@ -1405,7 +2405,7 @@ def run_interactive_chat():
   ├── "target_file": str (val: extraction_target_project/AGEN)
   ├── "entrypoint": str (val: python extraction_target_proje)
   ├── "standalone_entrypoint": str (val: python extraction_target_proje)
-  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern']...)
+  ├── "debug_log_spec": Dict (keys: ['toggle_key', 'log_pattern', 'steps_to_verify']...)
   ├── "implementation_blueprint": Dict (keys: ['feature_title', 'target_component', 'debug_toggle_key']...)
   ├── "servers": List (len: 0)
   ├── "browser_test_spec": NoneType (val: None)
@@ -1585,7 +2585,7 @@ def run_interactive_chat():
 #### 🔍 내부 심볼 및 의존성 관계:
 - **[JSON_KEY]** `task_id` (Line: 2~2)
 - **[JSON_KEY]** `target_file` (Line: 3~3)
-  - 🔗 *Calls (호출하는 것)*: `Canvas.js, extraction_target_project/client/src/Canvas.js`
+  - 🔗 *Calls (호출하는 것)*: `extraction_target_project/client/src/Canvas.js, Canvas.js`
 - **[JSON_KEY]** `entrypoint` (Line: 4~4)
 - **[JSON_KEY]** `standalone_entrypoint` (Line: 5~5)
 - **[JSON_KEY]** `servers` (Line: 6~6)
@@ -1766,6 +2766,11 @@ class Validator:
 
 --------------------------------------------------
 
+### 📄 debug_module_cleanup_plan.md
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
 ### 📄 extraction_target_project/AGENT_TEST/chess_ai.py
 #### 🧱 Code Skeleton:
 ```python
@@ -1869,33 +2874,80 @@ class ApexChessEngine:
         eg_phase = TOTAL_GAME_PHASE - mg_phase
         eval_score = (mg_score * mg_phase + eg_score * eg_phase) // TOTAL_GAME_PHASE
 
-        # King Safety, Pawn Structure, Bishop Pair adjustments
-        for color in [chess.WHITE, chess.BLACK]:
-            multiplier = 1 if color == chess.WHITE else -1
-            
-            # 1. King Safety: Pawn shield (detecting pawns on files adjacent to king)
-            shield = 0
-            king_sq = [sq for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.KING and self.board.piece_at(sq).color == color]
-            if king_sq:
-                k_file = king_sq[0] % 8
-                for f in range(max(0, k_file - 1), min(8, k_file + 2)):
-                    for r in (range(1, 3) if color == chess.WHITE else range(5, 7)):
-                        p = self.board.piece_at(f + r * 8)
-                        if p and p.piece_type == chess.PAWN and p.color == color:
-                            shield += 15
-            
-            # 2. Pawn Structure: Passed/Isolated/Doubled Pawn (simplified)
-            pawn_score = 0
-            # 3. Bishop Pair
-            bishops = [sq for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == color]
-            bishop_pair = 50 if len(bishops) >= 2 else 0
-            
-            eval_score += multiplier * (shield + pawn_score + bishop_pair)
+        # Pawn Structure: Passed/Isolated/Doubled
+        pawn_bonus = 0
+        for sq in chess.SQUARES:
+            piece = self.board.piece_at(sq)
+            if piece and piece.piece_type == chess.PAWN:
+                color = piece.color
+                file = chess.square_file(sq)
+                rank = chess.square_rank(sq)
+                
+                # Passed Pawn
+                is_passed = True
+                for r in (range(rank + 1, 8) if color == chess.WHITE else range(0, rank)):
+                    # Check files adjacent and current for enemy pawns
+                    for f in range(max(0, file - 1), min(8, file + 2)):
+                        p = self.board.piece_at(chess.square(f, r))
+                        if p and p.piece_type == chess.PAWN and p.color != color:
+                            is_passed = False
+                            break
+                    if not is_passed: break
+                
+                # Isolated Pawn
+                is_isolated = True
+                for f in [file - 1, file + 1]:
+                    if 0 <= f < 8:
+                        for r in range(8):
+                            p = self.board.piece_at(chess.square(f, r))
+                            if p and p.piece_type == chess.PAWN and p.color == color:
+                                is_isolated = False
+                                break
+                
+                # Doubled Pawn
+                is_doubled = False
+                for r in (range(rank + 1, 8) if color == chess.WHITE else range(0, rank)):
+                    p = self.board.piece_at(chess.square(file, r))
+                    if p and p.piece_type == chess.PAWN and p.color == color:
+                        is_doubled = True
+                        break
+                
+                score = (50 if is_passed else 0) - (20 if is_isolated else 0) - (15 if is_doubled else 0)
+                pawn_bonus += score if color == chess.WHITE else -score
 
-        final_score = eval_score if self.board.turn == chess.WHITE else -eval_score
+        # Bishop Pair
+        white_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.WHITE)
+        black_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.BLACK)
+        bishop_pair_bonus = (50 if white_bishops >= 2 else 0) - (50 if black_bishops >= 2 else 0)
+        
+        # King Safety (Pawn Shield)
+        king_safety_bonus = 0
+        for color in [chess.WHITE, chess.BLACK]:
+            king_sq = None
+            for sq in chess.SQUARES:
+                p = self.board.piece_at(sq)
+                if p and p.piece_type == chess.KING and p.color == color:
+                    king_sq = sq
+                    break
+            
+            if king_sq is not None:
+                shield = 0
+                file = king_sq % 8
+                rank = king_sq // 8
+                for f in range(max(0, file - 1), min(8, file + 2)):
+                    for r in (range(rank + 1, rank + 3) if color == chess.WHITE else range(rank - 2, rank)):
+                        if 0 <= r < 8:
+                            p = self.board.piece_at(r * 8 + f)
+                            if p and p.piece_type == chess.PAWN and p.color == color:
+                                shield += 15
+                king_safety_bonus += shield if color == chess.WHITE else -shield
+
+        eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_bonus)
+
         if os.environ.get("CHESS_AI_DEBUG") == "1":
-            print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={final_score}")
-        return final_score
+            print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={int(eval_score)}")
+
+        return int(eval_score)
 
     # -------------------------------------------------------------------------
     # Move Ordering (MVV-LVA, Killers, History, TT)
@@ -2183,7 +3235,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/fraction.js, node_modules/array.prototype.findlast, big.js, node_modules/object.values, node_modules/fs.realpath, node_modules/hpack.js, bin/eslint.js, fixtures/cli.js, node_modules/lodash.uniq, hpack.js, node_modules/array.prototype.tosorted, node_modules/object.assign, node_modules/resolve.exports, node_modules/ipaddr.js, node_modules/array.prototype.findlastindex, node_modules/big.js, bin/js-yaml.js, bin/esparse.js, node_modules/array.prototype.toreversed, bin/escodegen.js, node_modules/object.getownpropertydescriptors, bin/react-scripts.js, node_modules/socket.io, node_modules/array.prototype.reduce, lib/cli.js, bin/bin.js, bin/nopt.js, node_modules/string.prototype.trimstart, node_modules/lodash.merge, node_modules/util.promisify, bin/jiti.js, bin/jest.js, cli.js, node_modules/function.prototype.name, bin/cmd.js, node_modules/array.prototype.flatmap, node_modules/arraybuffer.prototype.slice, node_modules/iterator.prototype, bin/nanoid.cjs, node_modules/regexp.prototype.flags, node_modules/string.prototype.matchall, dist/cli.cjs, node_modules/sanitize.css, ipaddr.js, bin/cli.js, node_modules/decimal.js, bin/webpack-dev-server.js, bin/semver.js, node_modules/reflect.getprototypeof, node_modules/object.fromentries, node_modules/string.prototype.trimend, node_modules/proxy-addr/node_modules/ipaddr.js, dist/esm/bin.mjs, fraction.js, bin/esvalidate.js, bin/esgenerate.js, bin/babel-parser.js, node_modules/lodash.sortby, node_modules/object.groupby, node_modules/css.escape, node_modules/lodash.memoize, bin/webpack.js, bin.js, node_modules/object.hasown, node_modules/object.entries, node_modules/string.prototype.trim, node_modules/engine.io, node_modules/array.prototype.flat, decimal.js, node_modules/lodash.debounce`
+  - 🔗 *Calls (호출하는 것)*: `bin/eslint.js, node_modules/string.prototype.trimstart, bin/babel-parser.js, bin/semver.js, node_modules/big.js, big.js, cli.js, dist/esm/bin.mjs, node_modules/resolve.exports, bin/webpack.js, ipaddr.js, bin/jest.js, node_modules/lodash.memoize, node_modules/array.prototype.toreversed, node_modules/object.assign, node_modules/proxy-addr/node_modules/ipaddr.js, node_modules/sanitize.css, fixtures/cli.js, decimal.js, bin/nopt.js, bin/nanoid.cjs, bin/cli.js, node_modules/engine.io, node_modules/decimal.js, node_modules/lodash.merge, bin/react-scripts.js, bin.js, node_modules/regexp.prototype.flags, fraction.js, bin/webpack-dev-server.js, node_modules/hpack.js, bin/escodegen.js, node_modules/iterator.prototype, lib/cli.js, node_modules/function.prototype.name, bin/bin.js, node_modules/array.prototype.flatmap, node_modules/string.prototype.matchall, hpack.js, node_modules/array.prototype.flat, node_modules/array.prototype.findlastindex, node_modules/array.prototype.tosorted, node_modules/object.values, bin/js-yaml.js, bin/esparse.js, node_modules/array.prototype.findlast, node_modules/fraction.js, node_modules/lodash.debounce, bin/cmd.js, node_modules/string.prototype.trim, node_modules/arraybuffer.prototype.slice, node_modules/object.groupby, node_modules/socket.io, node_modules/array.prototype.reduce, node_modules/object.getownpropertydescriptors, node_modules/util.promisify, bin/jiti.js, node_modules/fs.realpath, node_modules/ipaddr.js, dist/cli.cjs, node_modules/css.escape, bin/esgenerate.js, bin/esvalidate.js, node_modules/lodash.uniq, node_modules/object.fromentries, node_modules/object.hasown, node_modules/reflect.getprototypeof, node_modules/string.prototype.trimend, node_modules/object.entries, node_modules/lodash.sortby`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -2437,7 +3489,7 @@ def main():
 - **[JSON_KEY]** `lockfileVersion` (Line: 4~4)
 - **[JSON_KEY]** `requires` (Line: 5~5)
 - **[JSON_KEY]** `packages` (Line: 6~6)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/socket.io, bin/nodemon.js, ipaddr.js, cli.js, bin/semver.js, node_modules/engine.io, node_modules/ipaddr.js, node_modules/pstree.remy, bin/nodetouch.js`
+  - 🔗 *Calls (호출하는 것)*: `bin/nodemon.js, bin/semver.js, node_modules/pstree.remy, node_modules/socket.io, cli.js, node_modules/ipaddr.js, ipaddr.js, node_modules/engine.io, bin/nodetouch.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -2512,25 +3564,8 @@ def main():
 ### 📄 run_test.py
 #### 🧱 Code Skeleton:
 ```python
-class PatchItem(BaseModel):
-    file_path: str
-    existing_code: str
-    replacement_code: str
-
-class PatchPayload(BaseModel):
-    patches: List[PatchItem]
-
-def build_log_regex_pattern(template_msg: str) -> str:
-    """미션의 디버그 로그 메시지 내 변수 표기({x}, {hex_code} 등)를 Regex 유연 패턴으로 자동 변환"""
-    escaped = re.escape(template_msg)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*num[a-zA-Z0-9_]*\\\}|\\\{x\\\}|\\\{y\\\}|\\\{val\\\}', r'[-+]?\\d*\\.?\\d+', escaped)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*bool[a-zA-Z0-9_]*\\\}', r'(?i)(true|false)', escaped)
-    escaped = re.sub(r'\\\{[a-zA-Z0-9_]*hex[a-zA-Z0-9_]*\\\}', r'#?[a-fA-F0-9]{3,6}', escaped)  # Hex Color 지원 추가
-    escaped = re.sub(r'\\\{.*?\\\}', r'[\\s\\S]*?', escaped)
-    return escaped
-
 def load_mission_file(mission_rel_path: str) -> dict:
-    """JSON 미션 파일 로더 및 규격 검증 (v1.3 신규 규격 적용)"""
+    """JSON 미션 파일 로더 및 규격 검증 (v2.0 신규 규격 적용)"""
     mission_path = ROOT_DIR / mission_rel_path
     if not mission_path.exists():
         raise FileNotFoundError(f"미션 파일을 찾을 수 없습니다: {mission_path}")
@@ -2538,8 +3573,8 @@ def load_mission_file(mission_rel_path: str) -> dict:
     with open(mission_path, "r", encoding="utf-8") as f:
         data = json.load(f)
     
-    # 신규 미션 JSON 규격 필수 키 검증 (task_id, target_file)
-    required_keys = ["task_id", "target_file"]
+    # 필수 규격 키 검증 (debug_log_spec 포함)
+    required_keys = ["task_id", "target_file", "debug_log_spec"]
     for key in required_keys:
         if key not in data:
             raise KeyError(f"미션 JSON에 필수 키가 누락되었습니다: '{key}'")
@@ -2707,12 +3742,11 @@ Current Codebase Map:
     print("\n🤖 [Step 3] LLM 단발성 수정 패치(다중 스니펫) 생성 중...")
     
     system_prompt = f"""STRICT EXECUTION PROTOCOL:
-1. 'file_path': Strictly '{target_file_path}'.
-2. 'existing_code': Exact raw string to replace. Keep context minimal to reduce token size.
-3. 'replacement_code': Minimum modified code only.
-4. INDENTATION: Preserve EXACT indentation (spaces/tabs) of the target method/class.
-5. OUTPUT: Raw JSON Object matching PatchPayload schema ONLY. No markdown, no explanations.
-6. NO hardcoded env vars (e.g., os.environ). Rely on runtime env."""
+1. Target File: Strictly '{target_file_path}'.
+2. Output code edits using EXACTLY the SEARCH/REPLACE block format shown below.
+3. Include enough surrounding lines in SEARCH block to uniquely identify the code to change.
+4. Keep exact whitespace/indentation.
+5. Do NOT output JSON. Use raw SEARCH/REPLACE text blocks only. No markdown wrapped JSON, no explanations."""
 
     user_prompt = f"""<MISSION_SPEC>
 Target File Path: {target_file_path}
@@ -2724,23 +3758,20 @@ Mission Details:
 {target_code}
 </READ_ONLY_CONTEXT>
 
-<OUTPUT_INSTRUCTIONS>
-Generate a JSON object matching PatchPayload schema:
-{{
-  "patches": [
-    {{
-      "file_path": "{target_file_path}",
-      "existing_code": "exact_raw_string_to_be_replaced",
-      "replacement_code": "exact_new_code_to_apply"
-    }}
-  ]
-}}
-</OUTPUT_INSTRUCTIONS>"""
+<OUTPUT_FORMAT>
+For each code change, output exactly:
+
+<<<<<<< SEARCH
+[Exact original code snippet to replace]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE
+</OUTPUT_FORMAT>"""
 
     raw_response = safe_execute_step(
         prompt=user_prompt,
         system_instruction=system_prompt,
-        response_mime_type="application/json"
+        response_mime_type="text/plain"
     )
 
     terminal_output = ""
@@ -2755,18 +3786,16 @@ Generate a JSON object matching PatchPayload schema:
         print(f"\n🛠️ [Step 4] CodePatcher 1:1 검증 및 치환 적용 (시도 {retry_count + 1}/{max_retries + 1})...")
         patch_success = False
         try:
-            # Pydantic 파싱으로 스키마 틀에 박힌 정확한 객체 검증
-            payload = PatchPayload.model_validate_json(clean_json_response(raw_response))
-            patch_list = [p.model_dump() for p in payload.patches]
+            # SEARCH/REPLACE 텍스트 블록 추출
+            patch_list = factory.patcher.parse_blocks(raw_response)
 
             if patch_list:
                 all_patches_ok = True
                 for idx, item in enumerate(patch_list, 1):
-                    file_path = item["file_path"]
                     existing_code = item["existing_code"]
                     replacement_code = item["replacement_code"]
 
-                    patch_result = factory.patcher.apply_patch(file_path, existing_code, replacement_code)
+                    patch_result = factory.patcher.apply_patch(target_file_path, existing_code, replacement_code)
                     print(f"📌 [PATCH RESULT {idx}/{len(patch_list)}] {patch_result['message']}")
                     print(f"   ├─ [BEFORE]: {existing_code.strip()[:60]}...")
                     print(f"   └─ [AFTER] : {replacement_code.strip()[:60]}...")
@@ -2774,32 +3803,33 @@ Generate a JSON object matching PatchPayload schema:
                         all_patches_ok = False
                 patch_success = all_patches_ok
             else:
-                print("⚠️ [PATCH FAIL] 패치 항목(patches)이 비어 있습니다.")
+                print("⚠️ [PATCH FAIL] SEARCH/REPLACE 패치 블록이 비어 있거나 인식되지 않았습니다.")
 
         except Exception as e:
-            print(f"❌ [STEP 4 ERROR] Pydantic 스키마 검증 실패 또는 패치 적용 오류: {e}")
+            print(f"❌ [STEP 4 ERROR] 패치 파싱 또는 적용 오류: {e}")
 
         # -------------------------------------------------------------
-        # 💻 [Step 5] DebugVerifier 기반 검증 모듈 실행 (통합 검증)
+        # 💻 [Step 5] DebugVerifier 기반 실제 실행 및 로그 패턴 검증
         # -------------------------------------------------------------
-        print("\n💻 [Step 5] 자율 검증 에이전트(Verifier Agent) 통합 실행 및 실체 검증 가동...")
+        print("\n💻 [Step 5] DebugVerifier 실행 및 로그 패턴 검증 중...")
 
         diagnosis_hint = ""
         if patch_success:
-            verifier = DebugVerifier(root_dir=ROOT_DIR, factory=factory)
-            verifier_res = verifier.verify(
-                mission_data=mission_data,
-                target_file_path=target_file_path,
-                target_code=target_code
-            )
-            is_verified = verifier_res["verified"]
-            terminal_output = verifier_res["output"]
-            diagnosis_hint = verifier_res.get("diagnosis_hint", "")
+            # 실제 검증기(DebugVerifier) 객체 생성 및 검증 수행
+            verifier = DebugVerifier(ROOT_DIR, factory)
+            ver_res = verifier.verify(mission_data, target_file_path, target_code)
+
+            # 검증 결과 바인딩
+            is_verified = ver_res.get("verified", False)
+            terminal_output = ver_res.get("output", "")
+            diagnosis_hint = ver_res.get("message", "")
+
             print(f"📄 [VERIFICATION OUTPUT]\n{terminal_output}")
-            print(f"📌 [VERIFICATION RESULT] {verifier_res['message']}")
+            print(f"📌 [VERIFICATION RESULT] {'검증 성공' if is_verified else '검증 실패'}: {diagnosis_hint}")
         else:
             is_verified = False
-            terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 검증을 스킵합니다."
+            terminal_output = "[PATCH FAIL] 패치 적용 실패로 인해 실행 검증을 스킵합니다."
+            diagnosis_hint = "SEARCH/REPLACE 패치 블록 적용 실패"
 
         if patch_success and is_verified:
             # 🧹 임시 생성된 검증용 테스트 파일 자동 청소 (Clean-up)
@@ -2861,16 +3891,17 @@ Output raw JSON ONLY: {{"is_sufficient": true/false, "reason": "short explanatio
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
 <VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
-Generate corrected JSON patch object matching PatchPayload schema:
-{{
-  "patches": [
-    {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
-  ]
-}}"""
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
             raw_response = safe_execute_step(
                 prompt=fix_user_prompt,
                 system_instruction=system_prompt,
-                response_mime_type="application/json"
+                response_mime_type="text/plain"
             )
         else:
             # ---------------------------------------------------------
@@ -2912,20 +3943,22 @@ Output JSON string array matching: ["path/1", "path/2"]"""
             slice_res = factory.extractor.process(dynamic_slice_prompt, auto_save=False)
             target_code = slice_res.get("markdown", "")
             
-            # 🛠️ [보완 2] 이전 실행 실패 로그(<PREVIOUS_FAILURE_LOG>)를 프롬프트에 필수 전달하여 피드백 강화
+            # 🛠️ [보완 2] 이전 실패 로그뿐만 아니라 자율 검증 에이전트 진단 힌트(<VERIFIER_AGENT_DIAGNOSIS>)까지 프롬프트에 동시 주입
             retry_fix_prompt = f"""<MISSION_SPEC>\n{mission_str}\n</MISSION_SPEC>
 <READ_ONLY_CONTEXT>\n{target_code}\n</READ_ONLY_CONTEXT>
 <PREVIOUS_FAILURE_LOG>\n{terminal_output}\n</PREVIOUS_FAILURE_LOG>
-Generate corrected JSON patch object matching PatchPayload schema:
-{{
-  "patches": [
-    {{"file_path": "{target_file_path}", "existing_code": "exact_string", "replacement_code": "new_code"}}
-  ]
-}}"""
+<VERIFIER_AGENT_DIAGNOSIS>\n{diagnosis_hint}\n</VERIFIER_AGENT_DIAGNOSIS>
+
+Output corrected SEARCH/REPLACE blocks:
+<<<<<<< SEARCH
+[Exact original code snippet]
+=======
+[New replacement code snippet]
+>>>>>>> REPLACE"""
             raw_response = safe_execute_step(
                 prompt=retry_fix_prompt,
                 system_instruction=system_prompt,
-                response_mime_type="application/json"
+                response_mime_type="text/plain"
             )
 
 def main():
@@ -2942,7 +3975,30 @@ def main():
 
 --------------------------------------------------
 
+### 📄 run_test_cli.py
+#### 🧱 Code Skeleton:
+```python
+def main():
+    print("🚀 ASE-OS Step Worker Pipeline 테스트 가동...")
+    mission_file_path = "agent_core/tasks/task_01/checklist_01/mission_01.json"
+    
+    # 핵심 엔진 직접 호출
+    success = run_debug_pipeline(
+        root_dir=ROOT_DIR,
+        mission_rel_path=mission_file_path,
+        max_retries=3
+    )
+    sys.exit(0 if success else 1)
+```
+
+--------------------------------------------------
+
 ### 📄 scan_debug.txt
+*선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 scratch/test_debug_agent.py
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
 --------------------------------------------------
@@ -4458,6 +5514,14 @@ class CodePatcher:
     def __init__(self, root_dir: Path):
         self.root_dir = Path(root_dir).resolve()
 
+    def parse_blocks(self, raw_text: str) -> list[dict]:
+        """
+        LLM 출력 텍스트에서 <<<<<<< SEARCH ... ======= ... >>>>>>> REPLACE 구문을 추출합니다.
+        """
+        pattern = r"<<<<<<< SEARCH\n(.*?)\n=======\n(.*?)\n>>>>>>> REPLACE"
+        matches = re.findall(pattern, raw_text, re.DOTALL)
+        return [{"existing_code": m[0], "replacement_code": m[1]} for m in matches]
+
     def apply_patch(self, rel_path: str, existing_code: str, replacement_code: str) -> dict:
         """
         파일 내에서 existing_code를 검증하여 replacement_code로 1:1 교체합니다.
@@ -5106,20 +6170,30 @@ class ProcessHandle:
     """subprocess.Popen을 감싸 비동기 입출력 및 상태를 관리하는 핸들러 클래스"""
     def __init__(self, proc: subprocess.Popen):
         self.proc = proc
+        self.pid = proc.pid
         self._output_queue: queue.Queue = queue.Queue()
         self._stop_event = threading.Event()
-        
-        # 백그라운드에서 stdout을 읽어 큐에 저장하는 스레드 가동
-        self._reader_thread = threading.Thread(target=self._read_stdout_loop, daemon=True)
-        self._reader_thread.start()
+        self.last_output_time = time.time()  # 마지막 출력 시간 타임스탬프 추가
 
-    def _read_stdout_loop(self):
-        if self.proc.stdout:
-            while not self._stop_event.is_set():
-                line = self.proc.stdout.readline()
-                if not line:
+        # 비동기 stdout/stderr 수집 스레드 시작
+        self._stdout_thread = threading.Thread(target=self._reader_thread, args=(self.proc.stdout,), daemon=True)
+        self._stderr_thread = threading.Thread(target=self._reader_thread, args=(self.proc.stderr,), daemon=True)
+        self._stdout_thread.start()
+        self._stderr_thread.start()
+
+    def _reader_thread(self, stream):
+        """스트림에서 실시간으로 텍스트를 읽어 큐에 적재"""
+        try:
+            for line in iter(stream.readline, ''):
+                if line:
+                    self._output_queue.put(line)
+                    self.last_output_time = time.time()  # 출력 발생 시 타임스탬프 갱신
+                if self._stop_event.is_set():
                     break
-                self._output_queue.put(line)
+        except Exception:
+            pass
+        finally:
+            stream.close()
 
     @property
     def pid(self) -> int:
@@ -5271,8 +6345,13 @@ class TerminalAgentRunner:
                         exit_code=proc_handle.exit_code
                     )
 
-                if self._is_kernel_waiting_stdin(proc_handle.pid):
-                    response = self._resolve_input(buffer, goal, mission_data, code_context)
+                if self._is_waiting_for_input(proc_handle, buffer):
+                    response = self._resolve_input(
+                        current_buffer=buffer,
+                        goal=goal,
+                        mission_data=mission_data,
+                        code_context=code_context
+                    )
                     if response is None:
                         self._kill_process_tree(proc_handle.pid)
                         return self._build_result(
@@ -5308,14 +6387,22 @@ class TerminalAgentRunner:
         except Exception as e:
             return self._build_result("DAEMON_ERROR", "", error_msg=str(e))
 
-    def _is_kernel_waiting_stdin(self, pid: int) -> bool:
-        try:
-            proc = psutil.Process(pid)
-            if proc.status() == psutil.STATUS_WAITING:
-                return True
-        except Exception:
-            pass
-        return False
+    def _is_waiting_for_input(self, proc_handle: ProcessHandle, buffer: str, quiet_time_sec: float = 0.3) -> bool:
+        """
+        Quiet Period(출력 정지 시간) + Tail Pattern(프롬프트 패턴) 기반 감지
+        """
+        if not proc_handle.is_alive():
+            return False
+
+        # 1. Quiet Period 검사: 지정된 시간(0.3초) 동안 아무 출력이 없었는지 확인
+        if time.time() - proc_handle.last_output_time < quiet_time_sec:
+            return False
+
+        # 2. Tail Pattern 검사: 버퍼의 마지막 줄이 입력 유도 패턴으로 끝나는지 확인
+        clean_tail = buffer.strip().splitlines()[-1] if buffer.strip() else ""
+        interactive_indicators = [">", ":", "?", "Turn:", "Enter", "input", "[y/n]"]
+
+        return any(clean_tail.endswith(ind) or ind in clean_tail for ind in interactive_indicators)
 
     def _resolve_input(self, current_buffer: str, goal: str, mission_data: Optional[Dict[str, Any]], code_context: Optional[str]) -> Optional[str]:
         buffer_lower = current_buffer.lower()

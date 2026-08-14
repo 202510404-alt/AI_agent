@@ -292,15 +292,40 @@ class ApexChessEngine:
             piece = self.board.piece_at(sq)
             if piece and piece.piece_type == chess.PAWN:
                 color = piece.color
-                file = sq % 8
-                rank = sq // 8
-                # Simple passed pawn check
+                file = chess.square_file(sq)
+                rank = chess.square_rank(sq)
+                
+                # Passed Pawn
                 is_passed = True
                 for r in (range(rank + 1, 8) if color == chess.WHITE else range(0, rank)):
-                    if self.board.piece_at(r * 8 + file) and self.board.piece_at(r * 8 + file).piece_type == chess.PAWN:
-                        is_passed = False
+                    # Check files adjacent and current for enemy pawns
+                    for f in range(max(0, file - 1), min(8, file + 2)):
+                        p = self.board.piece_at(chess.square(f, r))
+                        if p and p.piece_type == chess.PAWN and p.color != color:
+                            is_passed = False
+                            break
+                    if not is_passed: break
+                
+                # Isolated Pawn
+                is_isolated = True
+                for f in [file - 1, file + 1]:
+                    if 0 <= f < 8:
+                        for r in range(8):
+                            p = self.board.piece_at(chess.square(f, r))
+                            if p and p.piece_type == chess.PAWN and p.color == color:
+                                is_isolated = False
+                                break
+                
+                # Doubled Pawn
+                is_doubled = False
+                for r in (range(rank + 1, 8) if color == chess.WHITE else range(0, rank)):
+                    p = self.board.piece_at(chess.square(file, r))
+                    if p and p.piece_type == chess.PAWN and p.color == color:
+                        is_doubled = True
                         break
-                pawn_bonus += (30 if is_passed else 5) if color == chess.WHITE else (-30 if is_passed else -5)
+                
+                score = (50 if is_passed else 0) - (20 if is_isolated else 0) - (15 if is_doubled else 0)
+                pawn_bonus += score if color == chess.WHITE else -score
 
         # Bishop Pair
         white_bishops = sum(1 for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.BISHOP and self.board.piece_at(sq).color == chess.WHITE)
@@ -310,24 +335,31 @@ class ApexChessEngine:
         # King Safety (Pawn Shield)
         king_safety_bonus = 0
         for color in [chess.WHITE, chess.BLACK]:
-            king_sq = next((sq for sq in chess.SQUARES if self.board.piece_at(sq) and self.board.piece_at(sq).piece_type == chess.KING and self.board.piece_at(sq).color == color), None)
+            king_sq = None
+            for sq in chess.SQUARES:
+                p = self.board.piece_at(sq)
+                if p and p.piece_type == chess.KING and p.color == color:
+                    king_sq = sq
+                    break
+            
             if king_sq is not None:
                 shield = 0
-                f, r = king_sq % 8, king_sq // 8
-                for df in [-1, 0, 1]:
-                    nf = f + df
-                    if 0 <= nf <= 7:
-                        nr = r + (1 if color == chess.WHITE else -1)
-                        if 0 <= nr <= 7:
-                            p = self.board.piece_at(nr * 8 + nf)
+                file = king_sq % 8
+                rank = king_sq // 8
+                for f in range(max(0, file - 1), min(8, file + 2)):
+                    for r in (range(rank + 1, rank + 3) if color == chess.WHITE else range(rank - 2, rank)):
+                        if 0 <= r < 8:
+                            p = self.board.piece_at(r * 8 + f)
                             if p and p.piece_type == chess.PAWN and p.color == color:
-                                shield += 10
+                                shield += 15
                 king_safety_bonus += shield if color == chess.WHITE else -shield
 
         eval_score += (pawn_bonus + bishop_pair_bonus + king_safety_bonus)
+
         if os.environ.get("CHESS_AI_DEBUG") == "1":
-            print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={eval_score}")
-        return eval_score
+            print(f"[DEBUG_LOG] Step=EVAL_ENGINE | Score={int(eval_score)}")
+
+        return int(eval_score)
 
     # -------------------------------------------------------------------------
     # Move Ordering (MVV-LVA, Killers, History, TT)
