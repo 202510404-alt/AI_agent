@@ -14,6 +14,7 @@ export class NeonDragon extends BaseBoss {
      */
     constructor(x, y) {
         super(x, y, 25000);
+        NeonDragonPattern.currentTargetIndex = 0;
         this.dangerAreas = []; // AI 연동용 위험 구역 (레이저)
 
         // 부드러운 곡선 선회 이동용 웨이포인트 상태
@@ -60,7 +61,7 @@ export class NeonDragon extends BaseBoss {
      * 보스 이동 및 탄막/레이저 패턴 업데이트
      */
     update(bulletContainer, canvasWidth, players = [], dt = 0.016) {
-        this.angle += 0.02;
+        this.angle += 1.2 * dt;
 
         // 1. 주기적인 웨이포인트 산출 및 곡선 파동 이동
         this.moveTimer += dt;
@@ -82,8 +83,8 @@ export class NeonDragon extends BaseBoss {
             const waveOffset = Math.sin(this.moveTimer * 4.0) * 1.5; // 곡선 선회 성분
 
             // 직진 등속 이동 힘 + 측면 곡선 파동 힘 합성
-            this.x += (Math.cos(moveAngle) * step) + Math.cos(perpAngle) * waveOffset;
-            this.y += (Math.sin(moveAngle) * step) + Math.sin(perpAngle) * waveOffset;
+            this.x += (Math.cos(moveAngle) * step) + Math.cos(perpAngle) * waveOffset * dt * 60;
+            this.y += (Math.sin(moveAngle) * step) + Math.sin(perpAngle) * waveOffset * dt * 60;
         } else {
             this.x = this.targetX;
             this.y = this.targetY;
@@ -118,8 +119,12 @@ export class NeonDragon extends BaseBoss {
             }
         }
 
-        this.patternTimer++;
-        NeonDragonPattern.execute(bulletContainer, this.x, this.y, this.angle, this.patternTimer, players, this);
+        this.patternTimer += dt;
+        const elapsedTicks = Math.floor(this.patternTimer * 60 + 1e-9);
+        while (this.patternTick < elapsedTicks) {
+            this.patternTick++;
+            NeonDragonPattern.execute(bulletContainer, this.x, this.y, this.angle, this.patternTick, players, this);
+        }
     }
 
     /**

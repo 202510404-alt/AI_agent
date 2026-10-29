@@ -111,16 +111,16 @@ export class DodgeAlgorithm {
     /**
      * 3가지 위협 분기 상황별 정밀 회피 알고리즘
      */
-    static calculateNormalDodge(player, dangerousBullets, dangerAreas = []) {
+    static calculateNormalDodge(player, dangerousBullets, dangerAreas = [], angleOffset = 0) {
         const stepDist = 20; // 미세 자율 조향 보폭
         const predictTime = 0.22;
         const playerHitboxRadius = player.radius || 8;
 
         const wallMargin = 16;
         const mapMinX = wallMargin;
-        const mapMaxX = 800 - wallMargin;
-        const mapMinY = wallMargin;
-        const mapMaxY = 600 - wallMargin;
+        const mapMaxX = 1280 - wallMargin;
+        const mapMinY = 120;
+        const mapMaxY = 720 - wallMargin;
 
         // A. 탄환 이동 진행 방향 선분 데이터 수집
         const bulletSegments = dangerousBullets.map(b => {
@@ -163,6 +163,11 @@ export class DodgeAlgorithm {
 
         const hasBullets = bulletSegments.length > 0;
         const hasActiveHazard = insideHazardCount > 0;
+        const preferredAngle = combinedEscapeAngle !== null
+            ? combinedEscapeAngle + angleOffset
+            : hasBullets
+                ? Math.atan2(player.y - bulletSegments[0].y1, player.x - bulletSegments[0].x1) + angleOffset
+                : null;
 
         // 1. [순수 탄환 상황]: 범위 공격이 없고 오직 탄환만 있을 때 현재 위치 고수 우선 검사
         if (!hasActiveHazard) {
@@ -182,13 +187,14 @@ export class DodgeAlgorithm {
 
         // 2. [가중치 0% 정통 벡터 합성]: 탄환 궤적 차단 필터링 후 범위 공격 탈출 방향각 선택
         const sampleCount = 32;
+        const sampleAngles = Array.from({ length: sampleCount }, (_, i) => (Math.PI * 2 / sampleCount) * i);
+        if (preferredAngle !== null) sampleAngles.unshift(preferredAngle);
         let bestTarget = { targetX: player.x, targetY: player.y };
         let maxAlignment = -Infinity;
         let safestFallbackTarget = { targetX: player.x, targetY: player.y };
         let minBulletOverlap = Infinity;
 
-        for (let i = 0; i < sampleCount; i++) {
-            const rad = (Math.PI * 2 / sampleCount) * i;
+        for (const rad of sampleAngles) {
             const candX = player.x + Math.cos(rad) * stepDist;
             const candY = player.y + Math.sin(rad) * stepDist;
 
@@ -221,10 +227,10 @@ export class DodgeAlgorithm {
             }
 
             // [Step B] 탄환으로부터 안전한 각도들 중 범위 탈출 방향 벡터(combinedEscapeAngle)와 가장 일치하는 각도 선택
-            if (combinedEscapeAngle !== null) {
+            if (preferredAngle !== null) {
                 const candDirX = Math.cos(rad);
                 const candDirY = Math.sin(rad);
-                const alignment = candDirX * combinedDirX + candDirY * combinedDirY;
+                const alignment = candDirX * Math.cos(preferredAngle) + candDirY * Math.sin(preferredAngle);
 
                 if (alignment > maxAlignment) {
                     maxAlignment = alignment;
@@ -273,7 +279,8 @@ export class DodgeAlgorithm {
             const refX = hasBullet ? bullet.x : (player.x + 50);
             const refY = hasBullet ? bullet.y : (player.y - 50);
 
-            const panicAngle = Math.atan2(player.y - refY, player.x - refX) + (rngPlayerAi.getSpread(slotIdx) - 0.5) * 2.0;
+            const angleError = rngPlayerAi.angleOffset(slotIdx, AI_CONFIG.ANGLE_OFFSET_MIN_DEG, AI_CONFIG.ANGLE_OFFSET_MAX_DEG);
+            const panicAngle = Math.atan2(player.y - refY, player.x - refX) + degToRad(angleError);
             return {
                 type: 'OVERSTEER',
                 label: 'OVERSTEER!',

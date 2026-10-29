@@ -22,6 +22,7 @@ export class ShielderPlayer extends BasePlayer {
 
         this.maxGauge = 70;                         // 스킬 게이지 70
         this.activeShield = null;                   // 현재 설치된 배리어 정보
+        this.shieldCastCount = 0;
     }
 
     /**
@@ -73,7 +74,7 @@ export class ShielderPlayer extends BasePlayer {
 
         // 곡선 배리어 생성 (체력 100, 반지름 70px, 90도 호)
         this.activeShield = {
-            id: `shield_${this.slotIndex}_${Date.now()}`,
+            id: `shield_${this.slotIndex}_${++this.shieldCastCount}`,
             x: this.x,
             y: this.y,
             angle: deployAngle,
@@ -217,12 +218,29 @@ export class ShielderPlayer extends BasePlayer {
         // 배리어 호 렌더링
         if (this.activeShield) {
             const s = this.activeShield;
+            const strength = Math.max(0.25, Math.min(1, s.hp / s.maxHp));
             ctx.save();
             ctx.beginPath();
             ctx.arc(s.x, s.y, s.radius, s.angle - s.arcAngle / 2, s.angle + s.arcAngle / 2);
-            ctx.lineWidth = s.thickness;
-            ctx.strokeStyle = `rgba(59, 130, 246, ${Math.min(1.0, s.hp / s.maxHp)})`;
+            ctx.lineCap = 'round';
+
+            // 둥근 방패 끝과 겹쳐지는 네온 광채
+            ctx.lineWidth = s.thickness + 14;
+            ctx.strokeStyle = `rgba(37, 99, 235, ${strength * 0.25})`;
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 26;
             ctx.stroke();
+
+            ctx.lineWidth = s.thickness;
+            ctx.strokeStyle = `rgba(34, 211, 238, ${strength * 0.85})`;
+            ctx.shadowBlur = 18;
+            ctx.stroke();
+
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = `rgba(224, 250, 255, ${strength})`;
+            ctx.shadowBlur = 8;
+            ctx.stroke();
+            ctx.shadowBlur = 0;
 
             // 배리어 HP 바 표기
             ctx.font = '9px Orbitron';

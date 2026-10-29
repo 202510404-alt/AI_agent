@@ -35,6 +35,8 @@ export class NetworkManager {
 
         // 패킷 시퀀스 번호 (송신용 단조 증가 카운터)
         this.sequenceCounter = 0;
+        this.lastSentAction = null;
+        this.lastInputSentAt = 0;
 
         // 원격 슬롯별 마지막 수신 시퀀스 번호 추적 (Out-of-Order 무시용)
         this.lastReceivedSequences = {};
@@ -69,6 +71,8 @@ export class NetworkManager {
             this.socket = new WebSocket(wsUrl);
 
             this.socket.onopen = () => {
+                this.lastSentAction = null;
+                this.lastInputSentAt = 0;
                 console.log(`🌐 [NetworkManager] 웹소켓 서버 연결 완료 (${wsUrl})`);
                 // 내 닉네임 / 직업 정보가 준비되어 있다면 초기 동기화
                 this.syncLocalProfile();
@@ -169,29 +173,22 @@ export class NetworkManager {
                 const sIdx = packet.slotIndex;
                 if (!sIdx) break;
 
-                // 2. 패킷 순서 엉킴 및 손실 방지 (Out-of-Order / Packet Loss)
-                const seq = packet.sequenceNumber;
-                if (typeof seq === 'number') {
-                    const lastSeq = this.lastReceivedSequences[sIdx] || 0;
-                    if (seq < lastSeq) {
-                        // 오래된 순번의 패킷은 즉시 폐기 (Discard)
-                        return;
-                    }
-                    this.lastReceivedSequences[sIdx] = seq;
-                }
+                const remoteAction = packet.inputAction || {};
+                const seq = packet.sequenceNumber ?? remoteAction.sequenceNumber ?? 0;
 
-                // 핑(Ping) 계산: timeStamp 기반 RTT 근사치 갱신
+                // 💡 [원격 슬롯 연동 보장]: 내 슬롯이 아닌 모든 상대 슬롯(P1, P2 등) 패킷을 강제 캐싱
+                // 핑(Ping) 계산 및 최신 패킷 버퍼링
                 if (packet.timeStamp) {
                     const latency = Math.max(0, Date.now() - packet.timeStamp);
                     this.estimatedPing = Math.round(this.estimatedPing * 0.8 + latency * 0.2);
                 }
 
-                // 원격 조작 입력 패킷 캐싱
-                const action = packet.inputAction || {};
+                const action = { ...remoteAction };
                 action.sequenceNumber = seq;
                 action.timeStamp = packet.timeStamp || Date.now();
                 action.estimatedPing = this.estimatedPing;
 
+                // 💡 상대방 슬롯 입력 버퍼에 유실 없이 보관 (gameLoop.js에서 소비)
                 this.clientInputs[sIdx] = action;
                 break;
             }
@@ -296,21 +293,40 @@ export class NetworkManager {
     sendInputSync(slotIndex, inputAction) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
         
+        // 💡 [P1/호스트 예외 보장]: mySlotIndex가 초기에 null이어도 slotIndex(기본 1)를 활용하여 P1 패킷 송신 차단 해제
+        const activeSlot = slotIndex || this.mySlotIndex || 1;
+
+        const currentMoveX = inputAction.moveX || 0;
+        const currentMoveY = inputAction.moveY || 0;
+        const currentSkill = !!inputAction.useSkill;
+
+        const now = Date.now();
+        const previous = this.lastSentAction;
+        const moving = currentMoveX !== 0 || currentMoveY !== 0;
+        const wasMoving = !!previous && (previous.moveX !== 0 || previous.moveY !== 0);
+        const movementStartedOrStopped = !previous || moving !== wasMoving;
+        const positionChanged = !previous || Math.hypot((inputAction.posX ?? 0) - (previous.posX ?? 0), (inputAction.posY ?? 0) - (previous.posY ?? 0)) >= 0.5;
+        // 이동 시작과 정지는 즉시 보내고, 이동 위치는 초당 최대 20회 동기화한다.
+        if (!movementStartedOrStopped && !currentSkill && (!positionChanged && !moving || now - this.lastInputSentAt < 50)) return;
+
         this.sequenceCounter = (this.sequenceCounter + 1) >>> 0;
+        this.lastSentAction = { moveX: currentMoveX, moveY: currentMoveY, posX: inputAction.posX, posY: inputAction.posY };
+        this.lastInputSentAt = now;
 
         const payload = {
             type: 'INPUT_SYNC',
-            slotIndex: slotIndex || this.mySlotIndex,
+            slotIndex: activeSlot,
             sequenceNumber: this.sequenceCounter,
             timeStamp: inputAction.timeStamp || Date.now(),
             inputAction: {
-                moveX: inputAction.moveX || 0,
-                moveY: inputAction.moveY || 0,
-                dx: inputAction.dx !== undefined ? inputAction.dx : inputAction.moveX || 0,
-                dy: inputAction.dy !== undefined ? inputAction.dy : inputAction.moveY || 0,
+                moveX: currentMoveX,
+                moveY: currentMoveY,
+                dx: inputAction.dx !== undefined ? inputAction.dx : currentMoveX,
+                dy: inputAction.dy !== undefined ? inputAction.dy : currentMoveY,
                 mouseX: inputAction.mouseX,
                 mouseY: inputAction.mouseY,
-                useSkill: !!inputAction.useSkill,
+                useSkill: currentSkill,
+                sequenceNumber: this.sequenceCounter,
                 posX: inputAction.posX,
                 posY: inputAction.posY,
                 speed: inputAction.speed

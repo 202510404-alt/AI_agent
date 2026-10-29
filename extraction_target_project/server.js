@@ -312,14 +312,18 @@ wss.on('connection', (ws) => {
             }
             // C. 조작 입력 동기화 (Continuous Movement & Trigger Action Relay)
             else if (data.type === 'INPUT_SYNC' || data.type === 'CLIENT_INPUT') {
-                // 패킷 릴레이: sequenceNumber, timeStamp, slotIndex, inputAction 유지
-                broadcast({
+                // 💡 ws.slotIndex가 미할당된 P1 소켓이라도 패킷 내 slotIndex(기본 1)를 사용하여 P1 릴레이 누락 차단
+                const effectiveSlot = ws.slotIndex || data.slotIndex || 1;
+
+                const relayPacket = {
                     type: 'INPUT_SYNC',
-                    slotIndex: ws.slotIndex,
-                    sequenceNumber: data.sequenceNumber,
+                    slotIndex: effectiveSlot,
+                    sequenceNumber: data.sequenceNumber ?? data.inputAction?.sequenceNumber ?? 0,
                     timeStamp: data.timeStamp || Date.now(),
                     inputAction: data.inputAction
-                });
+                };
+
+                broadcast(relayPacket);
             }
             // D. 설치형 오브젝트 및 HP 상태 동기화 (Object & HP Sync - Owner Authority)
             else if (data.type === 'OBJECT_STATE_SYNC') {

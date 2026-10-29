@@ -24,12 +24,13 @@ export class ShooterMinion extends BaseAllyMinion {
         super.updateMovement(enemyEntities, dt);
         if (this.isDead || !this.owner) return;
 
-        const time = Date.now() * 0.002;
+        const time = (window.gameLoopInstance?.gameTime ?? 0) * 2;
         const targetX = this.owner.x + Math.cos(time + this.orbitAngleOffset) * this.orbitRadius;
         const targetY = this.owner.y + Math.sin(time + this.orbitAngleOffset) * this.orbitRadius;
 
-        this.x += (targetX - this.x) * dt * 6;
-        this.y += (targetY - this.y) * dt * 6;
+        const blend = 1 - Math.pow(0.9, dt * 60);
+        this.x += (targetX - this.x) * blend;
+        this.y += (targetY - this.y) * blend;
     }
 
     updateAttack(enemyEntities = [], allyBullets = [], dt = 0.016) {
@@ -86,7 +87,7 @@ export class ShooterMinion extends BaseAllyMinion {
 
         ctx.save();
         ctx.translate(this.x, this.y);
-        ctx.rotate(Date.now() * 0.004);
+        ctx.rotate((window.gameLoopInstance?.gameTime ?? 0) * 4);
         ctx.strokeStyle = '#34d399';
         ctx.lineWidth = 1.5;
         ctx.shadowColor = '#059669';

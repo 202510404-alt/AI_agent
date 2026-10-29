@@ -91,16 +91,22 @@ export class BerserkerMinion extends BaseAllyMinion {
                 const desiredVx = Math.cos(this.targetAngle) * this.baseSpeed;
                 const desiredVy = Math.sin(this.targetAngle) * this.baseSpeed;
 
-                this.vx = this.vx * 0.85 + desiredVx * 0.15;
-                this.vy = this.vy * 0.85 + desiredVy * 0.15;
+                const blend = 1 - Math.pow(0.85, dt * 60);
+                this.vx = this.vx * (1 - blend) + desiredVx * blend;
+                this.vy = this.vy * (1 - blend) + desiredVy * blend;
             } else {
-                this.vx *= 0.8;
-                this.vy *= 0.8;
+                const damping = Math.pow(0.8, dt * 60);
+                this.vx *= damping;
+                this.vy *= damping;
             }
 
             this.x += this.vx * dt;
             this.y += this.vy * dt;
         }
+
+        const margin = this.radius + 12;
+        this.x = Math.max(margin, Math.min(1280 - margin, this.x));
+        this.y = Math.max(margin, Math.min(720 - margin, this.y));
 
         // 도끼 와리가리 스윙 애니메이션
         if (this.isSwinging) {
@@ -143,13 +149,6 @@ export class BerserkerMinion extends BaseAllyMinion {
     draw(ctx) {
         if (this.isDead) return;
 
-        // 💡 [동적 캔버스 크기 기반 맵 이탈 방지] 렌더링 시점의 캔버스 너비/높이에 맞춰 위치 클램핑
-        if (ctx && ctx.canvas) {
-            const margin = this.radius + 12;
-            this.x = Math.max(margin, Math.min(ctx.canvas.width - margin, this.x));
-            this.y = Math.max(margin, Math.min(ctx.canvas.height - margin, this.y));
-        }
-
         ctx.save();
         ctx.translate(this.x, this.y);
 
@@ -157,7 +156,7 @@ export class BerserkerMinion extends BaseAllyMinion {
         if (this.isSpawning) {
             const spawnProgress = Math.max(0, 1 - (this.spawnTimer / 2));
             const scale = 0.3 + spawnProgress * 0.9;
-            const rotAngle = Date.now() * 0.01;
+            const rotAngle = (window.gameLoopInstance?.gameTime ?? 0) * 10;
 
             ctx.rotate(rotAngle);
             ctx.strokeStyle = '#dc2626';
@@ -184,7 +183,7 @@ export class BerserkerMinion extends BaseAllyMinion {
         const currentRadius = this.isBerserkMode ? this.radius * 1.35 : this.radius;
 
         if (this.isBerserkMode && this.berserkBuffTimer > 0) {
-            const pulse = Math.sin(Date.now() * 0.02) * 5;
+            const pulse = Math.sin((window.gameLoopInstance?.gameTime ?? 0) * 20) * 5;
             ctx.shadowColor = '#ef4444';
             ctx.shadowBlur = 20 + pulse;
             ctx.fillStyle = '#b91c1c';

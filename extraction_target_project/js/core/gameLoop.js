@@ -30,6 +30,9 @@ export class GameLoop {
 
         this.showAIDebug = false; // 기본 NORMAL 모드 (디버그 오버레이 비활성화)
         this.lastTimestamp = performance.now();
+        this.gameTime = 0;
+        this.matchSecondAccumulator = 0;
+        this.simulationAccumulator = 0;
 
         // 전역 참조 등록
         window.gameLoopInstance = this;
@@ -110,11 +113,15 @@ export class GameLoop {
         const mySlotNum = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
         const mySlotIdx = mySlotNum - 1;
 
+        this.slots.forEach((player, idx) => {
+            player.isLocalOwner = idx === mySlotIdx;
+        });
+
         // 1. 내 기체 입력 액션 추출 (isAiMode 여부에 따라 수동/AI 자동 생성)
         const myPlayer = this.slots ? this.slots[mySlotIdx] : null;
         let localInputAction = null;
 
-        if (myPlayer) {
+        if (myPlayer && myPlayer.isLocalOwner && mySlotIdx === mySlotNum - 1) {
             localInputAction = this.input.getInputAction(mySlotIdx, {
                 player: myPlayer,
                 boss: this.boss,
@@ -127,7 +134,7 @@ export class GameLoop {
             localInputAction.speed = myPlayer.speed;
 
             // 2. 내 컴퓨터 슬롯 조작 신호를 네트워크 소켓으로 프레임 단위 송신 (INPUT_SYNC)
-            if (net && net.mySlotIndex) {
+            if (net && net.mySlotIndex === mySlotNum) {
                 net.sendInputSync(net.mySlotIndex, localInputAction);
             }
         }
@@ -145,7 +152,7 @@ export class GameLoop {
         // 3. 각 슬롯별 권한 분리(IsLocalOwner vs RemoteProxy) 및 위치 보간
         this.slots.forEach((player, idx) => {
             const slotNum = idx + 1;
-            const isMySlot = (net && net.mySlotIndex === slotNum);
+            const isMySlot = slotNum === mySlotNum;
             player.isLocalOwner = isMySlot; // 내 소유 기체 권한 플래그
 
             if (isMySlot) {
@@ -174,20 +181,31 @@ export class GameLoop {
     /**
      * 메인 메뉴의 드롭다운 선택값(p1-class ~ p4-class)을 읽어서 각 슬롯 기체를 동적으로 생성
      */
-    initSlots() {
+    initSlots(masterSeed = null, slotDetails = null) {
+        if (masterSeed !== null && masterSeed !== undefined) this.matchSeed = masterSeed;
         const net = window.networkManager;
         const mySlot = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
         const activeSlots = (net && net.activeSlots) ? net.activeSlots : [1];
+        const serverSlots = slotDetails || (net && net.slotDetails) || [];
+
+        if (!this.sceneManager.isPlaying()) {
+            this.gameTime = 0;
+            this.matchSecondAccumulator = 0;
+            this.simulationAccumulator = 0;
+            this.matchState.timeRemaining = MATCH_CONFIG.DEFAULT_DURATION_SEC;
+            this.matchState.teamScore = 0;
+        }
 
         this.slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
             const slotId = i + 1;
             const classSelect = document.getElementById(`p${slotId}-class`);
-            const classType = classSelect ? classSelect.value : 'defaultPlayer';
+            const serverSlot = serverSlots.find(detail => detail.slotIndex === slotId);
+            const classType = (serverSlot && serverSlot.classType) || (classSelect ? classSelect.value : 'defaultPlayer');
             
             const player = PlayerFactory.createPlayer(i, classType);
             
             // 실제 멀티 접속 중인 인간 유저 슬롯(activeSlots에 포함된 슬롯)은 AI 제어를 해제(isHuman = true)
-            player.isHuman = activeSlots.includes(slotId);
+            player.isHuman = serverSlot ? serverSlot.active && !serverSlot.isAiMode : activeSlots.includes(slotId);
             return player;
         });
 
@@ -200,24 +218,11 @@ export class GameLoop {
     }
 
     /**
-     * 엔티티 초기 위치 및 타이머 루프 시작
+     * 엔티티 초기 위치 및 화면 크기 변경 처리
      */
     init() {
         this.resize();
         window.addEventListener('resize', () => this.resize());
-
-        // 초당 매치 타이머 및 주기 점수 증가
-        this.timerInterval = setInterval(() => {
-            if (!this.sceneManager.isPlaying()) return;
-
-            this.matchState.timeRemaining--;
-            this.matchState.teamScore += MATCH_CONFIG.SCORE_PER_TICK;
-            this.ui.updateHeader(this.matchState.timeRemaining, this.matchState.teamScore);
-
-            if (this.matchState.timeRemaining <= 0) {
-                this.endMatch();
-            }
-        }, 1000);
 
         this.ui.updateSlotAndStats(this.slots);
     }
@@ -241,9 +246,6 @@ export class GameLoop {
         this.canvas.style.left = `${(windowWidth - GAME_WIDTH * scale) / 2}px`;
         this.canvas.style.top = `${(windowHeight - GAME_HEIGHT * scale) / 2}px`;
 
-        if (this.slots) {
-            this.slots.forEach(slot => slot.resetPosition(GAME_WIDTH, GAME_HEIGHT, TOTAL_SLOTS));
-        }
     }
 
     /**
@@ -364,7 +366,6 @@ export class GameLoop {
      */
     endMatch() {
         this.sceneManager.setState(GameState.GAMEOVER);
-        clearInterval(this.timerInterval);
 
         this.ui.showGameOverModal(this.slots);
 
@@ -386,6 +387,18 @@ export class GameLoop {
      */
     update(dt) {
         if (!this.sceneManager.isPlaying()) return;
+
+        this.gameTime += dt;
+        this.matchSecondAccumulator += dt;
+        while (this.matchSecondAccumulator >= 1) {
+            this.matchSecondAccumulator -= 1;
+            this.matchState.timeRemaining--;
+            this.matchState.teamScore += MATCH_CONFIG.SCORE_PER_TICK;
+            if (this.matchState.timeRemaining <= 0) {
+                this.endMatch();
+                return;
+            }
+        }
 
         // 💡 [입력 및 네트워크 동기화 프레임 틱 호출]
         this.updateInputs(dt);
@@ -455,27 +468,11 @@ export class GameLoop {
 
         this.slots.forEach(slot => {
             if (slot.isHuman) {
-                const allEnemyBullets = [...(this.bossBullets || []), ...(this.minionBullets || [])];
-                const skillParams = {
-                    boss: this.boss,
-                    enemyMinions: this.enemyMinions,
-                    bossBullets: this.bossBullets,
-                    minionBullets: this.minionBullets,
-                    enemyBullets: allEnemyBullets,
-                    allyMinions: this.allyMinions,
-                    allyPlayers: this.slots
-                };
-
-                // 💡 우클릭 입력 상태를 keys 객체에 직접 동기화
-                if (this.input && this.input.getInputAction) {
-                    const action = this.input.getInputAction();
-                    if (action.useSkill) {
-                        this.input.keys['RightClick'] = true;
-                    }
+                // updateInputs(dt)에서 패킷 소비 및 위치 보간이 처리되므로
+                // 프레임 틱 단위 개별 업데이트만 수행 (불필요한 중복 return 지움)
+                if (typeof slot.update === 'function') {
+                    slot.update(dt);
                 }
-
-                // 💡 3번째 인자로 skillParams를 직접 다이렉트 전달!
-                slot.handleHumanInput(this.input.keys, this.input.joystick, skillParams);
             } else {
                 // 아군 전체 슬롯(this.slots)을 마지막 인자로 전달하여 쉴드 탐색 가능하게 수정
                 AIEngine.update(
@@ -553,23 +550,24 @@ export class GameLoop {
             }
 
             // 자동 사격 처리 (적 미니언 정보 포함 전달)
-            slot.updateAttack(() => {
+            slot.updateAttack(dt, () => {
                 slot.shoot(this.playerBullets, {
                     mousePos: this.input.mousePos,
                     boss: this.boss,
                     enemyMinions: this.enemyMinions
                 });
+                if (slot.isLocalOwner) window.gameAudio?.play('shoot');
             });
         });
 
         // 1. 미니언 기동 및 사격 업데이트
         this.enemyMinions.forEach(m => {
             m.updateMovement(this.slots, dt);
-            m.updateAttack(this.slots, this.minionBullets);
+            m.updateAttack(this.slots, this.minionBullets, dt);
         });
         this.allyMinions.forEach(m => {
             m.updateMovement([this.boss], dt);
-            m.updateAttack([this.boss], this.minionBullets);
+            m.updateAttack([this.boss], this.minionBullets, dt);
         });
 
         // 2. isAlly 속성 기반 통합 탄환 충돌 파이프라인
@@ -671,14 +669,14 @@ export class GameLoop {
         // 3. 플로팅 텍스트 업데이트
         for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
             const ft = this.floatingTexts[i];
-            ft.y += ft.vy;
+            ft.y += ft.vy * dt * 60;
             ft.life -= dt * 1.5;
             if (ft.life <= 0) this.floatingTexts.splice(i, 1);
         }
 
         // 4. 파티클 업데이트
         for (let i = this.particles.length - 1; i >= 0; i--) {
-            this.particles[i].update();
+            this.particles[i].update(dt);
             if (this.particles[i].life <= 0) this.particles.splice(i, 1);
         }
 
@@ -787,7 +785,12 @@ export class GameLoop {
         const dt = Math.min(0.1, (now - this.lastTimestamp) / 1000);
         this.lastTimestamp = now;
 
-        this.update(dt);
+        this.simulationAccumulator += dt;
+        const fixedDt = 1 / 60;
+        while (this.simulationAccumulator + 1e-9 >= fixedDt) {
+            this.update(fixedDt);
+            this.simulationAccumulator -= fixedDt;
+        }
         this.render();
 
         requestAnimationFrame((time) => this.run(time));

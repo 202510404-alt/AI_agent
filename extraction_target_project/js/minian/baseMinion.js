@@ -181,11 +181,12 @@ export class BaseMinion {
      * @param {Array} targets 
      * @param {Array} minionBulletsContainer 전역 미니언 탄환 배열
      */
-    updateAttack(targets = [], minionBulletsContainer = []) {
+    updateAttack(targets = [], minionBulletsContainer = [], dt = 1 / 60) {
         if (this.isDead) return;
 
-        this.attackCooldown++;
-        if (this.attackCooldown >= this.attackInterval) {
+        this.attackCooldown += dt;
+        const interval = this.attackInterval / 60;
+        if (this.attackCooldown + 1e-9 >= interval) {
             const closest = this.getClosestTarget(targets);
             if (closest) {
                 // 타깃을 향한 기본 라디안 각도
@@ -205,7 +206,7 @@ export class BaseMinion {
                 );
                 minionBulletsContainer.push(bullet);
             }
-            this.attackCooldown = 0;
+            this.attackCooldown = Math.max(0, this.attackCooldown - interval);
         }
     }
 

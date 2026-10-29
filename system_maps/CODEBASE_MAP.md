@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **43개**
+현재 인덱싱된 총 파일 수: **44개**
 
 ## 🗂️ [Module Index]
 - `extraction_target_project/AGENTS.md`
@@ -10,6 +10,7 @@
 - `extraction_target_project/js/ai/dodgeAlgorithm.js`
 - `extraction_target_project/js/config/constants.js`
 - `extraction_target_project/js/core/InputManager.js`
+- `extraction_target_project/js/core/audioManager.js`
 - `extraction_target_project/js/core/gameLoop.js`
 - `extraction_target_project/js/core/input.js`
 - `extraction_target_project/js/core/sceneManager.js`
@@ -67,7 +68,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../config/constants.js, ../utils/math.js, ../utils/seededRNG.js, ./dodgeAlgorithm.js
-🧬 class AIEngine [L10~L248]
+🧬 class AIEngine [L10~L255]
 ```
 
 --------------------------------------------------
@@ -76,7 +77,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../config/constants.js, ../utils/math.js, ../utils/seededRNG.js
-🧬 class DodgeAlgorithm [L9~L299]
+🧬 class DodgeAlgorithm [L9~L306]
 ```
 
 --------------------------------------------------
@@ -95,6 +96,14 @@
 
 --------------------------------------------------
 
+### 📄 extraction_target_project/js/core/audioManager.js
+#### 🧱 Code Skeleton:
+```python
+🧬 class AudioManager [L2~L82]
+```
+
+--------------------------------------------------
+
 ### 📄 extraction_target_project/js/core/gameLoop.js
 #### 🧱 Code Skeleton:
 ```python
@@ -108,8 +117,9 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../utils/seededRNG.js
-🧬 class InputHandler [L12~L268]
-🎯 def endTouch() [L159~L164]
+🧬 class InputHandler [L12~L298]
+🎯 def updateJoystick(clientX, clientY) [L144~L162]
+🎯 def endJoystick(e) [L179~L186]
 ```
 
 --------------------------------------------------
@@ -128,9 +138,9 @@
 💡 📦 imp: ../player/characters/index.js
 🧬 class UIManager [L8~L17]
 🎯 def updateSlotLockStatus() [L69~L87]
-🎯 def triggerSkill() [L248~L278]
-🧬 class truncate [L477~L489]
-🧬 class truncate [L515~L524]
+🎯 def triggerSkill() [L248~L281]
+🧬 class truncate [L480~L492]
+🧬 class truncate [L518~L527]
 ```
 
 --------------------------------------------------
@@ -190,8 +200,8 @@
 ### 📄 extraction_target_project/js/main.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ./core/InputManager.js, ./core/gameLoop.js, ./core/sceneManager.js, ./core/ui.js, ./network/networkManager.js, ./player/particle.js
-🎯 def resizeCanvas() [L28~L38]
+💡 📦 imp: ./core/InputManager.js, ./core/audioManager.js, ./core/gameLoop.js, ./core/sceneManager.js, ./core/ui.js, ./network/networkManager.js, ./player/particle.js
+🎯 def resizeCanvas() [L43~L53]
 ```
 
 --------------------------------------------------
@@ -261,7 +271,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../utils/seededRNG.js
-🧬 class NetworkManager [L14~L407]
+🧬 class NetworkManager [L14~L423]
 ```
 
 --------------------------------------------------
@@ -324,7 +334,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../basePlayer.js
-🧬 class ShielderPlayer [L11~L238]
+🧬 class ShielderPlayer [L11~L255]
 ```
 
 --------------------------------------------------
@@ -386,7 +396,7 @@
 ```python
 🎯 def hashSeed(seed) [L14~L28]
 🧬 class Mulberry32PRNG [L34~L78]
-🧬 class SeededRNGManager [L83~L138]
+🧬 class SeededRNGManager [L83~L142]
 ```
 
 --------------------------------------------------
@@ -397,7 +407,7 @@
 - **[JSON_KEY]** `lockfileVersion` (Line: 3~3)
 - **[JSON_KEY]** `requires` (Line: 4~4)
 - **[JSON_KEY]** `packages` (Line: 5~5)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/ipaddr.js, ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `ipaddr.js, node_modules/ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python

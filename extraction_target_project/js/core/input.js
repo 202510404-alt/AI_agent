@@ -15,6 +15,7 @@ export class InputHandler {
         this.mousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
         this.joystick = {
             active: false,
+            pointerId: null,
             startX: 0,
             startY: 0,
             moveX: 0,
@@ -39,6 +40,12 @@ export class InputHandler {
      */
     getNetworkManager() {
         return this.networkManager || window.networkManager || null;
+    }
+
+    logLocalInput(action, posX, posY) {
+        const net = this.getNetworkManager();
+        const slot = net && net.mySlotIndex ? net.mySlotIndex : 1;
+        console.log(`[LOCAL_INPUT] Slot P${slot} | Key: ${action} | Pos: (${posX ?? 'n/a'}, ${posY ?? 'n/a'})`);
     }
 
     /**
@@ -68,7 +75,8 @@ export class InputHandler {
                 }
                 // 💡 [Lazy Evaluation]: this.networkManager || window.networkManager 실시간 탐색
                 const net = this.getNetworkManager();
-                console.log(`[LOCAL KEY LOG] Key Down: ${e.code}`);
+                const player = window.gameLoopInstance?.slots?.[(this.getNetworkManager()?.mySlotIndex || 1) - 1];
+                this.logLocalInput(e.code, player?.x, player?.y);
                 if (net && typeof net.sendDebugInput === 'function') {
                     net.sendDebugInput('KEYBOARD', `Key Down: ${e.code}`);
                 }
@@ -97,7 +105,8 @@ export class InputHandler {
             if (e.button === 2) {
                 this.skillTriggered = true;
                 this.lastSkillTriggerTime = Date.now();
-                console.log('[LOCAL MOUSE LOG] Right Click (Skill Trigger)');
+                const player = window.gameLoopInstance?.slots?.[(this.getNetworkManager()?.mySlotIndex || 1) - 1];
+                this.logLocalInput('RightClick', player?.x, player?.y);
                 if (net && typeof net.sendDebugInput === 'function') {
                     net.sendDebugInput('MOUSE', 'Right Click (Skill Trigger)');
                 }
@@ -107,7 +116,8 @@ export class InputHandler {
                 const isButton = target && (target.tagName === 'BUTTON' || target.closest('button'));
                 const clickType = isButton ? `UI Button Click [${target.id || target.innerText || 'BTN'}]` : `Canvas Field Click (X:${e.clientX}, Y:${e.clientY})`;
 
-                console.log(`[LOCAL MOUSE LOG] ${clickType}`);
+                const player = window.gameLoopInstance?.slots?.[(this.getNetworkManager()?.mySlotIndex || 1) - 1];
+                this.logLocalInput(clickType, player?.x, player?.y);
                 if (net && typeof net.sendDebugInput === 'function') {
                     net.sendDebugInput('MOUSE_LEFT', clickType);
                 }
@@ -128,20 +138,15 @@ export class InputHandler {
 
         if (!joystickZone || !joystickKnob) return;
 
-        joystickZone.addEventListener('touchstart', (e) => {
-            this.joystick.active = true;
-            const touch = e.touches[0];
+        joystickZone.style.touchAction = 'none';
+        joystickKnob.style.pointerEvents = 'none';
+
+        const updateJoystick = (clientX, clientY) => {
             const rect = joystickZone.getBoundingClientRect();
             this.joystick.startX = rect.left + rect.width / 2;
             this.joystick.startY = rect.top + rect.height / 2;
-            e.preventDefault();
-        }, { passive: false });
-
-        window.addEventListener('touchmove', (e) => {
-            if (!this.joystick.active) return;
-            const touch = e.touches[0];
-            const dx = touch.clientX - this.joystick.startX;
-            const dy = touch.clientY - this.joystick.startY;
+            const dx = clientX - this.joystick.startX;
+            const dy = clientY - this.joystick.startY;
             const dist = Math.hypot(dx, dy);
             const maxDist = 35;
 
@@ -154,17 +159,35 @@ export class InputHandler {
             const knobX = Math.cos(angle) * intensity;
             const knobY = Math.sin(angle) * intensity;
             joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
-        }, { passive: true });
+        };
 
-        const endTouch = () => {
+        joystickZone.addEventListener('pointerdown', (e) => {
+            if (this.joystick.active || (e.pointerType === 'mouse' && e.button !== 0)) return;
+            this.joystick.active = true;
+            this.joystick.pointerId = e.pointerId;
+            joystickZone.setPointerCapture(e.pointerId);
+            updateJoystick(e.clientX, e.clientY);
+            e.preventDefault();
+        });
+
+        joystickZone.addEventListener('pointermove', (e) => {
+            if (!this.joystick.active || e.pointerId !== this.joystick.pointerId) return;
+            updateJoystick(e.clientX, e.clientY);
+            e.preventDefault();
+        });
+
+        const endJoystick = (e) => {
+            if (e.pointerId !== this.joystick.pointerId) return;
             this.joystick.active = false;
+            this.joystick.pointerId = null;
             this.joystick.moveX = 0;
             this.joystick.moveY = 0;
             joystickKnob.style.transform = `translate(0px, 0px)`;
         };
 
-        window.addEventListener('touchend', endTouch);
-        window.addEventListener('touchcancel', endTouch);
+        joystickZone.addEventListener('pointerup', endJoystick);
+        joystickZone.addEventListener('pointercancel', endJoystick);
+        joystickZone.addEventListener('lostpointercapture', endJoystick);
     }
 
     /**
@@ -204,7 +227,7 @@ export class InputHandler {
             }
         }
 
-        return {
+        const inputAction = {
             moveX,
             moveY,
             dx: moveX,
@@ -214,6 +237,7 @@ export class InputHandler {
             useSkill,
             timeStamp: Date.now()
         };
+        return inputAction;
     }
 
     /**
@@ -240,8 +264,12 @@ export class InputHandler {
         }
 
         if (this.joystick && this.joystick.active) {
-            moveX = this.joystick.moveX;
-            moveY = this.joystick.moveY;
+            // 조이스틱 미세 오차 보정 및 안전 정규화
+            const jLen = Math.hypot(this.joystick.moveX, this.joystick.moveY);
+            if (jLen > 0.05) {
+                moveX = this.joystick.moveX / (jLen > 1 ? jLen : 1);
+                moveY = this.joystick.moveY / (jLen > 1 ? jLen : 1);
+            }
         }
 
         const useSkill = this.skillTriggered;
@@ -251,7 +279,7 @@ export class InputHandler {
         const myPlayer = (context && context.player) || 
             (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);
 
-        return {
+        const inputAction = {
             moveX,
             moveY,
             dx: moveX,
@@ -264,6 +292,8 @@ export class InputHandler {
             posY: myPlayer ? myPlayer.y : undefined,
             speed: myPlayer ? myPlayer.speed : undefined
         };
+
+        return inputAction;
     }
 }
 

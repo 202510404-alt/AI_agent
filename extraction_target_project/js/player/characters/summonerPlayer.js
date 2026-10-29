@@ -21,6 +21,7 @@ export class SummonerPlayer extends BasePlayer {
         this.skillFloatText = 'BERSERKERS & DRONE SUMMONED!';
 
         this.maxGauge = 120;
+        this.summonCastCount = 0;
     }
 
     /**
@@ -44,11 +45,12 @@ export class SummonerPlayer extends BasePlayer {
             context.allyMinions.push(b2);
 
             // 소유자(Owner)인 경우 OBJECT_STATE_SYNC 브로드캐스트
+            const castId = ++this.summonCastCount;
             if (this.isLocalOwner && window.networkManager) {
                 const minionStates = [
-                    { id: `drone_${this.slotIndex}_${Date.now()}`, type: 'drone', hp: drone.hp, maxHp: drone.maxHp, x: drone.x, y: drone.y },
-                    { id: `b1_${this.slotIndex}_${Date.now()}`, type: 'berserker', hp: b1.hp, maxHp: b1.maxHp, x: b1.x, y: b1.y },
-                    { id: `b2_${this.slotIndex}_${Date.now()}`, type: 'berserker', hp: b2.hp, maxHp: b2.maxHp, x: b2.x, y: b2.y }
+                    { id: `drone_${this.slotIndex}_${castId}`, type: 'drone', hp: drone.hp, maxHp: drone.maxHp, x: drone.x, y: drone.y },
+                    { id: `b1_${this.slotIndex}_${castId}`, type: 'berserker', hp: b1.hp, maxHp: b1.maxHp, x: b1.x, y: b1.y },
+                    { id: `b2_${this.slotIndex}_${castId}`, type: 'berserker', hp: b2.hp, maxHp: b2.maxHp, x: b2.x, y: b2.y }
                 ];
                 window.networkManager.sendObjectStateSync(this.slotIndex + 1, minionStates);
             }
@@ -63,7 +65,7 @@ export class SummonerPlayer extends BasePlayer {
         if (!this.isStunned()) {
             ctx.save();
             ctx.translate(this.x, this.y);
-            ctx.rotate(Date.now() * 0.002);
+            ctx.rotate((window.gameLoopInstance?.gameTime ?? 0) * 2);
             ctx.strokeStyle = this.themeColor;
             ctx.lineWidth = 1.5;
 

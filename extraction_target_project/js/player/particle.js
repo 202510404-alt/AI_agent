@@ -25,10 +25,10 @@ export class Particle {
     /**
      * 파티클 상태 업데이트
      */
-    update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.life -= this.decay;
+    update(dt = 1 / 60) {
+        this.x += this.vx * dt * 60;
+        this.y += this.vy * dt * 60;
+        this.life -= this.decay * dt * 60;
     }
 
     /**

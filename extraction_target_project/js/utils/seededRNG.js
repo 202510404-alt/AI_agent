@@ -105,6 +105,10 @@ class SeededRNGManager {
             'playerAiSpread_P2',
             'playerAiSpread_P3',
             'playerAiSpread_P4',
+            'playerAiAngle_P1',
+            'playerAiAngle_P2',
+            'playerAiAngle_P3',
+            'playerAiAngle_P4',
             'minionMove',
             'minionAttack',
             'minionPattern',
@@ -149,6 +153,12 @@ export const rngBoss = {
 };
 
 export const rngPlayerAi = {
+    angleOffset: (slotIndex, minDeg, maxDeg) => {
+        const slotKey = `playerAiAngle_P${Math.max(1, Math.min(4, (slotIndex || 0) + 1))}`;
+        const rng = seededRNG.get(slotKey);
+        const magnitude = minDeg + rng.next() * (maxDeg - minDeg);
+        return magnitude * (rng.next() < 0.5 ? -1 : 1);
+    },
     getSpread: (slotIndex) => {
         const slotKey = `playerAiSpread_P${Math.max(1, Math.min(4, (slotIndex || 0) + 1))}`;
         return seededRNG.get(slotKey).next();

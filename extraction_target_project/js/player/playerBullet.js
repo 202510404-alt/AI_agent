@@ -40,9 +40,9 @@ export class PlayerBullet {
     /**
      * 탄환 위치 업데이트
      */
-    update() {
-        this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed;
+    update(_players = [], dt = 1 / 60) {
+        this.x += Math.cos(this.angle) * this.speed * dt * 60;
+        this.y += Math.sin(this.angle) * this.speed * dt * 60;
     }
 
     /**

@@ -8,8 +8,23 @@ import { UIManager } from './core/ui.js';
 import { GameLoop } from './core/gameLoop.js';
 import { createImpactParticles } from './player/particle.js';
 import { NetworkManager } from './network/networkManager.js';
+import { AudioManager } from './core/audioManager.js';
 
 window.addEventListener('DOMContentLoaded', () => {
+    const audio = new AudioManager();
+    window.gameAudio = audio;
+    window.addEventListener('pointerdown', () => audio.unlock(), { passive: true });
+    window.addEventListener('keydown', () => audio.unlock());
+    const audioButton = document.createElement('button');
+    audioButton.type = 'button';
+    audioButton.textContent = audio.enabled ? '🔊 Sound' : '🔇 Sound';
+    audioButton.setAttribute('aria-label', 'Toggle game sound');
+    audioButton.style.cssText = 'position:fixed;right:12px;top:12px;z-index:10000;padding:8px 12px;border:1px solid #67e8f9;border-radius:8px;background:#081322;color:white;cursor:pointer';
+    audioButton.addEventListener('click', () => {
+        audio.setEnabled(!audio.enabled);
+        audioButton.textContent = audio.enabled ? '🔊 Sound' : '🔇 Sound';
+    });
+    document.body.appendChild(audioButton);
     const canvas = document.getElementById('gameCanvas');
     if (!canvas) {
         console.error('캔버스 엘리먼트(#gameCanvas)를 찾을 수 없습니다.');
@@ -41,7 +56,7 @@ window.addEventListener('DOMContentLoaded', () => {
     resizeCanvas();
 
     // 1. 상태 머신 관리자 초기화
-    const sceneManager = new SceneManager();
+    const sceneManager = new SceneManager({ onStateChange: (state) => audio.setPlaying(state === 'PLAY') });
 
     // 2. 사용자 입력 처리기 초기화
     const inputHandler = new InputManager();
@@ -49,6 +64,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // 3. UI 매니저 초기화 및 콜백 바인딩
     // 3. UI 매니저 초기화 및 콜백 바인딩
     let gameLoopInstance = null;
+    let awaitingGameRoomState = false;
     const uiManager = new UIManager({
         onSlotToggle: (slot) => {
             if (gameLoopInstance) {
@@ -112,8 +128,7 @@ window.addEventListener('DOMContentLoaded', () => {
         
         const currentPhase = packet.phase || window.networkManager.currentPhase || 'LOBBY';
         if (currentPhase === 'GAME') {
-            if (gameLoopInstance) gameLoopInstance.initSlots();
-            sceneManager.setState('PLAY');
+            awaitingGameRoomState = true;
         } else if (currentPhase === 'LOBBY') {
             sceneManager.setState('LOBBY');
         } else if (currentPhase === 'MENU') {
@@ -126,6 +141,11 @@ window.addEventListener('DOMContentLoaded', () => {
     window.networkManager.on('ROOM_STATE', (packet) => {
         if (packet.slotDetails) {
             uiManager.updateLobbySlots(packet.slotDetails, window.networkManager.mySlotIndex);
+        }
+        if (awaitingGameRoomState && packet.phase === 'GAME') {
+            awaitingGameRoomState = false;
+            if (gameLoopInstance) gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails);
+            sceneManager.setState('PLAY');
         }
     });
 

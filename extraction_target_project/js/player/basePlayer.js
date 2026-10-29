@@ -8,7 +8,7 @@
  * 3. DeltaTime Base: 주사율 차이(60Hz, 144Hz 등)와 무관한 일관된 이동 연산.
  * 4. Hard Snap Threshold: 핑 튐으로 예측 위치와 실제 수신 위치 차이가 150px 초과 시 즉시 강제 텔레포트.
  */
-import { SLOT_COLORS } from '../config/constants.js';
+import { SLOT_COLORS, AI_CONFIG } from '../config/constants.js';
 import { PlayerBullet } from './playerBullet.js';
 import { rngPlayerAi } from '../utils/seededRNG.js';
 
@@ -24,8 +24,8 @@ export default class BasePlayer {
         this.isHuman = (slotIndex === 0);
         this.classType = classType;
 
-        // 💡 [멀티플레이 권한 시스템]: 내가 직접 키보드/마우스로 조종하는 기체인지 여부 (IsLocalOwner)
-        this.isLocalOwner = false;
+        // 💡 [멀티플레이 권한 시스템]: 0번 슬롯(P1) 또는 단일 플레이 시 기본적으로 isLocalOwner = true 보장
+        this.isLocalOwner = (slotIndex === 0);
 
         // 💡 [Dead Reckoning & 원격 상태 수신 변수]
         this.remoteInputPacket = null;
@@ -176,6 +176,7 @@ export default class BasePlayer {
     useSkill(params = {}) {
         if (!this.isSkillReady()) return false;
         this.gauge = 0;
+        if (this.isLocalOwner) window.gameAudio?.play('skill');
         return true;
     }
 
@@ -209,6 +210,7 @@ export default class BasePlayer {
 
         this.hp = Math.max(0, this.hp - amount);
         this.invulnerableTimer = 1.0;
+        if (this.isLocalOwner) window.gameAudio?.play('hit');
 
         if (this.hp <= 0) {
             this.stunTimer = 3.0;
@@ -249,12 +251,12 @@ export default class BasePlayer {
         const len = Math.hypot(dx, dy);
         if (len > 0) {
             const factor = len > 1 ? len : 1;
-            // deltaTime 연산을 위해 속도 벡터로 저장
             const normX = dx / factor;
             const normY = dy / factor;
             this.targetX = this.x + normX * this.moveSpeed * 0.1;
             this.targetY = this.y + normY * this.moveSpeed * 0.1;
         } else {
+            // 키를 뗐을 때 현재 위치를 목표 지점으로 고정하여 얼어붙음 방지
             this.targetX = this.x;
             this.targetY = this.y;
         }
@@ -276,39 +278,37 @@ export default class BasePlayer {
         const moveY = inputAction.moveY !== undefined ? inputAction.moveY : inputAction.dy || 0;
         const len = Math.hypot(moveX, moveY);
 
-        // 1. 송신지 실제 좌표가 포함되어 있는 경우 Dead Reckoning 목적지 설정
-        if (typeof inputAction.posX === 'number' && typeof inputAction.posY === 'number') {
-            const pingSec = Math.max(0.01, (inputAction.estimatedPing || 50) / 1000);
-            
-            // 상대방의 현재 속도 추정
-            const speed = this.moveSpeed;
-            const vx = len > 0 ? (moveX / len) * speed : 0;
-            const vy = len > 0 ? (moveY / len) * speed : 0;
-
-            this.netVelocityX = vx;
-            this.netVelocityY = vy;
-
-            // Ping 지연 시간만큼 미래의 예측 위치 계산 (Dead Reckoning)
-            this.netTargetX = inputAction.posX + vx * pingSec;
-            this.netTargetY = inputAction.posY + vy * pingSec;
-
-            // 💡 [Hard Snap / Teleport Threshold]: 150px 이상 오차 시 강제 스냅
+        // 로컬 기체는 현재 위치가 담긴 전송 패킷보다 직접 입력한 방향을 우선한다.
+        if (this.isLocalOwner) {
+            if (len > 0) {
+                const factor = len > 1 ? len : 1;
+                this.targetX = this.x + (moveX / factor) * this.moveSpeed * 0.1;
+                this.targetY = this.y + (moveY / factor) * this.moveSpeed * 0.1;
+            } else {
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
+        } else if (typeof inputAction.posX === 'number' && typeof inputAction.posY === 'number') {
             const distFromCurrent = Math.hypot(this.x - inputAction.posX, this.y - inputAction.posY);
-            if (distFromCurrent > this.HARD_SNAP_THRESHOLD) {
+
+            if (distFromCurrent > 120) {
+                // 오차가 심할 때만 강제위치 고정
                 this.x = inputAction.posX;
                 this.y = inputAction.posY;
                 this.targetX = inputAction.posX;
                 this.targetY = inputAction.posY;
             } else {
-                this.targetX = this.netTargetX;
-                this.targetY = this.netTargetY;
+                // 예측식(Dead Reckoning) 전면 제거 -> 실시간 보간용 목표 좌표로 직결
+                this.targetX = inputAction.posX;
+                this.targetY = inputAction.posY;
             }
         } else {
-            // 위치 좌표가 없을 경우 기존 방향 벡터 누적
+            // 위치 좌표 누락 시 수신받은 방향 벡터 기반 연속 관성 이동
             if (len > 0) {
-                const factor = len > 1 ? len : 1;
-                this.targetX = this.x + (moveX / factor) * this.moveSpeed * 0.1;
-                this.targetY = this.y + (moveY / factor) * this.moveSpeed * 0.1;
+                const normX = moveX / (len > 1 ? len : 1);
+                const normY = moveY / (len > 1 ? len : 1);
+                this.targetX = this.x + normX * this.moveSpeed * 0.05;
+                this.targetY = this.y + normY * this.moveSpeed * 0.05;
             } else {
                 this.targetX = this.x;
                 this.targetY = this.y;
@@ -348,27 +348,28 @@ export default class BasePlayer {
         const dy = this.targetY - this.y;
         const dist = Math.hypot(dx, dy);
 
-        if (dist > this.HARD_SNAP_THRESHOLD) {
-            // 임계치 초과 시 즉시 Hard Snap
-            this.x = this.targetX;
-            this.y = this.targetY;
-        } else if (dist > 1) {
-            // 원격 기체(RemoteProxy)는 거리에 따라 미세 가속/감속 보정 (도착 시간 맞춤)
-            let currentSpeed = this.moveSpeed;
-            if (!this.isLocalOwner && this.isHuman) {
-                // 오차가 크면 약간 가속(최대 1.5배), 거의 도착하면 감속
-                const speedMultiplier = Math.min(1.8, Math.max(0.6, dist / 30));
-                currentSpeed *= speedMultiplier;
+        // 💡 [이동 연산 및 권한 판정 완치]
+        if (this.isLocalOwner) {
+            // [로컬 기체]: 내 키보드/조이스틱 입력으로 부드럽고 정확하게 실시간 이동
+            if (dist > 1) {
+                const step = Math.min(dist, this.moveSpeed * dt);
+                this.x += (dx / dist) * step;
+                this.y += (dy / dist) * step;
+            } else {
+                this.x = this.targetX;
+                this.y = this.targetY;
             }
-
-            const step = Math.min(dist, currentSpeed * dt);
-            this.x += (dx / dist) * step;
-            this.y += (dy / dist) * step;
         } else {
-            this.x = this.targetX;
-            this.y = this.targetY;
+            // [원격 기체]: 네트워크 수신 좌표 부드러운 Lerp 추적 (상대방 위치 튀김 방지)
+            if (dist > 150) {
+                this.x = this.targetX;
+                this.y = this.targetY;
+            } else if (dist > 0.5) {
+                const blend = 1 - Math.pow(0.75, dt * 60);
+                this.x += dx * blend;
+                this.y += dy * blend;
+            }
         }
-
         // 맵 경계 제한
         this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x));
         this.y = Math.max(120, Math.min(canvasHeight - this.radius, this.y));
@@ -402,20 +403,38 @@ export default class BasePlayer {
             }
 
             if (closestEnemy) {
-                targetAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
+                const baseAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
+
+                // 💡 [constants.js 의 AI_CONFIG 변수 실시간 동기화]
+                const minDeg = AI_CONFIG?.ANGLE_OFFSET_MIN_DEG ?? 1;
+                const maxDeg = AI_CONFIG?.ANGLE_OFFSET_MAX_DEG ?? 1;
+
+                // 1. constants.js 의 설정 범위 기반 기본 오차각 산출
+                const baseDegError = rngPlayerAi.angleOffset(this.slotIndex, minDeg, maxDeg);
+
+                // 2. 회피 누적 피로도(dodgeFatigue: 0.0 ~ 1.0)에 비례하여 오차각 증폭
+                const fatigue = this.dodgeFatigue || 0;
+                const fatigueMultiplier = 1.0 + (fatigue * 1.5);
+
+                const finalDegError = baseDegError * fatigueMultiplier;
+                const radError = (finalDegError * Math.PI) / 180;
+
+                targetAngle = baseAngle + radError;
             }
         }
 
         bulletContainer.push(new PlayerBullet(this.x, this.y, targetAngle, this.color, this));
     }
 
-    updateAttack(onShoot) {
+    updateAttack(dt, onShoot) {
         if (this.isStunned()) return;
 
         const currentAttackSpeed = this.attackSpeed * (1 + this.getModifierValue('attackSpeed') / 100);
-        this.attackCooldown += currentAttackSpeed;
-        if (this.attackCooldown >= 60) {
-            this.attackCooldown = 0;
+        if (currentAttackSpeed <= 0) return;
+        const interval = Math.max(1, Math.ceil(60 / currentAttackSpeed)) / 60;
+        this.attackCooldown += dt;
+        if (this.attackCooldown + 1e-9 >= interval) {
+            this.attackCooldown = Math.max(0, this.attackCooldown - interval);
             if (typeof onShoot === 'function') {
                 onShoot();
             }
@@ -426,7 +445,7 @@ export default class BasePlayer {
         ctx.save();
 
         if (this.isStunned()) {
-            ctx.globalAlpha = 0.4 + 0.3 * Math.sin(Date.now() * 0.01);
+            ctx.globalAlpha = 0.4 + 0.3 * Math.sin((window.gameLoopInstance?.gameTime ?? 0) * 10);
         }
 
         // Graze 연출

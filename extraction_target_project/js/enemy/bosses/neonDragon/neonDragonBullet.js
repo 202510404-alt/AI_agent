@@ -93,12 +93,12 @@ export class BossBullet {
                 let diff = targetAngle - this.angle;
                 while (diff < -Math.PI) diff += Math.PI * 2;
                 while (diff > Math.PI) diff -= Math.PI * 2;
-                this.angle += Math.sign(diff) * Math.min(Math.abs(diff), 0.05);
+                this.angle += Math.sign(diff) * Math.min(Math.abs(diff), 3 * dt);
             }
         }
 
-        this.x += Math.cos(this.angle) * this.speed;
-        this.y += Math.sin(this.angle) * this.speed;
+        this.x += Math.cos(this.angle) * this.speed * dt * 60;
+        this.y += Math.sin(this.angle) * this.speed * dt * 60;
     }
 
     /**
@@ -135,7 +135,7 @@ export class BossBullet {
         // [경고 상태]: 0.5초간 반투명 점선 원 깜빡임 (대미지 없음, AI는 미리 회피)
         if (this.isWarning) {
             ctx.save();
-            const flashAlpha = Math.floor(Date.now() / 80) % 2 === 0 ? 0.45 : 0.15;
+            const flashAlpha = Math.floor((window.gameLoopInstance?.gameTime ?? 0) / 0.08) % 2 === 0 ? 0.45 : 0.15;
 
             // 1. 깜빡이는 반투명 경고 원
             ctx.beginPath();

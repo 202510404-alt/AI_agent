@@ -64,6 +64,10 @@ export class AIEngine {
         const hasThreat = dangerBullets.length > 0 || insideHazard;
 
         if (hasThreat) {
+            if (player.fsmState !== 'DODGE') {
+                const angleError = rngPlayerAi.angleOffset(player.slotIndex, AI_CONFIG.ANGLE_OFFSET_MIN_DEG, AI_CONFIG.ANGLE_OFFSET_MAX_DEG);
+                player.dodgeAngleOffset = angleError * Math.PI / 180;
+            }
             // 위협 감지 시 0프레임 단일 회피 모드(DODGE) 강제 구동
             player.actionLockTimer = 0;
             player.fsmState = 'DODGE';
@@ -85,7 +89,7 @@ export class AIEngine {
                 }
             } else {
                 // 단 하나의 통합 회피 알고리즘 실행
-                const normalDodge = DodgeAlgorithm.calculateNormalDodge(player, dangerBullets, allDangerAreas);
+                const normalDodge = DodgeAlgorithm.calculateNormalDodge(player, dangerBullets, allDangerAreas, player.dodgeAngleOffset);
                 player.targetX = normalDodge.targetX;
                 player.targetY = normalDodge.targetY;
             }
@@ -106,6 +110,8 @@ export class AIEngine {
                     const wallRng = rngPlayerAi.getSpread(player.slotIndex);
                     player.repositionStrategy = stratRng < 0.5 ? 'APPROACH' : 'RETREAT';
                     player.wallAvoidSide = wallRng < 0.5 ? 1 : -1;
+                    const angleError = rngPlayerAi.angleOffset(player.slotIndex, AI_CONFIG.ANGLE_OFFSET_MIN_DEG, AI_CONFIG.ANGLE_OFFSET_MAX_DEG);
+                    player.repositionAngleOffset = angleError * Math.PI / 180;
                 }
 
                 const primaryEnemy = (enemyEntities && enemyEntities.length > 0) ? enemyEntities[0] : null;
@@ -118,9 +124,9 @@ export class AIEngine {
 
                     const wallMargin = 16;
                     const mapMinX = wallMargin;
-                    const mapMaxX = 800 - wallMargin;
+                    const mapMaxX = 1280 - wallMargin;
                     const mapMinY = 120;
-                    const mapMaxY = 600 - wallMargin;
+                    const mapMaxY = 720 - wallMargin;
 
                     let moveAngle = null;
 
@@ -158,6 +164,7 @@ export class AIEngine {
                     }
 
                     if (moveAngle !== null) {
+                        moveAngle += player.repositionAngleOffset || 0;
                         const stepDist = 15; // 단거리 보폭
                         let nextTargetX = player.x + Math.cos(moveAngle) * stepDist;
                         let nextTargetY = player.y + Math.sin(moveAngle) * stepDist;

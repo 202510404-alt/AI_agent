@@ -106,7 +106,7 @@ export class EmpPlayer extends BasePlayer {
         if (!this.isStunned()) {
             ctx.save();
             ctx.translate(this.x, this.y);
-            ctx.rotate(Date.now() * 0.003);
+            ctx.rotate((window.gameLoopInstance?.gameTime ?? 0) * 3);
 
             ctx.strokeStyle = this.themeColor;
             ctx.lineWidth = 1.5;

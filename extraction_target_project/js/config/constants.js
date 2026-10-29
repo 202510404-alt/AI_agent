@@ -31,8 +31,8 @@ export const AI_CONFIG = {
     FATIGUE_MISTAKE_MAX: 0.02,       // 최대 피로 시 실수 확률 
     FATIGUE_INCREASE_ON_DODGE: 0.008, // 회피 기동 1회당 증가하는 피로도
     FATIGUE_RECOVERY_RATE: 0.6,       // 평상시 초당 피로도 회복량
-    ANGLE_OFFSET_MIN_DEG: 20,        // 오차각 기본 최소치 (도)
-    ANGLE_OFFSET_MAX_DEG: 30         // 오차각 기본 최대치 (도)
+    ANGLE_OFFSET_MIN_DEG: 1,         // 오차각 기본 최소치 (도)
+    ANGLE_OFFSET_MAX_DEG: 1        // 오차각 기본 최대치 (도)
 };
 
 // 원격 랭킹 서버 기본 엔드포인트 URL

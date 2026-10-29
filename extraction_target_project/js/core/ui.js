@@ -249,6 +249,9 @@ export class UIManager {
             const userPlayer = typeof getUserPlayerFn === 'function' ? getUserPlayerFn() : null;
             if (!userPlayer || typeof userPlayer.useSkill !== 'function') return;
 
+            const slot = window.networkManager?.mySlotIndex || 1;
+            console.log(`[LOCAL_INPUT] Slot P${slot} | Move: (0, 0) | Skill: true | Pos: (${userPlayer.x}, ${userPlayer.y})`);
+
             const allEnemyBullets = [
                 ...(gameLoopInstance.bossBullets || []),
                 ...(gameLoopInstance.minionBullets || [])

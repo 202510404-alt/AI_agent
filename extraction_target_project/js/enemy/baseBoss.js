@@ -17,6 +17,7 @@ export default class BaseBoss {
         this.hp = maxHp;
         this.angle = 0;
         this.patternTimer = 0;
+        this.patternTick = 0;
         this.color = '#f43f5e';
     }
 

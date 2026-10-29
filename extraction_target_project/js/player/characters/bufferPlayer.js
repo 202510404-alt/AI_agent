@@ -119,7 +119,7 @@ export class BufferPlayer extends BasePlayer {
                     ctx.translate(p.x, p.y);
                     
                     // 은은하게 회전하며 맥동하는 반투명 주황색 버프 테두리 링
-                    const pulse = Math.sin(Date.now() * 0.008) * 2;
+                    const pulse = Math.sin((window.gameLoopInstance?.gameTime ?? 0) * 8) * 2;
                     ctx.beginPath();
                     ctx.arc(0, 0, p.radius + 6 + pulse, 0, Math.PI * 2);
                     ctx.strokeStyle = 'rgba(249, 115, 22, 0.8)';
