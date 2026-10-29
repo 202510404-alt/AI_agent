@@ -16,6 +16,7 @@ const path = require('path');
 const os = require('os');
 const http = require('http');
 const fs = require('fs');
+const { randomUUID } = require('crypto');
 
 function ensureModule(moduleName) {
     try {
@@ -60,7 +61,9 @@ let currentMasterSeed = null;
 let skillEventSequence = 0;
 let matchParticipants = {};
 let currentMatchResult = null;
+let currentMatchSaved = false;
 const rankFile = path.join(targetStaticPath, 'rank.json');
+const pendingRankFile = path.join(targetStaticPath, 'rank.pending.json');
 let pendingSkillBySlot = {};
 const SKILL_WINDUP_MS = 300;
 
@@ -92,21 +95,63 @@ app.get('/api/rankings', (req, res) => {
     }
 });
 
-function saveMatchResult(score) {
+function createMatchResult(score) {
     const players = Object.values(slots).map(s => ({
         slotIndex: s.slotIndex,
         nickname: matchParticipants[s.slotIndex]?.nickname || s.nickname || `PLAYER ${s.slotIndex}`,
         connected: !!matchParticipants[s.slotIndex]
     }));
-    const result = { score: Math.max(0, Math.floor(score)), players, playedAt: new Date().toISOString() };
+    const result = { matchId: randomUUID(), score: Math.max(0, Math.floor(score)), players, playedAt: new Date().toISOString() };
+    const tempFile = `${pendingRankFile}.${result.matchId}.tmp`;
     try {
-        const rankings = loadRankings();
-        rankings.push(result);
-        fs.writeFileSync(rankFile, JSON.stringify(rankings, null, 2), 'utf8');
+        fs.writeFileSync(tempFile, JSON.stringify(result, null, 2), 'utf8');
+        fs.renameSync(tempFile, pendingRankFile);
+        console.log(`[Ranking] 경기 결과 임시 보관: ${pendingRankFile}`);
     } catch (error) {
-        console.error('[Ranking] 저장 실패:', error.message);
+        console.error(`[Ranking] 임시 보관 실패: ${pendingRankFile}`, error.message);
+        try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch (_) {}
     }
     return result;
+}
+
+function saveMatchResult(result) {
+    if (currentMatchSaved) return true;
+    if (!result) return false;
+    const tempFile = `${rankFile}.${result.matchId}.tmp`;
+    try {
+        const rankings = loadRankings();
+        if (!rankings.some(entry => entry.matchId === result.matchId)) {
+            rankings.push(result);
+            fs.writeFileSync(tempFile, JSON.stringify(rankings, null, 2), 'utf8');
+            fs.renameSync(tempFile, rankFile);
+        }
+        currentMatchSaved = true;
+        try { if (fs.existsSync(pendingRankFile)) fs.unlinkSync(pendingRankFile); }
+        catch (error) { console.warn('[Ranking] 임시 기록 정리 실패:', error.message); }
+        console.log(`[Ranking] 경기 기록 저장 완료: ${rankFile} (${result.score}점)`);
+        return true;
+    } catch (error) {
+        console.error(`[Ranking] 저장 실패: ${rankFile}`, error.message);
+        try { if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile); } catch (_) {}
+        return false;
+    }
+}
+
+// 투표 전에 서버가 재시작되어도 확정된 경기 결과를 다시 표시한다.
+try {
+    if (fs.existsSync(pendingRankFile)) {
+        const pending = JSON.parse(fs.readFileSync(pendingRankFile, 'utf8'));
+        if (pending && typeof pending.matchId === 'string' && Number.isFinite(pending.score) &&
+            Array.isArray(pending.players) && typeof pending.playedAt === 'string') {
+            currentMatchResult = pending;
+            currentPhase = Phase.SCOREBOARD;
+            console.log(`[Ranking] 미저장 경기 결과 복구: ${pendingRankFile}`);
+        } else {
+            console.error(`[Ranking] 임시 기록 형식 오류: ${pendingRankFile}`);
+        }
+    }
+} catch (error) {
+    console.error(`[Ranking] 임시 기록 복구 실패: ${pendingRankFile}`, error.message);
 }
 
 /**
@@ -200,6 +245,7 @@ function changePhase(nextPhase, result = null) {
     // GAME 페이즈 진입 시 단일 masterSeed 생성 및 하사
     if (currentPhase === Phase.GAME) {
         currentMatchResult = null;
+        currentMatchSaved = false;
         matchParticipants = {};
         Object.values(slots).filter(s => s.active).forEach(s => {
             matchParticipants[s.slotIndex] = { nickname: s.nickname };
@@ -250,6 +296,10 @@ function checkScoreboardVoting() {
 
         if (isUnanimous) {
             console.log(`🗳️ [Scoreboard Vote] 전원 일치 표결 완료: ${firstVote}`);
+            if (!saveMatchResult(currentMatchResult)) {
+                broadcast({ type: 'RANK_SAVE_FAILED' });
+                return;
+            }
             if (firstVote === 'REPLAY') {
                 changePhase(Phase.GAME);
             } else if (firstVote === 'MENU') {
@@ -480,7 +530,7 @@ wss.on('connection', (ws) => {
             else if (data.type === 'TRIGGER_SCOREBOARD') {
                 const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
                 if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot && Number.isFinite(data.score)) {
-                    changePhase(Phase.SCOREBOARD, saveMatchResult(data.score));
+                    changePhase(Phase.SCOREBOARD, createMatchResult(data.score));
                 }
             }
             // E. 기타 범용 중계 패킷

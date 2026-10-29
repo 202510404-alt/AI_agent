@@ -388,7 +388,7 @@ export class UIManager {
         if (!list) return;
         list.textContent = '랭킹을 불러오는 중...';
         try {
-            const response = await fetch('/api/rankings');
+            const response = await fetch('/api/rankings', { cache: 'no-store' });
             if (!response.ok) throw new Error('랭킹 조회 실패');
             const rankings = await response.json();
             list.textContent = '';

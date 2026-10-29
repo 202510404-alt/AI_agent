@@ -152,6 +152,11 @@ window.addEventListener('DOMContentLoaded', () => {
         uiManager.updateVoteStatus(packet.votes, window.networkManager.mySlotIndex);
     });
 
+    window.networkManager.on('RANK_SAVE_FAILED', () => {
+        const status = document.getElementById('vote-status');
+        if (status) status.textContent = '랭킹 저장에 실패했습니다. 서버 로그를 확인한 뒤 다시 선택해 주세요.';
+    });
+
     // 네트워크를 통해 들어오는 다른 플레이어의 키 입력(INPUT_SYNC) 수신 처리
     window.networkManager.on('INPUT_SYNC', (packet) => {
         if (gameLoopInstance && typeof gameLoopInstance.handleNetworkInput === 'function') {

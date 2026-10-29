@@ -62,6 +62,7 @@ export class NetworkManager {
             AI_STATE_SYNC: [],
             OBJECT_STATE_SYNC: [],
             VOTE_STATUS_UPDATE: [],
+            RANK_SAVE_FAILED: [],
             DEBUG_INPUT_EVENT: []
         };
     }
