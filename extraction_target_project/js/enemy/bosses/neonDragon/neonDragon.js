@@ -6,6 +6,7 @@ import BaseBoss from '../../baseBoss.js';
 import { NeonDragonPattern } from './neonDragonPattern.js';
 import { rngBoss } from '../../../utils/seededRNG.js';
 import { NeonDragonHatchling } from '../../../minian/enemy/neonDragonHatchling/neonDragonHatchling.js';
+import { updateBossMovement } from '../../bossMovement.js';
 
 export class NeonDragon extends BaseBoss {
     /**
@@ -65,31 +66,7 @@ export class NeonDragon extends BaseBoss {
         this.angle += 1.2 * dt;
 
         // 1. 주기적인 웨이포인트 산출 및 곡선 파동 이동
-        this.moveTimer += dt;
-        if (this.moveTimer >= this.moveInterval) {
-            this.moveTimer = 0;
-            this.pickNewTarget(canvasWidth);
-        }
-
-        const dx = this.targetX - this.x;
-        const dy = this.targetY - this.y;
-        const dist = Math.hypot(dx, dy);
-
-        // 거리가 멀든 가깝든 step(속도 * dt) 단위로 항상 일정한 속도로 이동
-        const step = this.moveSpeed * dt;
-
-        if (dist > step) {
-            const moveAngle = Math.atan2(dy, dx);
-            const perpAngle = moveAngle + Math.PI / 2;
-            const waveOffset = Math.sin(this.moveTimer * 4.0) * 1.5; // 곡선 선회 성분
-
-            // 직진 등속 이동 힘 + 측면 곡선 파동 힘 합성
-            this.x += (Math.cos(moveAngle) * step) + Math.cos(perpAngle) * waveOffset * dt * 60;
-            this.y += (Math.sin(moveAngle) * step) + Math.sin(perpAngle) * waveOffset * dt * 60;
-        } else {
-            this.x = this.targetX;
-            this.y = this.targetY;
-        }
+        updateBossMovement(this, canvasWidth, dt);
 
         // Danger Areas (레이저) 타이머 및 상태(경고 vs 발사) 관리
         for (let i = this.dangerAreas.length - 1; i >= 0; i--) {

@@ -104,7 +104,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (packet.phase === 'GAME') {
             if (gameLoopInstance) {
                 // masterSeed 및 방 상태를 전달받아 기기 간 화면 및 난수 시드 동기화
-                gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails);
+                gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails, packet.bossType);
             }
             sceneManager.setState('PLAY');
         } else if (packet.phase === 'LOBBY') {
@@ -143,8 +143,9 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         if (awaitingGameRoomState && packet.phase === 'GAME') {
             awaitingGameRoomState = false;
-            if (gameLoopInstance) gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails);
+            if (gameLoopInstance) gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails, packet.bossType);
             if (gameLoopInstance) gameLoopInstance.syncBossState(packet.bossType, packet.bossRevision);
+            if (gameLoopInstance) gameLoopInstance.applyBossHpSync({ bossType: packet.bossType, revision: packet.bossRevision, hp: packet.bossHp, elites: packet.bossElites, handoff: true });
             sceneManager.setState('PLAY');
         }
     });

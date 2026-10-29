@@ -17,7 +17,7 @@ export const SLOT_COLORS = [
 
 // 게임 매치 기본 설정
 export const MATCH_CONFIG = {
-    DEFAULT_DURATION_SEC: 120, // 매치 지속 시간 (초)
+    DEFAULT_DURATION_SEC: 180, // 매치 지속 시간 (초)
     SCORE_PER_TICK: 80,        // 시간 경과 시 획득 기본 점수
     SCORE_ON_BOSS_KILL: 5000,  // 보스 처치 보너스 점수
     SCORE_PENALTY_HIT: 150,    // 피격 시 감점

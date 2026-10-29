@@ -46,6 +46,7 @@ export class GameLoop {
         this.matchGeneration = 0;
         this.bossRevision = 0;
         this.pendingBossTransition = false;
+        this.bossHpSyncAccumulator = 0;
 
         // 전역 참조 등록
         window.gameLoopInstance = this;
@@ -124,6 +125,9 @@ export class GameLoop {
             });
             window.networkManager.on('BOSS_TRANSITION', (packet) => {
                 this.syncBossState(packet.bossType, packet.revision, true);
+            });
+            window.networkManager.on('BOSS_HP_SYNC', (packet) => {
+                this.applyBossHpSync(packet);
             });
         }
 
@@ -216,11 +220,45 @@ export class GameLoop {
         if (!['neonDragon', 'necromancer'].includes(bossType) ||
             !Number.isInteger(revision) || revision <= this.bossRevision) return false;
         if (Array.isArray(this.boss?.hatchlings)) this.boss.hatchlings.forEach(h => { h.isDead = true; });
+        if (Array.isArray(this.boss?.zombies)) this.boss.zombies.forEach(zombie => { zombie.isDead = true; });
+        if (Array.isArray(this.boss?.eliteZombies)) this.boss.eliteZombies.forEach(zombie => { zombie.isDead = true; });
         if (awardKill) this.matchState.teamScore += MATCH_CONFIG.SCORE_ON_BOSS_KILL;
         this.boss = BossFactory.createBoss(bossType, this.canvas.width / 2, 150);
         this.bossRevision = revision;
         this.pendingBossTransition = false;
+        this.bossHpSyncAccumulator = 0;
         return true;
+    }
+
+    applyBossHpSync(packet) {
+        const net = window.networkManager;
+        if (!this.boss || packet.bossType !== this.boss.type || packet.revision !== this.bossRevision ||
+            !Number.isFinite(packet.hp) || packet.hp < 0 || packet.hp > this.boss.maxHp ||
+            (!packet.handoff && packet.sourceSlot === net?.mySlotIndex)) return false;
+        this.boss.hp = packet.hp;
+        this.boss.isDead = packet.hp === 0;
+        if (Array.isArray(packet.elites) && this.boss.eliteZombies) {
+            packet.elites.forEach((state, i) => {
+                const zombie = this.boss.eliteZombies[i];
+                if (!zombie || !state || !Number.isFinite(state.hp) || !Number.isFinite(state.x) || !Number.isFinite(state.y)) return;
+                zombie.hp = Math.max(0, Math.min(zombie.maxHp, state.hp));
+                zombie.isDead = zombie.hp === 0;
+                zombie.x = state.x;
+                zombie.y = state.y;
+            });
+        }
+        if (packet.handoff) this.pendingBossTransition = false;
+        return true;
+    }
+
+    sendBossHpSync(dt, immediate = false) {
+        const net = window.networkManager;
+        if (!net?.socket || net.socket.readyState !== 1 || !this.isAiAuthority() || !this.boss) return;
+        this.bossHpSyncAccumulator += dt;
+        if (!immediate && this.bossHpSyncAccumulator + 1e-9 < 0.5) return;
+        this.bossHpSyncAccumulator = 0;
+        const elites = this.boss.eliteZombies?.map(zombie => ({ hp: zombie.hp, x: zombie.x, y: zombie.y })) || null;
+        net.sendBossHp(this.boss.type, this.bossRevision, this.boss.hp, elites);
     }
 
     handleBossDeath() {
@@ -233,6 +271,7 @@ export class GameLoop {
         if (!net?.socket || net.socket.readyState !== 1) {
             this.syncBossState(nextType, revision, true);
         } else {
+            this.sendBossHpSync(0, true);
             net.requestBossTransition(this.boss.type, nextType, revision);
         }
     }
@@ -285,7 +324,7 @@ export class GameLoop {
     /**
      * 메인 메뉴의 드롭다운 선택값(p1-class ~ p4-class)을 읽어서 각 슬롯 기체를 동적으로 생성
      */
-    initSlots(masterSeed = null, slotDetails = null) {
+    initSlots(masterSeed = null, slotDetails = null, initialBossType = null) {
         if (masterSeed !== null && masterSeed !== undefined) this.matchSeed = masterSeed;
         const net = window.networkManager;
         const mySlot = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
@@ -309,11 +348,14 @@ export class GameLoop {
             this.matchGeneration++;
             this.bossRevision = 0;
             this.pendingBossTransition = false;
+            this.bossHpSyncAccumulator = 0;
             this.matchState.timeRemaining = MATCH_CONFIG.DEFAULT_DURATION_SEC;
             this.matchState.teamScore = 0;
             // 재도전 시작 시 이전 경기의 보스와 탄환·미니언을 모두 초기화한다.
             if (this.boss) {
-                this.boss = BossFactory.createBoss('neonDragon', this.canvas.width / 2, 150);
+                const bossType = ['neonDragon', 'necromancer'].includes(initialBossType)
+                    ? initialBossType : BossFactory.getNextBossType(null, 0);
+                this.boss = BossFactory.createBoss(bossType, this.canvas.width / 2, 150);
                 this.playerBullets = [];
                 this.bossBullets = [];
                 this.minionBullets = [];
@@ -636,7 +678,7 @@ export class GameLoop {
         if (this.boss && Array.isArray(this.boss.dangerAreas)) {
             this.boss.dangerAreas.forEach(area => {
                 if (this.boss.isDead) return;
-                if (area.isFiring) {
+                if (area.isFiring && area.type === 'laser') {
                     // 차단 상태 초기화 후 판정
                     area.isBlockedByShield = false;
 
@@ -895,6 +937,7 @@ export class GameLoop {
         }
 
         this.handleBossDeath();
+        if (!this.pendingBossTransition) this.sendBossHpSync(dt);
 
         // 사망한 미니언 객체 청소
         this.enemyMinions = this.enemyMinions.filter(m => !m.isDead);

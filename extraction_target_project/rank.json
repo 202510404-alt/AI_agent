@@ -25,5 +25,86 @@
       }
     ],
     "playedAt": "2026-10-29T19:29:42.891Z"
+  },
+  {
+    "matchId": "e6afca34-8976-4ed4-802e-fc515b1ad8c8",
+    "score": 166575,
+    "players": [
+      {
+        "slotIndex": 1,
+        "nickname": "PLAYER 1",
+        "connected": true
+      },
+      {
+        "slotIndex": 2,
+        "nickname": "BOT-ALPHA",
+        "connected": true
+      },
+      {
+        "slotIndex": 3,
+        "nickname": "PLAYER 3",
+        "connected": false
+      },
+      {
+        "slotIndex": 4,
+        "nickname": "PLAYER 4",
+        "connected": false
+      }
+    ],
+    "playedAt": "2026-10-29T20:48:18.772Z"
+  },
+  {
+    "matchId": "0c64d95a-e923-472d-aaf9-ed473e51a2bd",
+    "score": 201242,
+    "players": [
+      {
+        "slotIndex": 1,
+        "nickname": "PLAYER 1",
+        "connected": true
+      },
+      {
+        "slotIndex": 2,
+        "nickname": "BOT-ALPHA",
+        "connected": true
+      },
+      {
+        "slotIndex": 3,
+        "nickname": "PLAYER 3",
+        "connected": false
+      },
+      {
+        "slotIndex": 4,
+        "nickname": "PLAYER 4",
+        "connected": false
+      }
+    ],
+    "playedAt": "2026-10-29T20:55:06.779Z"
+  },
+  {
+    "matchId": "e7a69ac4-f9fe-4225-b3ed-9bab7a36b85e",
+    "score": 154744,
+    "players": [
+      {
+        "slotIndex": 1,
+        "nickname": "PLAYER 1",
+        "connected": true
+      },
+      {
+        "slotIndex": 2,
+        "nickname": "BOT-ALPHA",
+        "connected": true
+      },
+      {
+        "slotIndex": 3,
+        "nickname": "PLAYER 3",
+        "connected": false
+      },
+      {
+        "slotIndex": 4,
+        "nickname": "PLAYER 4",
+        "connected": false
+      }
+    ],
+    "playedAt": "2026-10-29T21:13:04.094Z"
   }
 ]

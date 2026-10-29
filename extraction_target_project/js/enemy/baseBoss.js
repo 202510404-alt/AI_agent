@@ -54,6 +54,9 @@ export default class BaseBoss {
      */
     takeDamage(damage) {
         if (this.isDead || !Number.isFinite(damage) || damage <= 0) return false;
+        const loop = globalThis.window?.gameLoopInstance;
+        const net = globalThis.window?.networkManager;
+        if (loop?.boss === this && net?.socket?.readyState === 1 && !loop.isAiAuthority()) return false;
         this.hp = Math.max(0, this.hp - damage);
         if (this.hp <= 0) {
             this.isDead = true;

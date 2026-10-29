@@ -61,26 +61,25 @@ export class UIManager {
                 if (select.querySelector(`option[value="${defaultChoice}"]`)) {
                     select.value = defaultChoice;
                 }
+                // 모든 슬롯의 직업 선택을 서버에 공유한다.
+                select.addEventListener('change', () => {
+                    window.networkManager?.sendSlotClass(i, select.value);
+                });
             }
         }
 
-        // 💡 [다른 사람 슬롯 수정 방지]: 라디오 버튼 변경 시 내 슬롯 외에는 전부 disabled 잠금 처리
+        // 닉네임은 본인 슬롯만 수정할 수 있다.
         const updateSlotLockStatus = () => {
             const selectedRadio = document.querySelector('input[name="my-slot-select"]:checked');
             const mySlotNum = selectedRadio ? parseInt(selectedRadio.value, 10) : 1;
 
             for (let i = 1; i <= 4; i++) {
                 const nameInput = document.getElementById(`p${i}-nickname`);
-                const classSelect = document.getElementById(`p${i}-class`);
                 const isMySlot = (i === mySlotNum);
 
                 if (nameInput) {
                     nameInput.disabled = !isMySlot;
                     nameInput.style.opacity = isMySlot ? '1.0' : '0.4';
-                }
-                if (classSelect) {
-                    classSelect.disabled = !isMySlot;
-                    classSelect.style.opacity = isMySlot ? '1.0' : '0.4';
                 }
             }
         };

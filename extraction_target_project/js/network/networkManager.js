@@ -58,6 +58,7 @@ export class NetworkManager {
             AI_SHOT_SYNC: [],
             PLAYER_SKILL_SYNC: [],
             BOSS_TRANSITION: [],
+            BOSS_HP_SYNC: [],
             TIME_SYNC_RESPONSE: [],
             SLOT_ASSIGNED: [],
             SLOT_EVENT_SYNC: [],
@@ -142,7 +143,7 @@ export class NetworkManager {
             case 'SLOT_ASSIGNED':
                 this.mySlotIndex = packet.slotIndex;
                 if (packet.phase) this.currentPhase = packet.phase;
-                if (packet.masterSeed) {
+                if (packet.masterSeed !== null && packet.masterSeed !== undefined) {
                     this.setMasterSeed(packet.masterSeed);
                 }
                 console.log(`🎮 [NetworkManager] 내 슬롯 할당: P${this.mySlotIndex}`);
@@ -154,7 +155,7 @@ export class NetworkManager {
                 this.activeSlots = packet.activeSlots || [];
                 this.slotDetails = packet.slotDetails || [];
                 if (packet.phase) this.currentPhase = packet.phase;
-                if (packet.masterSeed && packet.masterSeed !== this.masterSeed) {
+                if (packet.masterSeed !== null && packet.masterSeed !== undefined && packet.masterSeed !== this.masterSeed) {
                     this.setMasterSeed(packet.masterSeed);
                 }
 
@@ -194,7 +195,7 @@ export class NetworkManager {
             case 'PHASE_CHANGE':
                 this.currentPhase = packet.phase;
                 console.log(`🔄 [NetworkManager] 페이즈 전환 수신: ${this.currentPhase}`);
-                if (packet.masterSeed) {
+                if (packet.masterSeed !== null && packet.masterSeed !== undefined) {
                     this.setMasterSeed(packet.masterSeed);
                 }
                 break;
@@ -272,11 +273,10 @@ export class NetworkManager {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN || !this.mySlotIndex) return;
 
         const nameInput = document.getElementById(`p${this.mySlotIndex}-nickname`);
-        const classSelect = document.getElementById(`p${this.mySlotIndex}-class`);
         const nickname = nameInput ? nameInput.value.trim() : `PLAYER ${this.mySlotIndex}`;
-        const classType = classSelect ? classSelect.value : 'bufferPlayer';
 
-        this.sendSlotProfile(this.mySlotIndex, { nickname, classType });
+        // 접속 시 기존에 선택된 슬롯 직업을 로컬 기본값으로 덮어쓰지 않는다.
+        this.sendSlotProfile(this.mySlotIndex, { nickname });
     }
 
     /**
@@ -302,6 +302,12 @@ export class NetworkManager {
             slotIndex: slotIndex || this.mySlotIndex,
             ...profile
         }));
+    }
+
+    /** 메뉴에서 선택한 슬롯 직업을 서버에 반영한다. */
+    sendSlotClass(slotIndex, classType) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({ type: 'SET_SLOT_CLASS', slotIndex, classType }));
     }
 
     /**
@@ -424,6 +430,11 @@ export class NetworkManager {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
         this.socket.send(JSON.stringify({ type: 'BOSS_TRANSITION_REQUEST', previousType, nextType, revision }));
         return true;
+    }
+
+    sendBossHp(bossType, revision, hp, elites = null) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({ type: 'BOSS_HP_UPDATE', bossType, revision, hp, elites }));
     }
 
     requestTimeSync() {

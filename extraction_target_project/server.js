@@ -61,6 +61,9 @@ let currentMasterSeed = null;
 let skillEventSequence = 0;
 let currentBossType = 'neonDragon';
 let bossRevision = 0;
+let currentBossHp = 25000;
+let currentBossElites = null;
+const BOSS_MAX_HP = { neonDragon: 25000, necromancer: 25000 };
 let matchParticipants = {};
 let currentMatchResult = null;
 let currentMatchSaved = false;
@@ -77,6 +80,7 @@ const slots = {
     3: { slotIndex: 3, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 3', classType: 'shielderPlayer', ws: null },
     4: { slotIndex: 4, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 4', classType: 'summonerPlayer', ws: null }
 };
+const selectableClasses = new Set(['defaultPlayer', 'bufferPlayer', 'empPlayer', 'shielderPlayer', 'summonerPlayer']);
 
 function loadRankings() {
     try {
@@ -163,6 +167,16 @@ function generateMasterSeed() {
     return Math.floor(Math.random() * 0xFFFFFFFF) >>> 0;
 }
 
+// 경기 시드에서 시작 보스 전용 값을 파생해 서버가 한 번만 결정한다.
+function selectInitialBoss(seed) {
+    let value = (seed ^ 0x9e3779b9) >>> 0;
+    value = Math.imul(value ^ (value >>> 16), 0x85ebca6b);
+    value = Math.imul(value ^ (value >>> 13), 0xc2b2ae35);
+    value = (value ^ (value >>> 16)) >>> 0;
+    const types = Object.keys(BOSS_MAX_HP);
+    return types[Math.floor(value / 0x100000000 * types.length)];
+}
+
 /**
  * 전체 클라이언트에게 브로드캐스트
  */
@@ -205,7 +219,9 @@ function broadcastRoomState() {
         slotDetails,
         masterSeed: currentMasterSeed,
         bossType: currentBossType,
-        bossRevision
+        bossRevision,
+        bossHp: currentBossHp,
+        bossElites: currentBossElites
     });
 }
 
@@ -248,7 +264,6 @@ function changePhase(nextPhase, result = null) {
 
     // GAME 페이즈 진입 시 단일 masterSeed 생성 및 하사
     if (currentPhase === Phase.GAME) {
-        currentBossType = 'neonDragon';
         bossRevision = 0;
         currentMatchResult = null;
         currentMatchSaved = false;
@@ -257,7 +272,13 @@ function changePhase(nextPhase, result = null) {
             matchParticipants[s.slotIndex] = { nickname: s.nickname };
         });
         currentMasterSeed = generateMasterSeed();
+        currentBossType = selectInitialBoss(currentMasterSeed);
+        currentBossHp = BOSS_MAX_HP[currentBossType];
+        currentBossElites = null;
         payload.masterSeed = currentMasterSeed;
+        payload.bossType = currentBossType;
+        payload.bossRevision = bossRevision;
+        payload.bossHp = currentBossHp;
         console.log(`🎲 [masterSeed Issued] 신규 게임 마스터 시드 생성: ${currentMasterSeed}`);
     }
     if (currentPhase === Phase.SCOREBOARD && result) {
@@ -339,6 +360,7 @@ console.log(`⚡ 웹소켓 포트: ${WS_PORT}`);
 console.log('====================================================');
 
 wss.on('connection', (ws) => {
+    const previousAuthority = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
     // 1. 빈 슬롯 자동 할당 (P1 ~ P4)
     let assignedSlot = null;
     for (let i = 1; i <= 4; i++) {
@@ -376,6 +398,10 @@ wss.on('connection', (ws) => {
 
     // 전원에게 방 상태 방송
     broadcastRoomState();
+    const newAuthority = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+    if (currentPhase === Phase.GAME && previousAuthority !== newAuthority) {
+        broadcast({ type: 'BOSS_HP_SYNC', bossType: currentBossType, revision: bossRevision, hp: currentBossHp, elites: currentBossElites, handoff: true });
+    }
 
     ws.on('message', (message) => {
         try {
@@ -403,6 +429,15 @@ wss.on('connection', (ws) => {
                     if (data.classType) s.classType = String(data.classType);
                     if (typeof data.isAiMode === 'boolean') s.isAiMode = data.isAiMode;
                     console.log(`👤 [Slot Profile Updated] P${ws.slotIndex} Nickname: ${s.nickname}, Class: ${s.classType}, AiMode: ${s.isAiMode}`);
+                    broadcastRoomState();
+                }
+            }
+            // 메뉴에서 접속 여부와 관계없이 네 슬롯의 직업을 선택한다.
+            else if (data.type === 'SET_SLOT_CLASS') {
+                const target = Number.isInteger(data.slotIndex) ? slots[data.slotIndex] : null;
+                if (slots[ws.slotIndex]?.active && target && selectableClasses.has(data.classType) &&
+                    (currentPhase === Phase.LOBBY || currentPhase === Phase.MENU)) {
+                    target.classType = data.classType;
                     broadcastRoomState();
                 }
             }
@@ -485,7 +520,24 @@ wss.on('connection', (ws) => {
                     allowedTypes.includes(data.nextType) && data.nextType !== currentBossType) {
                     currentBossType = data.nextType;
                     bossRevision = data.revision;
+                    currentBossHp = BOSS_MAX_HP[currentBossType];
+                    currentBossElites = null;
                     broadcast({ type: 'BOSS_TRANSITION', bossType: currentBossType, revision: bossRevision });
+                }
+            }
+            else if (data.type === 'BOSS_HP_UPDATE') {
+                const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+                if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot &&
+                    data.bossType === currentBossType && data.revision === bossRevision &&
+                    Number.isFinite(data.hp) && data.hp >= 0 && data.hp <= BOSS_MAX_HP[currentBossType]) {
+                    const validElites = currentBossType === 'necromancer' && Array.isArray(data.elites) && data.elites.length === 2 &&
+                        data.elites.every(e => e && Number.isFinite(e.hp) && e.hp >= 0 && e.hp <= 800 &&
+                            Number.isFinite(e.x) && Number.isFinite(e.y));
+                    if (currentBossType === 'necromancer' && !validElites) return;
+                    currentBossHp = data.hp;
+                    currentBossElites = validElites ? data.elites.map(e => ({ hp: e.hp, x: e.x, y: e.y })) : null;
+                    broadcast({ type: 'BOSS_HP_SYNC', bossType: currentBossType, revision: bossRevision,
+                        hp: currentBossHp, elites: currentBossElites, sourceSlot: ws.slotIndex });
                 }
             }
             else if (data.type === 'PLAYER_SKILL_REQUEST') {
@@ -575,6 +627,7 @@ wss.on('connection', (ws) => {
     ws.on('close', () => {
         const slotIdx = ws.slotIndex;
         if (slotIdx && slots[slotIdx]) {
+            const previousAuthority = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
             slots[slotIdx].active = false;
             slots[slotIdx].ready = false;
             slots[slotIdx].vote = null;
@@ -583,6 +636,11 @@ wss.on('connection', (ws) => {
 
             // 퇴장 후 인원 변동에 따른 갱신 및 표결/레디 재검사
             broadcastRoomState();
+
+            const newAuthority = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+            if (currentPhase === Phase.GAME && previousAuthority !== newAuthority && Number.isFinite(newAuthority)) {
+                broadcast({ type: 'BOSS_HP_SYNC', bossType: currentBossType, revision: bossRevision, hp: currentBossHp, elites: currentBossElites, handoff: true });
+            }
 
             if (currentPhase === Phase.LOBBY || currentPhase === Phase.MENU) {
                 checkReadyUnanimity();
