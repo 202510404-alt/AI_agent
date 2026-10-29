@@ -2,773 +2,3441 @@
 # 🎯 AI GLOBAL GUIDELINES: 코드 무결성 및 디버깅 중심 가이드
 # [SCAN_MODE] EXTRACTION_TARGET_PROJECT
 # ==========================================================================
-# 📄 [요청 1] TARGET: index.html (1-336라인)
+# 📄 [요청 1] TARGET: js/network/networkManager.js (14-407라인)
 # ----------------------------------------------------------
 ```python
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Human-like AI Bullet Hell Arena</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body class="h-screen w-screen flex flex-col justify-between items-center relative overflow-hidden bg-slate-950">
-
-    <!-- GAME CANVAS CONTAINER -->
-    <div class="absolute inset-0 z-0">
-        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
-        <div class="scanline absolute inset-0"></div>
-    </div>
-
-    <!-- 1. 로비 화면 (LOBBY State) -->
-    <div id="lobby-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
-        <div class="text-center space-y-6 max-w-2xl w-full bg-slate-900/80 p-8 rounded-2xl border border-cyan-500/50 shadow-2xl neon-border-cyan">
-            <!-- 로비 타이틀 -->
-            <div>
-                <h1 class="text-3xl sm:text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 animate-pulse">
-                    MULTIPLAYER LOBBY
-                </h1>
-                <p class="text-xs text-cyan-300/80 mt-1">대기실에서 모든 참가자가 준비를 완료하면 게임이 시작됩니다.</p>
-            </div>
-
-            <!-- P1~P4 슬롯 카드 그리드 -->
-            <div id="lobby-slots-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
-                <!-- P1 슬롯 카드 -->
-                <div id="lobby-slot-card-1" class="bg-black/60 p-4 rounded-xl border border-cyan-500/30 flex flex-col justify-between transition-all">
-                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black text-cyan-400">SLOT 1</span>
-                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
-                        </div>
-                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
-                    </div>
-                    <div class="space-y-1">
-                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
-                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
-                    </div>
-                </div>
-
-                <!-- P2 슬롯 카드 -->
-                <div id="lobby-slot-card-2" class="bg-black/60 p-4 rounded-xl border border-pink-500/30 flex flex-col justify-between transition-all">
-                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black text-pink-400">SLOT 2</span>
-                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
-                        </div>
-                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
-                    </div>
-                    <div class="space-y-1">
-                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
-                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
-                    </div>
-                </div>
-
-                <!-- P3 슬롯 카드 -->
-                <div id="lobby-slot-card-3" class="bg-black/60 p-4 rounded-xl border border-emerald-500/30 flex flex-col justify-between transition-all">
-                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black text-emerald-400">SLOT 3</span>
-                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
-                        </div>
-                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
-                    </div>
-                    <div class="space-y-1">
-                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
-                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
-                    </div>
-                </div>
-
-                <!-- P4 슬롯 카드 -->
-                <div id="lobby-slot-card-4" class="bg-black/60 p-4 rounded-xl border border-amber-500/30 flex flex-col justify-between transition-all">
-                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black text-amber-400">SLOT 4</span>
-                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
-                        </div>
-                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
-                    </div>
-                    <div class="space-y-1">
-                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
-                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- READY 토글 버튼 -->
-            <div class="pt-2">
-                <button id="btn-lobby-ready" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-lg rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-check"></i> READY
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. 메인 메뉴 화면 (MENU State) -->
-    <div id="menu-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-4" style="display: none;">
-        <div class="text-center space-y-6 max-w-lg w-full bg-slate-900/80 p-8 rounded-2xl border border-cyan-500/50 shadow-2xl neon-border-cyan">
-            <!-- 깔끔한 단독 네온 타이틀 -->
-            <h1 class="text-4xl sm:text-5xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 animate-pulse">
-                BULLET MATRIX
-            </h1>
-
-            <!-- P1~P4 슬롯 & 닉네임 / 직업 선택 -->
-            <div class="space-y-3 text-left">
-                <p class="text-xs font-bold text-cyan-400 tracking-wider uppercase border-b border-gray-700 pb-1">
-                    <i class="fa-solid fa-users"></i> Pilot Slots & Class Selection
-                </p>
-                
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <div class="bg-black/50 p-2 rounded border border-cyan-500/30 relative">
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="text-[10px] text-cyan-300 font-bold">P1 SLOT</label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="my-slot-select" value="1" checked class="accent-cyan-400" />
-                                <span class="text-[9px] text-cyan-400 font-black">내 기체</span>
-                            </label>
-                        </div>
-                        <input type="text" id="p1-nickname" value="PLAYER 1" class="w-full bg-slate-800 text-white px-2 py-0.5 rounded border border-slate-700 text-xs mb-1" />
-                        <select id="p1-class" class="w-full bg-slate-800 text-cyan-300 px-1 py-0.5 rounded border border-slate-700 text-[10px] font-bold">
-                            <!-- JS 동적 생성 -->
-                        </select>
-                    </div>
-                    <div class="bg-black/50 p-2 rounded border border-pink-500/30 relative">
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="text-[10px] text-pink-300 font-bold">P2 SLOT</label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="my-slot-select" value="2" class="accent-pink-400" />
-                                <span class="text-[9px] text-pink-400 font-black">내 기체</span>
-                            </label>
-                        </div>
-                        <input type="text" id="p2-nickname" value="BOT-ALPHA" class="w-full bg-slate-800 text-white px-2 py-0.5 rounded border border-slate-700 text-xs mb-1" />
-                        <select id="p2-class" class="w-full bg-slate-800 text-pink-300 px-1 py-0.5 rounded border border-slate-700 text-[10px] font-bold">
-                            <!-- JS 동적 생성 -->
-                        </select>
-                    </div>
-                    <div class="bg-black/50 p-2 rounded border border-emerald-500/30 relative">
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="text-[10px] text-emerald-300 font-bold">P3 SLOT <span class="text-[8px] text-gray-500">(Cheat Zone)</span></label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="my-slot-select" value="3" class="accent-emerald-400" />
-                                <span class="text-[9px] text-emerald-400 font-black">내 기체</span>
-                            </label>
-                        </div>
-                        <input type="text" id="p3-nickname" placeholder="Callsign" value="BOT-BETA" class="w-full bg-slate-800 text-white px-2 py-0.5 rounded border border-slate-700 text-xs mb-1" />
-                        <select id="p3-class" class="w-full bg-slate-800 text-emerald-300 px-1 py-0.5 rounded border border-slate-700 text-[10px] font-bold">
-                            <!-- JS 동적 생성 -->
-                        </select>
-                    </div>
-                    <div class="bg-black/50 p-2 rounded border border-amber-500/30 relative">
-                        <div class="flex items-center justify-between mb-0.5">
-                            <label class="text-[10px] text-amber-300 font-bold">P4 SLOT</label>
-                            <label class="flex items-center gap-1 cursor-pointer">
-                                <input type="radio" name="my-slot-select" value="4" class="accent-amber-400" />
-                                <span class="text-[9px] text-amber-400 font-black">내 기체</span>
-                            </label>
-                        </div>
-                        <input type="text" id="p4-nickname" value="BOT-GAMMA" class="w-full bg-slate-800 text-white px-2 py-0.5 rounded border border-slate-700 text-xs mb-1" />
-                        <select id="p4-class" class="w-full bg-slate-800 text-amber-300 px-1 py-0.5 rounded border border-slate-700 text-[10px] font-bold">
-                            <!-- JS 동적 생성 -->
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 메뉴 시작 버튼 -->
-            <div class="pt-2 space-y-2">
-                <button id="btn-start-game" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-lg rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-play"></i> GAME START
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. 게임 인게임 HEADER / HUD (PLAY State) -->
-    <header id="ui-layer" class="relative z-10 w-full max-w-7xl p-3 flex flex-wrap justify-between items-center gap-2 bg-slate-900/85 backdrop-blur-md rounded-b-2xl border-b border-cyan-500/40 shadow-xl" style="display: none;">
-        <div class="flex items-center gap-3">
-            <i class="fa-solid fa-brain text-cyan-400 text-2xl animate-pulse"></i>
-            <div>
-                <h1 class="text-lg font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400">
-                    HUMAN-LIKE AI BULLET HELL
-                </h1>
-                <p class="text-[10px] text-cyan-300/80 font-normal">FSM + Action Lock + Fatigue System Demo</p>
-            </div>
-        </div>
-
-        <!-- Global Match Timer & Score & AI Mode Toggle -->
-        <div class="flex items-center gap-3">
-            <div class="bg-black/60 px-3 py-1 rounded-lg border border-pink-500/40 flex items-center gap-2">
-                <i class="fa-solid fa-stopwatch text-pink-400"></i>
-                <span id="matchTimerDisplay" class="font-bold text-base text-pink-300 tracking-wider">02:00</span>
-            </div>
-            <div class="text-right">
-                <p class="text-[9px] text-gray-400 uppercase tracking-widest">Team DPS Score</p>
-                <p id="teamScoreDisplay" class="font-black text-lg text-emerald-400">000000</p>
-            </div>
-            <div class="h-6 w-px bg-slate-800"></div>
-
-            <!-- 상단 미니멀 [AI ON/OFF] 토글 버튼 -->
-            <button id="btn-top-ai-toggle" class="flex items-center gap-1.5 px-3 py-1 bg-slate-800 hover:bg-slate-700 active:scale-95 border border-cyan-500/40 rounded-lg transition">
-                <i class="fa-solid fa-robot text-xs text-cyan-400"></i>
-                <div class="text-left text-[10px] leading-tight">
-                    <span class="block text-[8px] text-slate-400">MODE</span>
-                    <span id="top-ai-status-text" class="text-cyan-400 font-bold">USER (MANUAL)</span>
-                </div>
-            </button>
-        </div>
-
-        <!-- Debug Visualizer Toggle (히든 치트키 발동 시만 노출) -->
-        <button id="btnToggleDebug" class="hidden px-3 py-1.5 rounded-lg bg-cyan-950 border border-cyan-500/60 hover:bg-cyan-900 text-cyan-300 text-xs font-bold flex items-center gap-2 transition active:scale-95 shadow-md">
-            <i class="fa-solid fa-eye"></i>
-            <span>AI 디버그 시각화: <strong id="debugStatusText" class="text-emerald-400">OFF</strong></span>
-        </button>
-    </header>
-
-    <!-- RIGHT FLOATING PANEL: SLOT CONTROL & LIVE STATS -->
-    <div id="right-debug-panel" class="hidden absolute right-4 top-20 z-20 w-80 bg-slate-900/90 backdrop-blur-md rounded-xl p-3 border border-cyan-500/40 shadow-2xl text-xs space-y-3">
-        <!-- Slot Handover Controls -->
-        <div>
-            <div class="flex justify-between items-center border-b border-gray-700 pb-1.5 mb-2">
-                <span class="font-bold text-cyan-400 flex items-center gap-1.5">
-                    <i class="fa-solid fa-users"></i> 슬롯 제어 (유저 난입 / AI)
-                </span>
-                <span class="text-[9px] text-pink-400 bg-pink-950/80 px-1.5 py-0.5 rounded border border-pink-600/50">SLOTS: 4</span>
-            </div>
-            <div id="slotControlsContainer" class="grid grid-cols-2 gap-1.5">
-                <!-- 동적 렌더링 영역 -->
-            </div>
-        </div>
-
-        <!-- Live Real-Time AI Stats -->
-        <div>
-            <div class="flex justify-between items-center border-b border-gray-700 pb-1.5 mb-2">
-                <span class="font-bold text-yellow-400 flex items-center gap-1.5">
-                    <i class="fa-solid fa-chart-line"></i> 실시간 딜량 & AI 실수 집계
-                </span>
-            </div>
-            <div id="liveStatsContainer" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                <!-- 동적 렌더링 영역 -->
-            </div>
-        </div>
-
-        <!-- 💡 [k090207 치트키 전용]: 폰 접속용 QR 코드 및 HOST IP 세팅 영역 -->
-        <div id="debug-network-info" class="hidden mt-3 p-2 bg-slate-950/90 rounded-xl border border-cyan-500/40 text-center space-y-1">
-            <p class="text-[9px] font-bold text-cyan-300">📱 MOBILE CLIENT JOIN QR</p>
-            <div class="flex justify-center my-1">
-                <img id="qr-code-img" class="w-24 h-24 rounded border border-cyan-400/50 bg-white p-1" alt="Join QR Code" />
-            </div>
-            <p id="host-ip-url" class="text-[9px] font-mono text-emerald-400 select-all font-bold break-all">http://localhost:3000?client=true</p>
-        </div>
-    </div>
-
-    <!-- BOTTOM MOBILE CONTROLS / GUIDANCE -->
-    <footer class="relative z-10 w-full max-w-7xl p-3 flex justify-between items-end pointer-events-none mb-1">
-        <!-- Touch Joystick Zone -->
-        <div id="joystickZone" class="pointer-events-auto w-28 h-28 rounded-full border-2 border-cyan-500/40 bg-slate-900/40 backdrop-blur-sm relative flex items-center justify-center md:opacity-40 hover:opacity-100 transition">
-            <div id="joystickKnob" class="w-10 h-10 rounded-full bg-cyan-400/80 shadow-lg border border-white absolute transform transition-transform duration-75"></div>
-            <span class="text-[8px] text-cyan-300/60 absolute bottom-1.5 pointer-events-none">TOUCH JOYSTICK</span>
-        </div>
-
-        <!-- PC Keyboard Guidance -->
-        <div class="bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-xl border border-cyan-500/30 text-center pointer-events-auto hidden sm:block">
-            <p class="text-xs text-gray-300 font-medium">
-                <span class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-cyan-400 font-bold">WASD / 방향키</span> 유저 이동 &nbsp;|&nbsp;
-                <span class="px-1.5 py-0.5 bg-slate-800 border border-slate-600 rounded text-pink-400 font-bold">마우스 조준</span> 자동 사격
-            </p>
-        </div>
-
-        <!-- EMP Bomb & Active Skill Buttons -->
-        <div class="pointer-events-auto flex items-center gap-2">
-            <!-- 게이지 차오름 스킬 버튼 + [SPACE] 조작 안내 라벨 -->
-            <div class="relative flex flex-col items-center gap-1">
-                <span class="px-1.5 py-0.5 bg-cyan-950/90 border border-cyan-400/80 rounded text-[9px] font-mono text-cyan-300 font-black tracking-wider shadow-md animate-pulse">
-                    [SPACE]
-                </span>
-                <button id="btnActiveSkill" class="relative w-16 h-16 rounded-full bg-slate-900 border-2 border-amber-400 text-amber-300 font-bold overflow-hidden shadow-lg flex flex-col items-center justify-center active:scale-95 transition">
-                    <!-- 하단에서 위로 불투명 차오르는 게이지 레이어 -->
-                    <div id="skillGaugeFill" class="absolute bottom-0 left-0 right-0 bg-amber-500/80 transition-all duration-100" style="height: 0%;"></div>
-                    <div class="relative z-10 flex flex-col items-center">
-                        <i class="fa-solid fa-wand-magic-sparkles text-base mb-0.5"></i>
-                        <span id="skillGaugeText" class="text-[8px] font-black">0%</span>
-                    </div>
-                </button>
-            </div>
-
-            <!-- EMP 특수 폭탄 -->
-            <button id="btnSpecialBomb" class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-600 to-purple-600 active:scale-90 border-2 border-pink-300 text-white font-bold flex flex-col items-center justify-center shadow-lg neon-border-pink">
-                <i class="fa-solid fa-bolt text-lg mb-0.5"></i>
-                <span class="text-[8px]">EMP BOMB</span>
-            </button>
-        </div>
-    </footer>
-
-    <!-- 3. RESULT STATE MODAL -->
-    <div id="result-screen" class="hidden absolute inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="max-w-md w-full bg-slate-900 border-2 border-pink-500 rounded-2xl p-6 text-center space-y-4 shadow-2xl neon-border-pink">
-            <h2 id="result-title" class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 tracking-wider">
-                MISSION CLEAR
-            </h2>
-            
-            <!-- 종합 최종 점수 -->
-            <div class="bg-black/60 p-3 rounded-xl border border-pink-500/30">
-                <p class="text-[10px] text-gray-400 uppercase tracking-widest">FINAL SCORE</p>
-                <p id="final-score-val" class="text-3xl font-black text-yellow-400 tracking-wider">000000</p>
-            </div>
-
-            <!-- 슬롯별 딜량 및 실수 집계 표 -->
-            <div id="finalScoreboardList" class="bg-black/60 rounded-xl p-3 border border-slate-800 space-y-1.5 text-left text-xs max-h-52 overflow-y-auto">
-                <!-- 동적 렌더링 영역 -->
-            </div>
-
-            <!-- 하단 재도전 및 메인 메뉴 버튼 -->
-            <div class="grid grid-cols-2 gap-2 pt-2">
-                <button id="btnRestartMatch" class="py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black rounded-xl shadow-lg transition transform active:scale-95 text-xs">
-                    🔄 REPLAY
-                </button>
-                <button id="btn-main-menu" class="py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-600 text-gray-200 font-black rounded-xl transition transform active:scale-95 text-xs">
-                    🏠 MAIN MENU
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ES6 MODULE ENTRY POINT -->
-    <script type="module" src="js/main.js" defer></script>
-</body>
-</html>
-```
-
-# 📄 [요청 1 ➡️ 불러온함수 (truncate 본체)] TARGET: extraction_target_project/js/core/ui.js (461-473라인)
-# ----------------------------------------------------------
-```python
-                    classEl.className = 'text-xs text-cyan-300/80 slot-class truncate';
-                }
-
-                // 레디 상태 표시 (ready: 초록색 / 회색 뱃지)
-                if (readyBadge) {
-                    if (slot.ready) {
-                        readyBadge.textContent = 'READY';
-                        readyBadge.className = 'slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-emerald-500 text-black shadow-md shadow-emerald-500/30';
-                    } else {
-                        readyBadge.textContent = 'NOT READY';
-                        readyBadge.className = 'slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-slate-700 text-gray-400';
-                    }
-                }
-```
-
-# 📄 [요청 1 ➡️ 불러온함수 (truncate 본체)] TARGET: extraction_target_project/js/core/ui.js (499-508라인)
-# ----------------------------------------------------------
-```python
-                    classEl.className = 'text-xs text-gray-600 slot-class truncate';
-                }
-                card.style.borderColor = '';
-                card.style.boxShadow = '';
-            }
-        });
-    }
-}
-
-export default UIManager;
-```
-
-# 📄 [요청 2] TARGET: js/main.js (120-216라인)
-# ----------------------------------------------------------
-```python
-            sceneManager.setState('MENU');
-        } else if (currentPhase === 'SCOREBOARD') {
-            sceneManager.setState('GAMEOVER');
-        }
-    });
-
-    window.networkManager.on('ROOM_STATE', (packet) => {
-        if (packet.slotDetails) {
-            uiManager.updateLobbySlots(packet.slotDetails, window.networkManager.mySlotIndex);
-        }
-    });
-
-    // 네트워크를 통해 들어오는 다른 플레이어의 키 입력(INPUT_SYNC) 수신 처리
-    window.networkManager.on('INPUT_SYNC', (packet) => {
-        if (gameLoopInstance && typeof gameLoopInstance.handleNetworkInput === 'function') {
-            gameLoopInstance.handleNetworkInput(packet.slotIndex, packet.inputAction);
-        }
-    });
-
-    // 5. 게임 메인 루프 초기화 및 실행
-    gameLoopInstance = new GameLoop(canvas, ctx, sceneManager, inputHandler, uiManager);
-
-    // 6. [로비 화면] -> [READY / NOT READY] 토글 버튼 이벤트
-    let isLobbyReady = false;
-    const btnLobbyReady = document.getElementById('btn-lobby-ready');
-    if (btnLobbyReady) {
-        btnLobbyReady.addEventListener('click', () => {
-            isLobbyReady = !isLobbyReady;
-            if (isLobbyReady) {
-                btnLobbyReady.innerHTML = '<i class="fa-solid fa-xmark"></i> CANCEL READY';
-                btnLobbyReady.className = 'w-full py-3.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black text-lg rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2';
-            } else {
-                btnLobbyReady.innerHTML = '<i class="fa-solid fa-check"></i> READY';
-                btnLobbyReady.className = 'w-full py-3.5 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-lg rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2';
-            }
-
-            // 히든 치트키 검사 (P3: k090207)
-            const p3NicknameInput = document.getElementById('p3-nickname');
-            const p3Name = p3NicknameInput ? p3NicknameInput.value.trim() : '';
-            if (p3Name === 'k090207') {
-                gameLoopInstance.showAIDebug = true;
-                uiManager.setDebugVisibility(true);
-                console.log('🔓 [HIDDEN CHEAT] DEBUG MODE ACTIVATED (P3: k090207)');
-            } else {
-                gameLoopInstance.showAIDebug = false;
-                uiManager.setDebugVisibility(false);
-            }
-
-            // 서버로 READY 상태 패킷 송신
-            if (window.networkManager) {
-                window.networkManager.sendReady(isLobbyReady);
-            }
-        });
-    }
-
-    // 7. [메인 메뉴] -> [게임 시작] 버튼 이벤트 연동
-    const btnStart = document.getElementById('btn-start-game');
-    if (btnStart) {
-        btnStart.addEventListener('click', () => {
-            if (window.networkManager) {
-                window.networkManager.sendReady(true);
-            } else {
-                if (gameLoopInstance) {
-                    gameLoopInstance.initSlots();
-                }
-                sceneManager.setState('PLAY');
-            }
-        });
-    }
-
-    // [결과 화면] -> [REPLAY] 버튼 (SCOREBOARD 표결 전송)
-    const btnRestartMatch = document.getElementById('btnRestartMatch');
-    if (btnRestartMatch) {
-        btnRestartMatch.addEventListener('click', () => {
-            if (window.networkManager) {
-                window.networkManager.sendVote('REPLAY');
-            } else {
-                window.location.reload();
-            }
-        });
-    }
-
-    // [결과 화면] -> [메인 메뉴 이동] 버튼 (SCOREBOARD 표결 전송)
-    const btnMainMenu = document.getElementById('btn-main-menu');
-    if (btnMainMenu) {
-        btnMainMenu.addEventListener('click', () => {
-            if (window.networkManager) {
-                window.networkManager.sendVote('MENU');
-            } else {
-                sceneManager.setState('MENU');
-            }
-        });
-    }
-
-    // 5. 프레임 애니메이션 시작
-    requestAnimationFrame((now) => gameLoopInstance.run(now));
-});
-```
-
-# 📄 [요청 2 ➡️ 불러온함수 (GameLoop 본체)] TARGET: extraction_target_project/js/core/gameLoop.js (14-23라인)
-# ----------------------------------------------------------
-```python
-export class GameLoop {
+export class NetworkManager {
     /**
-     * @param {HTMLCanvasElement} canvas 
-     * @param {CanvasRenderingContext2D} ctx 
-     * @param {import('./sceneManager.js').SceneManager} sceneManager 
-     * @param {import('./input.js').InputHandler} input 
-     * @param {import('./ui.js').UIManager} ui 
+     * @param {object} options
+     * @param {boolean} options.isHost 호스트 여부
+     * @param {string} [options.hostIp] 접속 호스트 IP
+     * @param {number} [options.port] 웹소켓 포트 (기본 8080)
      */
-```
+    constructor(options = {}) {
+        this.isHost = options.isHost || false;
+        this.hostIp = options.hostIp || 'localhost';
+        this.port = options.port || 8080;
+        this.socket = null;
 
-# 📄 [요청 3] TARGET: js/core/gameLoop.js (1-250라인)
-# ----------------------------------------------------------
-```python
-/**
- * js/core/gameLoop.js
- * 메인 60fps requestAnimationFrame 루프, 충돌 판정, AI 시각화 및 렌더링 결합
- */
-import { TOTAL_SLOTS, MATCH_CONFIG, CANVAS_GRID_SIZE } from '../config/constants.js';
-import { PlayerFactory } from '../player/playerFactory.js';
-import { BossFactory } from '../enemy/bossFactory.js';
-import { AIEngine } from '../ai/aiEngine.js';
-import { createImpactParticles, createFloatingText } from '../player/particle.js';
-import { setGameSeed } from '../utils/math.js';
-import { GameState } from './sceneManager.js';
-import { sendScoreToServer } from '../network/scoreSender.js';
+        this.mySlotIndex = null;      // 서버가 할당해준 내 슬롯 번호 (1~4)
+        this.activeSlots = [1];       // 현재 활성 슬롯 인덱스 목록
+        this.slotDetails = [];        // 슬롯별 레디/투표/닉네임/직업 상세 상태
+        this.currentPhase = 'LOBBY';  // LOBBY, MENU, GAME, SCOREBOARD
+        this.masterSeed = null;
 
-export class GameLoop {
-    /**
-     * @param {HTMLCanvasElement} canvas 
-     * @param {CanvasRenderingContext2D} ctx 
-     * @param {import('./sceneManager.js').SceneManager} sceneManager 
-     * @param {import('./input.js').InputHandler} input 
-     * @param {import('./ui.js').UIManager} ui 
-     */
+        // 원격 입력 버퍼: slotIndex -> inputAction
+        this.clientInputs = {};
 
-    
-    constructor(canvas, ctx, sceneManager, input, ui, options = {}) {
-        this.canvas = canvas;
-        this.ctx = ctx;
-        this.sceneManager = sceneManager;
-        this.input = input;
-        this.ui = ui;
+        // 패킷 시퀀스 번호 (송신용 단조 증가 카운터)
+        this.sequenceCounter = 0;
 
-        this.showAIDebug = false; // 기본 NORMAL 모드 (디버그 오버레이 비활성화)
-        this.lastTimestamp = performance.now();
+        // 원격 슬롯별 마지막 수신 시퀀스 번호 추적 (Out-of-Order 무시용)
+        this.lastReceivedSequences = {};
 
-        // 전역 참조 등록
-        window.gameLoopInstance = this;
+        // RTT(Ping) 추적을 위한 타임스탬프 맵
+        this.estimatedPing = 50; // 기본 ms
+        this.lastPingSentAt = 0;
 
-        // 멀티플레이 시드 바인딩 (서버 수신 시드 사용, 없을 경우 고정 시드 1004)
-        this.matchSeed = (options && options.seed) || window.selectedMatchSeed || 1004;
-        setGameSeed(this.matchSeed);
-
-        // 매치 상태 데이터
-        this.matchState = {
-            timeRemaining: MATCH_CONFIG.DEFAULT_DURATION_SEC,
-            teamScore: 0
+        // 리스너 콜백 맵: eventName -> [callbacks]
+        this.listeners = {
+            ROOM_STATE: [],
+            PHASE_CHANGE: [],
+            INPUT_SYNC: [],
+            SLOT_ASSIGNED: [],
+            SLOT_EVENT_SYNC: [],
+            OBJECT_STATE_SYNC: [],
+            VOTE_STATUS_UPDATE: [],
+            DEBUG_INPUT_EVENT: []
         };
-
-        // 메뉴 드롭다운에서 선택된 직업(bufferPlayer, defaultPlayer 등)을 읽어와 슬롯 초기화
-        this.initSlots();
-        this.boss = BossFactory.createBoss('neonDragon', this.canvas.width / 2, 150);
-        this.playerBullets = [];
-        this.bossBullets = [];
-        this.minionBullets = []; // 전역 미니언 탄환 배열
-        this.enemyMinions = [];  // 적군 미니언 엔티티 배열
-        this.allyMinions = [];   // 아군 미니언 엔티티 배열
-        this.particles = [];
-        this.floatingTexts = [];
-
-        // 💡 [UI 스킬 버튼 바인딩 연동]
-        if (this.ui && typeof this.ui.bindSkillButton === 'function') {
-            this.ui.bindSkillButton(() => this.slots.find(s => s.isHuman), this);
-        }
-
-        // 💡 [신규 - 네트워크 슬롯 이벤트 바인딩]: 수신된 AI 모드 전환 신호를 실시간 처리
-        if (window.networkManager) {
-            window.networkManager.on('SLOT_EVENT_SYNC', (packet) => {
-                if (packet.eventType === 'TOGGLE_AI_MODE' && packet.payload) {
-                    this.applySlotAiMode(packet.slotIndex, packet.payload.isAiMode);
-                }
-            });
-        }
-
-        this.init();
     }
 
     /**
-     * 💡 [유저 스킬 시전 처리 메서드 - E키 및 UI 전용]
-     */
-    useUserSkill() {
-        const userSlot = this.slots.find(s => s.isHuman && !s.isStunned());
-        if (!userSlot || !userSlot.hasActiveSkill) return;
-
-        const allEnemyBullets = [...this.bossBullets, ...this.minionBullets];
-        const success = userSlot.useSkill({
-            boss: this.boss,
-            enemyMinions: this.enemyMinions,
-            bossBullets: this.bossBullets,
-            minionBullets: this.minionBullets,
-            enemyBullets: allEnemyBullets,
-            allyMinions: this.allyMinions,
-            allyPlayers: this.slots
-        });
-
-        if (success) {
-            this.floatingTexts.push(createFloatingText(userSlot.x, userSlot.y - 20, userSlot.skillFloatText, userSlot.themeColor));
-        }
-    }
-
-    /**
-     * 메인 프레임 업데이트 중 유저 입력 처리 연동 (네트워크 동기화 포함)
-     */
-    updateInputs() {
-        const net = window.networkManager;
-        const mySlotNum = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
-        const mySlotIdx = mySlotNum - 1;
-
-        // 1. 내 기체 입력 액션 추출 (isAiMode 여부에 따라 수동/AI 자동 생성)
-        const myPlayer = this.slots ? this.slots[mySlotIdx] : null;
-        const localInputAction = this.input.getInputAction(mySlotIdx, {
-            player: myPlayer,
-            boss: this.boss,
-            gameLoop: this
-        });
-
-        // 2. 내 컴퓨터 슬롯 조작 신호를 네트워크 소켓으로 송신 (INPUT_SYNC)
-        if (net && net.mySlotIndex) {
-            net.sendInputSync(net.mySlotIndex, localInputAction);
-        }
-
-        // 3. 각 슬롯별 권한 분리 및 입력/네트워크 위치 보간 동기화
-        this.slots.forEach((player, idx) => {
-            const slotNum = idx + 1;
-            const isMySlot = (net && net.mySlotIndex === slotNum);
-            player.isLocalOwner = isMySlot; // 내 소유 기체 설정
-
-            const remoteInput = net ? net.consumeClientInput(slotNum) : null;
-            if (remoteInput) {
-                if (typeof remoteInput.isAiMode === 'boolean') {
-                    player.isHuman = !remoteInput.isAiMode;
-                }
-                player.remoteInputPacket = remoteInput;
-            }
-
-            const skillParams = {
-                boss: this.boss,
-                enemyMinions: this.enemyMinions,
-                bossBullets: this.bossBullets,
-                minionBullets: this.minionBullets,
-                enemyBullets: [...(this.bossBullets || []), ...(this.minionBullets || [])],
-                allyMinions: this.allyMinions,
-                allyPlayers: this.slots
-            };
-
-            // 💡 [핵심 - 권한 분리]: 내 슬롯(Local Owner)만 키보드/마우스 입력을 직접 계산
-            if (isMySlot && player.isHuman) {
-                player.handleHumanInputPacket(localInputAction, skillParams);
-            } 
-            // 💡 [상대 슬롯 - Remote Proxy]: 수신받은 네트워크 패킷(remoteInputPacket)으로 위치 및 스킬 1회성 적용
-            else if (!isMySlot && player.isHuman && player.remoteInputPacket) {
-                const pkt = player.remoteInputPacket;
-                player.handleHumanInputPacket(pkt, skillParams);
-
-                // 스킬 연속 발동 방지 플래그 소모
-                if (pkt.useSkill) {
-                    pkt.useSkill = false;
-                }
-            }
-        });
-    }
-
-    /**
-     * 메인 메뉴의 드롭다운 선택값(p1-class ~ p4-class)을 읽어서 각 슬롯 기체를 동적으로 생성
-     */
-    initSlots() {
-        const net = window.networkManager;
-        const mySlot = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
-        const activeSlots = (net && net.activeSlots) ? net.activeSlots : [1];
-
-        this.slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
-            const slotId = i + 1;
-            const classSelect = document.getElementById(`p${slotId}-class`);
-            const classType = classSelect ? classSelect.value : 'defaultPlayer';
-            
-            const player = PlayerFactory.createPlayer(i, classType);
-            
-            // 실제 멀티 접속 중인 인간 유저 슬롯(activeSlots에 포함된 슬롯)은 AI 제어를 해제(isHuman = true)
-            player.isHuman = activeSlots.includes(slotId);
-            return player;
-        });
-
-        if (this.canvas) {
-            this.slots.forEach(slot => slot.resetPosition(1280, 720, TOTAL_SLOTS));
-        }
-        if (this.ui) {
-            this.ui.updateSlotAndStats(this.slots);
-        }
-    }
-
-    /**
-     * 엔티티 초기 위치 및 타이머 루프 시작
+     * 소켓 네트워크 초기화
      */
     init() {
-        this.resize();
-        window.addEventListener('resize', () => this.resize());
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetHost = urlParams.get('host') || window.location.hostname || 'localhost';
+        const wsUrl = `${protocol}//${targetHost}:${this.port}`;
 
-        // 초당 매치 타이머 및 주기 점수 증가
-        this.timerInterval = setInterval(() => {
-            if (!this.sceneManager.isPlaying()) return;
+        try {
+            this.socket = new WebSocket(wsUrl);
 
-            this.matchState.timeRemaining--;
-            this.matchState.teamScore += MATCH_CONFIG.SCORE_PER_TICK;
-            this.ui.updateHeader(this.matchState.timeRemaining, this.matchState.teamScore);
+            this.socket.onopen = () => {
+                console.log(`🌐 [NetworkManager] 웹소켓 서버 연결 완료 (${wsUrl})`);
+                // 내 닉네임 / 직업 정보가 준비되어 있다면 초기 동기화
+                this.syncLocalProfile();
+            };
 
-            if (this.matchState.timeRemaining <= 0) {
-                this.endMatch();
-            }
-        }, 1000);
+            this.socket.onmessage = (event) => {
+                try {
+                    const packet = JSON.parse(event.data);
+                    this.dispatchPacket(packet);
+                } catch (e) {
+                    console.warn('[NetworkManager] 패킷 파싱 에러:', e);
+                }
+            };
 
-        this.ui.updateSlotAndStats(this.slots);
+            this.socket.onerror = (err) => {
+                console.warn('[NetworkManager] 소켓 연결 에러/대기 중 (오프라인 로컬 폴백 동작)');
+            };
+
+            this.socket.onclose = () => {
+                console.warn('[NetworkManager] 소켓 연결 종료. 3초 후 재연결 시도...');
+                setTimeout(() => {
+                    this.init();
+                }, 3000);
+            };
+        } catch (e) {
+            console.warn('[NetworkManager] 소켓 생성 실패:', e);
+        }
     }
 
     /**
-     * 캔버스 리사이즈 및 슬롯 좌표 재정렬 (1280x720 고정 좌표계 유지)
+     * 이벤트 리스너 등록
+     * @param {string} type 
+     * @param {Function} callback 
      */
-    resize() {
-        const GAME_WIDTH = 1280;
-        const GAME_HEIGHT = 720;
-        this.canvas.width = GAME_WIDTH;
-        this.canvas.height = GAME_HEIGHT;
+    on(type, callback) {
+        if (!this.listeners[type]) {
+            this.listeners[type] = [];
+        }
+        this.listeners[type].push(callback);
+    }
 
+    /**
+     * 수신된 패킷 분기 및 이벤트 디스패치
+     * @param {object} packet 
+     */
+    dispatchPacket(packet) {
+        if (!packet || !packet.type) return;
+
+        switch (packet.type) {
+            case 'SLOT_ASSIGNED':
+                this.mySlotIndex = packet.slotIndex;
+                if (packet.phase) this.currentPhase = packet.phase;
+                if (packet.masterSeed) {
+                    this.setMasterSeed(packet.masterSeed);
+                }
+                console.log(`🎮 [NetworkManager] 내 슬롯 할당: P${this.mySlotIndex}`);
+                this.syncLocalProfile();
+                break;
+
+            case 'ROOM_STATE':
+                // 1. 상태 관리 신호 (Strict Sync) - Single Source of Truth
+                this.activeSlots = packet.activeSlots || [];
+                this.slotDetails = packet.slotDetails || [];
+                if (packet.phase) this.currentPhase = packet.phase;
+                if (packet.masterSeed && packet.masterSeed !== this.masterSeed) {
+                    this.setMasterSeed(packet.masterSeed);
+                }
+
+                // 기체/닉네임/AI 모드 및 human 플래그 전 기기 동시 적용
+                if (window.gameLoopInstance && window.gameLoopInstance.slots) {
+                    window.gameLoopInstance.slots.forEach((player, idx) => {
+                        const slotNum = idx + 1;
+                        const detail = this.slotDetails.find(d => d.slotIndex === slotNum);
+                        if (detail) {
+                            // AI 모드가 활성화되어 있으면 isHuman = false
+                            player.isHuman = detail.active && !detail.isAiMode;
+                            if (detail.nickname) player.nickname = detail.nickname;
+                            if (detail.classType && player.classType !== detail.classType) {
+                                player.classType = detail.classType;
+                            }
+                        } else {
+                            player.isHuman = this.activeSlots.includes(slotNum);
+                        }
+                    });
+                }
+                break;
+
+            case 'PHASE_CHANGE':
+                this.currentPhase = packet.phase;
+                console.log(`🔄 [NetworkManager] 페이즈 전환 수신: ${this.currentPhase}`);
+                if (packet.masterSeed) {
+                    this.setMasterSeed(packet.masterSeed);
+                }
+                break;
+
+            case 'INPUT_SYNC':
+            case 'CLIENT_INPUT': {
+                const sIdx = packet.slotIndex;
+                if (!sIdx) break;
+
+                // 2. 패킷 순서 엉킴 및 손실 방지 (Out-of-Order / Packet Loss)
+                const seq = packet.sequenceNumber;
+                if (typeof seq === 'number') {
+                    const lastSeq = this.lastReceivedSequences[sIdx] || 0;
+                    if (seq < lastSeq) {
+                        // 오래된 순번의 패킷은 즉시 폐기 (Discard)
+                        return;
+                    }
+                    this.lastReceivedSequences[sIdx] = seq;
+                }
+
+                // 핑(Ping) 계산: timeStamp 기반 RTT 근사치 갱신
+                if (packet.timeStamp) {
+                    const latency = Math.max(0, Date.now() - packet.timeStamp);
+                    this.estimatedPing = Math.round(this.estimatedPing * 0.8 + latency * 0.2);
+                }
+
+                // 원격 조작 입력 패킷 캐싱
+                const action = packet.inputAction || {};
+                action.sequenceNumber = seq;
+                action.timeStamp = packet.timeStamp || Date.now();
+                action.estimatedPing = this.estimatedPing;
+
+                this.clientInputs[sIdx] = action;
+                break;
+            }
+
+            case 'OBJECT_STATE_SYNC':
+                // 4. 설치형 오브젝트 & HP 판정 (Object & HP Sync)
+                break;
+
+            case 'DEBUG_INPUT_EVENT':
+                console.log(`[NET DEBUG RECV] Slot P${packet.slotIndex} | Source: [${packet.source}] | ${packet.description}`);
+                break;
+
+            case 'SLOT_EVENT_SYNC':
+                console.log(`⚡ [NetworkManager] 슬롯 이벤트 수신: P${packet.slotIndex} -> ${packet.eventType}`, packet.payload);
+                break;
+
+            case 'VOTE_STATUS_UPDATE':
+                console.log(`🗳️ [NetworkManager] 표결 현황 갱신:`, packet.votes);
+                break;
+        }
+
+        // 등록된 리스너들에게 패킷 전달
+        const cbs = this.listeners[packet.type] || [];
+        cbs.forEach(cb => {
+            try {
+                cb(packet);
+            } catch (err) {
+                console.error(`[NetworkManager] 리스너 실행 오류 (${packet.type}):`, err);
+            }
+        });
+    }
+
+    /**
+     * 로컬 UI(닉네임, 선택 직업) 상태를 서버 중앙 데이터로 동기화 요청
+     */
+    syncLocalProfile() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN || !this.mySlotIndex) return;
+
+        const nameInput = document.getElementById(`p${this.mySlotIndex}-nickname`);
+        const classSelect = document.getElementById(`p${this.mySlotIndex}-class`);
+        const nickname = nameInput ? nameInput.value.trim() : `PLAYER ${this.mySlotIndex}`;
+        const classType = classSelect ? classSelect.value : 'bufferPlayer';
+
+        this.sendSlotProfile(this.mySlotIndex, { nickname, classType });
+    }
+
+    /**
+     * masterSeed 수신 시 seededRNG 모듈 초기화
+     * @param {number|string} seed 
+     */
+    setMasterSeed(seed) {
+        this.masterSeed = seed;
+        window.selectedMatchSeed = seed;
+        seededRNG.initDerivations(seed);
+        console.log(`🎲 [NetworkManager] masterSeed(${seed}) 수신 및 seededRNG 전역 초기화 완료`);
+    }
+
+    /**
+     * [1. 상태 관리 신호 - Strict Sync] 슬롯 프로필(닉네임, 클래스) 변경 요청
+     * @param {number} slotIndex 
+     * @param {object} profile { nickname, classType, isAiMode }
+     */
+    sendSlotProfile(slotIndex, profile = {}) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'UPDATE_SLOT_PROFILE',
+            slotIndex: slotIndex || this.mySlotIndex,
+            ...profile
+        }));
+    }
+
+    /**
+     * [1. 상태 관리 신호 - Strict Sync] USER <-> AI 모드 전환 요청
+     * 클라이언트 단독 즉시 전환을 금지하고 서버에 요청
+     * @param {number} slotIndex 
+     * @param {boolean} [isAiMode]
+     */
+    requestToggleAiMode(slotIndex, isAiMode) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            // 오프라인 폴백
+            if (window.gameLoopInstance && typeof window.gameLoopInstance.applySlotAiMode === 'function') {
+                window.gameLoopInstance.applySlotAiMode(slotIndex, isAiMode);
+            }
+            return;
+        }
+        this.socket.send(JSON.stringify({
+            type: 'TOGGLE_AI_MODE',
+            slotIndex: slotIndex || this.mySlotIndex,
+            isAiMode
+        }));
+    }
+
+    /**
+     * [2. 실시간 이동 + 3. 1회성 트리거]
+     * 내 조작 입력 보따리 프레임 단위 압축 송신 (INPUT_SYNC)
+     * - sequenceNumber 단조 증가 부여
+     * - timeStamp 포함
+     * - posX, posY (Client Prediction 검증 및 Dead Reckoning용)
+     * @param {number} slotIndex 
+     * @param {object} inputAction { moveX, moveY, mouseX, mouseY, useSkill, posX, posY, timeStamp }
+     */
+    sendInputSync(slotIndex, inputAction) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        
+        this.sequenceCounter = (this.sequenceCounter + 1) >>> 0;
+
+        const payload = {
+            type: 'INPUT_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            sequenceNumber: this.sequenceCounter,
+            timeStamp: inputAction.timeStamp || Date.now(),
+            inputAction: {
+                moveX: inputAction.moveX || 0,
+                moveY: inputAction.moveY || 0,
+                dx: inputAction.dx !== undefined ? inputAction.dx : inputAction.moveX || 0,
+                dy: inputAction.dy !== undefined ? inputAction.dy : inputAction.moveY || 0,
+                mouseX: inputAction.mouseX,
+                mouseY: inputAction.mouseY,
+                useSkill: !!inputAction.useSkill,
+                posX: inputAction.posX,
+                posY: inputAction.posY,
+                speed: inputAction.speed
+            }
+        };
+
+        this.socket.send(JSON.stringify(payload));
+    }
+
+    /**
+     * [4. 설치형 오브젝트 & HP 판정 - Object & HP Sync]
+     * 시전자 기기(Owner)가 판정한 오브젝트 상태 및 HP 동기화 패킷 전송
+     * @param {number} slotIndex 소유자 슬롯
+     * @param {Array} objects 방벽 / 미니언 상태 목록 [{ id, type, x, y, hp, maxHp, isDead, angle, duration }]
+     * @param {object} [hpState] 기체 본체 HP 상태 { hp, maxHp, isStunned }
+     */
+    sendObjectStateSync(slotIndex, objects = [], hpState = null) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'OBJECT_STATE_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            timeStamp: Date.now(),
+            objects,
+            hpState
+        }));
+    }
+
+    /**
+     * 확장형 범용 슬롯 이벤트 송신 (하위 호환)
+     */
+    sendSlotEvent(slotIndex, eventType, payload = {}) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'SLOT_EVENT_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            eventType,
+            payload
+        }));
+    }
+
+    /**
+     * 디버그 입력 전송 메서드
+     */
+    sendDebugInput(source, description) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'DEBUG_INPUT_EVENT',
+            slotIndex: this.mySlotIndex || 1,
+            source,
+            description
+        }));
+    }
+
+    sendClientInput(slotIndex, inputAction) {
+        this.sendInputSync(slotIndex, inputAction);
+    }
+
+    /**
+     * [클라이언트 ➔ 서버] LOBBY / MENU 상태 준비(READY) 신호 송신
+     * @param {boolean} ready 
+     * @param {object} [profile]
+     */
+    sendReady(ready = true, profile = {}) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'SET_READY',
+            ready,
+            ...profile
+        }));
+    }
+
+    /**
+     * [클라이언트 ➔ 서버] SCOREBOARD 결과 화면 표결(VOTE) 신호 송신
+     * @param {'REPLAY'|'MENU'} voteChoice 
+     */
+    sendVote(voteChoice) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'SUBMIT_VOTE',
+            vote: voteChoice
+        }));
+    }
+
+    /**
+     * 슬롯별 수신된 원격 조작 입력 패킷 꺼내기 및 소비
+     * @param {number} slotIndex 
+     * @returns {object|null}
+     */
+    consumeClientInput(slotIndex) {
+        const input = this.clientInputs[slotIndex] || null;
+        this.clientInputs[slotIndex] = null;
+        return input;
+    }
+}
+```
+
+# 📄 [요청 1 ➡️ 불러온함수 (NetworkManager 본체)] TARGET: extraction_target_project/js/network/networkManager.js (14-407라인)
+# ----------------------------------------------------------
+```python
+export class NetworkManager {
+    /**
+     * @param {object} options
+     * @param {boolean} options.isHost 호스트 여부
+     * @param {string} [options.hostIp] 접속 호스트 IP
+     * @param {number} [options.port] 웹소켓 포트 (기본 8080)
+     */
+    constructor(options = {}) {
+        this.isHost = options.isHost || false;
+        this.hostIp = options.hostIp || 'localhost';
+        this.port = options.port || 8080;
+        this.socket = null;
+
+        this.mySlotIndex = null;      // 서버가 할당해준 내 슬롯 번호 (1~4)
+        this.activeSlots = [1];       // 현재 활성 슬롯 인덱스 목록
+        this.slotDetails = [];        // 슬롯별 레디/투표/닉네임/직업 상세 상태
+        this.currentPhase = 'LOBBY';  // LOBBY, MENU, GAME, SCOREBOARD
+        this.masterSeed = null;
+
+        // 원격 입력 버퍼: slotIndex -> inputAction
+        this.clientInputs = {};
+
+        // 패킷 시퀀스 번호 (송신용 단조 증가 카운터)
+        this.sequenceCounter = 0;
+
+        // 원격 슬롯별 마지막 수신 시퀀스 번호 추적 (Out-of-Order 무시용)
+        this.lastReceivedSequences = {};
+
+        // RTT(Ping) 추적을 위한 타임스탬프 맵
+        this.estimatedPing = 50; // 기본 ms
+        this.lastPingSentAt = 0;
+
+        // 리스너 콜백 맵: eventName -> [callbacks]
+        this.listeners = {
+            ROOM_STATE: [],
+            PHASE_CHANGE: [],
+            INPUT_SYNC: [],
+            SLOT_ASSIGNED: [],
+            SLOT_EVENT_SYNC: [],
+            OBJECT_STATE_SYNC: [],
+            VOTE_STATUS_UPDATE: [],
+            DEBUG_INPUT_EVENT: []
+        };
+    }
+
+    /**
+     * 소켓 네트워크 초기화
+     */
+    init() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetHost = urlParams.get('host') || window.location.hostname || 'localhost';
+        const wsUrl = `${protocol}//${targetHost}:${this.port}`;
+
+        try {
+            this.socket = new WebSocket(wsUrl);
+
+            this.socket.onopen = () => {
+                console.log(`🌐 [NetworkManager] 웹소켓 서버 연결 완료 (${wsUrl})`);
+                // 내 닉네임 / 직업 정보가 준비되어 있다면 초기 동기화
+                this.syncLocalProfile();
+            };
+
+            this.socket.onmessage = (event) => {
+                try {
+                    const packet = JSON.parse(event.data);
+                    this.dispatchPacket(packet);
+                } catch (e) {
+                    console.warn('[NetworkManager] 패킷 파싱 에러:', e);
+                }
+            };
+
+            this.socket.onerror = (err) => {
+                console.warn('[NetworkManager] 소켓 연결 에러/대기 중 (오프라인 로컬 폴백 동작)');
+            };
+
+            this.socket.onclose = () => {
+                console.warn('[NetworkManager] 소켓 연결 종료. 3초 후 재연결 시도...');
+                setTimeout(() => {
+                    this.init();
+                }, 3000);
+            };
+        } catch (e) {
+            console.warn('[NetworkManager] 소켓 생성 실패:', e);
+        }
+    }
+
+    /**
+     * 이벤트 리스너 등록
+     * @param {string} type 
+     * @param {Function} callback 
+     */
+    on(type, callback) {
+        if (!this.listeners[type]) {
+            this.listeners[type] = [];
+        }
+        this.listeners[type].push(callback);
+    }
+
+    /**
+     * 수신된 패킷 분기 및 이벤트 디스패치
+     * @param {object} packet 
+     */
+    dispatchPacket(packet) {
+        if (!packet || !packet.type) return;
+
+        switch (packet.type) {
+            case 'SLOT_ASSIGNED':
+                this.mySlotIndex = packet.slotIndex;
+                if (packet.phase) this.currentPhase = packet.phase;
+                if (packet.masterSeed) {
+                    this.setMasterSeed(packet.masterSeed);
+                }
+                console.log(`🎮 [NetworkManager] 내 슬롯 할당: P${this.mySlotIndex}`);
+                this.syncLocalProfile();
+                break;
+
+            case 'ROOM_STATE':
+                // 1. 상태 관리 신호 (Strict Sync) - Single Source of Truth
+                this.activeSlots = packet.activeSlots || [];
+                this.slotDetails = packet.slotDetails || [];
+                if (packet.phase) this.currentPhase = packet.phase;
+                if (packet.masterSeed && packet.masterSeed !== this.masterSeed) {
+                    this.setMasterSeed(packet.masterSeed);
+                }
+
+                // 기체/닉네임/AI 모드 및 human 플래그 전 기기 동시 적용
+                if (window.gameLoopInstance && window.gameLoopInstance.slots) {
+                    window.gameLoopInstance.slots.forEach((player, idx) => {
+                        const slotNum = idx + 1;
+                        const detail = this.slotDetails.find(d => d.slotIndex === slotNum);
+                        if (detail) {
+                            // AI 모드가 활성화되어 있으면 isHuman = false
+                            player.isHuman = detail.active && !detail.isAiMode;
+                            if (detail.nickname) player.nickname = detail.nickname;
+                            if (detail.classType && player.classType !== detail.classType) {
+                                player.classType = detail.classType;
+                            }
+                        } else {
+                            player.isHuman = this.activeSlots.includes(slotNum);
+                        }
+                    });
+                }
+                break;
+
+            case 'PHASE_CHANGE':
+                this.currentPhase = packet.phase;
+                console.log(`🔄 [NetworkManager] 페이즈 전환 수신: ${this.currentPhase}`);
+                if (packet.masterSeed) {
+                    this.setMasterSeed(packet.masterSeed);
+                }
+                break;
+
+            case 'INPUT_SYNC':
+            case 'CLIENT_INPUT': {
+                const sIdx = packet.slotIndex;
+                if (!sIdx) break;
+
+                // 2. 패킷 순서 엉킴 및 손실 방지 (Out-of-Order / Packet Loss)
+                const seq = packet.sequenceNumber;
+                if (typeof seq === 'number') {
+                    const lastSeq = this.lastReceivedSequences[sIdx] || 0;
+                    if (seq < lastSeq) {
+                        // 오래된 순번의 패킷은 즉시 폐기 (Discard)
+                        return;
+                    }
+                    this.lastReceivedSequences[sIdx] = seq;
+                }
+
+                // 핑(Ping) 계산: timeStamp 기반 RTT 근사치 갱신
+                if (packet.timeStamp) {
+                    const latency = Math.max(0, Date.now() - packet.timeStamp);
+                    this.estimatedPing = Math.round(this.estimatedPing * 0.8 + latency * 0.2);
+                }
+
+                // 원격 조작 입력 패킷 캐싱
+                const action = packet.inputAction || {};
+                action.sequenceNumber = seq;
+                action.timeStamp = packet.timeStamp || Date.now();
+                action.estimatedPing = this.estimatedPing;
+
+                this.clientInputs[sIdx] = action;
+                break;
+            }
+
+            case 'OBJECT_STATE_SYNC':
+                // 4. 설치형 오브젝트 & HP 판정 (Object & HP Sync)
+                break;
+
+            case 'DEBUG_INPUT_EVENT':
+                console.log(`[NET DEBUG RECV] Slot P${packet.slotIndex} | Source: [${packet.source}] | ${packet.description}`);
+                break;
+
+            case 'SLOT_EVENT_SYNC':
+                console.log(`⚡ [NetworkManager] 슬롯 이벤트 수신: P${packet.slotIndex} -> ${packet.eventType}`, packet.payload);
+                break;
+
+            case 'VOTE_STATUS_UPDATE':
+                console.log(`🗳️ [NetworkManager] 표결 현황 갱신:`, packet.votes);
+                break;
+        }
+
+        // 등록된 리스너들에게 패킷 전달
+        const cbs = this.listeners[packet.type] || [];
+        cbs.forEach(cb => {
+            try {
+                cb(packet);
+            } catch (err) {
+                console.error(`[NetworkManager] 리스너 실행 오류 (${packet.type}):`, err);
+            }
+        });
+    }
+
+    /**
+     * 로컬 UI(닉네임, 선택 직업) 상태를 서버 중앙 데이터로 동기화 요청
+     */
+    syncLocalProfile() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN || !this.mySlotIndex) return;
+
+        const nameInput = document.getElementById(`p${this.mySlotIndex}-nickname`);
+        const classSelect = document.getElementById(`p${this.mySlotIndex}-class`);
+        const nickname = nameInput ? nameInput.value.trim() : `PLAYER ${this.mySlotIndex}`;
+        const classType = classSelect ? classSelect.value : 'bufferPlayer';
+
+        this.sendSlotProfile(this.mySlotIndex, { nickname, classType });
+    }
+
+    /**
+     * masterSeed 수신 시 seededRNG 모듈 초기화
+     * @param {number|string} seed 
+     */
+    setMasterSeed(seed) {
+        this.masterSeed = seed;
+        window.selectedMatchSeed = seed;
+        seededRNG.initDerivations(seed);
+        console.log(`🎲 [NetworkManager] masterSeed(${seed}) 수신 및 seededRNG 전역 초기화 완료`);
+    }
+
+    /**
+     * [1. 상태 관리 신호 - Strict Sync] 슬롯 프로필(닉네임, 클래스) 변경 요청
+     * @param {number} slotIndex 
+     * @param {object} profile { nickname, classType, isAiMode }
+     */
+    sendSlotProfile(slotIndex, profile = {}) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'UPDATE_SLOT_PROFILE',
+            slotIndex: slotIndex || this.mySlotIndex,
+            ...profile
+        }));
+    }
+
+    /**
+     * [1. 상태 관리 신호 - Strict Sync] USER <-> AI 모드 전환 요청
+     * 클라이언트 단독 즉시 전환을 금지하고 서버에 요청
+     * @param {number} slotIndex 
+     * @param {boolean} [isAiMode]
+     */
+    requestToggleAiMode(slotIndex, isAiMode) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            // 오프라인 폴백
+            if (window.gameLoopInstance && typeof window.gameLoopInstance.applySlotAiMode === 'function') {
+                window.gameLoopInstance.applySlotAiMode(slotIndex, isAiMode);
+            }
+            return;
+        }
+        this.socket.send(JSON.stringify({
+            type: 'TOGGLE_AI_MODE',
+            slotIndex: slotIndex || this.mySlotIndex,
+            isAiMode
+        }));
+    }
+
+    /**
+     * [2. 실시간 이동 + 3. 1회성 트리거]
+     * 내 조작 입력 보따리 프레임 단위 압축 송신 (INPUT_SYNC)
+     * - sequenceNumber 단조 증가 부여
+     * - timeStamp 포함
+     * - posX, posY (Client Prediction 검증 및 Dead Reckoning용)
+     * @param {number} slotIndex 
+     * @param {object} inputAction { moveX, moveY, mouseX, mouseY, useSkill, posX, posY, timeStamp }
+     */
+    sendInputSync(slotIndex, inputAction) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        
+        this.sequenceCounter = (this.sequenceCounter + 1) >>> 0;
+
+        const payload = {
+            type: 'INPUT_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            sequenceNumber: this.sequenceCounter,
+            timeStamp: inputAction.timeStamp || Date.now(),
+            inputAction: {
+                moveX: inputAction.moveX || 0,
+                moveY: inputAction.moveY || 0,
+                dx: inputAction.dx !== undefined ? inputAction.dx : inputAction.moveX || 0,
+                dy: inputAction.dy !== undefined ? inputAction.dy : inputAction.moveY || 0,
+                mouseX: inputAction.mouseX,
+                mouseY: inputAction.mouseY,
+                useSkill: !!inputAction.useSkill,
+                posX: inputAction.posX,
+                posY: inputAction.posY,
+                speed: inputAction.speed
+            }
+        };
+
+        this.socket.send(JSON.stringify(payload));
+    }
+
+    /**
+     * [4. 설치형 오브젝트 & HP 판정 - Object & HP Sync]
+     * 시전자 기기(Owner)가 판정한 오브젝트 상태 및 HP 동기화 패킷 전송
+     * @param {number} slotIndex 소유자 슬롯
+     * @param {Array} objects 방벽 / 미니언 상태 목록 [{ id, type, x, y, hp, maxHp, isDead, angle, duration }]
+     * @param {object} [hpState] 기체 본체 HP 상태 { hp, maxHp, isStunned }
+     */
+    sendObjectStateSync(slotIndex, objects = [], hpState = null) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'OBJECT_STATE_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            timeStamp: Date.now(),
+            objects,
+            hpState
+        }));
+    }
+
+    /**
+     * 확장형 범용 슬롯 이벤트 송신 (하위 호환)
+     */
+    sendSlotEvent(slotIndex, eventType, payload = {}) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'SLOT_EVENT_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            eventType,
+            payload
+        }));
+    }
+
+    /**
+     * 디버그 입력 전송 메서드
+     */
+    sendDebugInput(source, description) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'DEBUG_INPUT_EVENT',
+            slotIndex: this.mySlotIndex || 1,
+            source,
+            description
+        }));
+    }
+
+    sendClientInput(slotIndex, inputAction) {
+        this.sendInputSync(slotIndex, inputAction);
+    }
+
+    /**
+     * [클라이언트 ➔ 서버] LOBBY / MENU 상태 준비(READY) 신호 송신
+     * @param {boolean} ready 
+     * @param {object} [profile]
+     */
+    sendReady(ready = true, profile = {}) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'SET_READY',
+            ready,
+            ...profile
+        }));
+    }
+
+    /**
+     * [클라이언트 ➔ 서버] SCOREBOARD 결과 화면 표결(VOTE) 신호 송신
+     * @param {'REPLAY'|'MENU'} voteChoice 
+     */
+    sendVote(voteChoice) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'SUBMIT_VOTE',
+            vote: voteChoice
+        }));
+    }
+
+    /**
+     * 슬롯별 수신된 원격 조작 입력 패킷 꺼내기 및 소비
+     * @param {number} slotIndex 
+     * @returns {object|null}
+     */
+    consumeClientInput(slotIndex) {
+        const input = this.clientInputs[slotIndex] || null;
+        this.clientInputs[slotIndex] = null;
+        return input;
+    }
+}
+```
+
+# 📄 [요청 2] TARGET: js/player/basePlayer.js (15-462라인)
+# ----------------------------------------------------------
+```python
+export default class BasePlayer {
+    /**
+     * @param {number} slotIndex 슬롯 인덱스 (0 ~ TOTAL_SLOTS - 1)
+     * @param {string} classType 플레이어 직업 타입 ('bufferPlayer', 'defaultPlayer')
+     */
+    constructor(slotIndex, classType = 'defaultPlayer') {
+        this.slotIndex = slotIndex;
+        this.id = slotIndex + 1;
+        this.color = SLOT_COLORS[slotIndex % SLOT_COLORS.length];
+        this.isHuman = (slotIndex === 0);
+        this.classType = classType;
+
+        // 💡 [멀티플레이 권한 시스템]: 내가 직접 키보드/마우스로 조종하는 기체인지 여부 (IsLocalOwner)
+        this.isLocalOwner = false;
+
+        // 💡 [Dead Reckoning & 원격 상태 수신 변수]
+        this.remoteInputPacket = null;
+        this.lastReceivedSeq = 0;
+        this.netTargetX = 0;
+        this.netTargetY = 0;
+        this.netVelocityX = 0;
+        this.netVelocityY = 0;
+        this.netEstimatedPing = 50; // ms
+
+        // Hard Snap 임계값 (예측 오차가 이 값을 초과하면 즉시 강제 이동)
+        this.HARD_SNAP_THRESHOLD = 150;
+
+        // --- 공통 메타 속성 (하위 캐릭터 파일에서 오버라이드) ---
+        this.className = '기본 기체';
+        this.themeColor = '#06b6d4';
+        this.hasActiveSkill = false;
+        this.skillIconClass = 'fa-solid fa-bolt';
+        this.skillName = 'SKILL';
+        this.skillFloatText = 'SKILL ACTIVATED!';
+
+        this.radius = 8;
+        this.moveSpeed = 300; // px/sec 기준 (기본)
+        this.speed = 5.2;
+
+        // 체력 및 기절 시스템
+        this.maxHp = 5;
+        this.hp = 5;
+        this.stunTimer = 0.0;
+
+        // 위치 및 목표 좌표
+        this.x = 0;
+        this.y = 0;
+        this.targetX = 0;
+        this.targetY = 0;
+
+        // 통계 및 상태값
+        this.damageDealt = 0;
+        this.kills = 0;
+        this.mistakesCount = 0;
+        this.attackCooldown = 0;
+        this.attackSpeed = 8;
+        this.invulnerableTimer = 0.0;
+
+        // 델타룬 Graze 게이지
+        this.gauge = 0;             
+        this.maxGauge = 100;
+        this.grazeRadius = 45;   
+        this.grazeCheckTimer = 0.0; 
+        this.grazeEffectTimer = 0;  
+
+        // 동적 스탯 수정자 파이프라인
+        this.modifiers = [];     
+
+        // AI FSM 필드
+        this.fsmState = 'IDLE';
+        this.actionLockTimer = 0.0;
+        this.dodgeFatigue = 0.0;
+        this.lastMistakeType = 'NONE';
+    }
+
+    /**
+     * 동적 스탯 수정자(Modifier) 추가
+     */
+    addModifier(mod) {
+        if (!mod || !mod.key) return;
+        this.removeModifier(mod.key);
+        this.modifiers.push({
+            key: mod.key,
+            type: mod.type || 'buff',
+            stat: mod.stat || 'all',
+            value: mod.value || 0,
+            duration: mod.duration || 1.0,
+            elapsed: 0
+        });
+    }
+
+    removeModifier(key) {
+        this.modifiers = this.modifiers.filter(m => m.key !== key);
+    }
+
+    getModifierValue(stat) {
+        let total = 0;
+        for (const mod of this.modifiers) {
+            if (mod.stat === stat || mod.stat === 'all') {
+                total += mod.value;
+            }
+        }
+        return total;
+    }
+
+    updateModifiers(dt) {
+        for (let i = this.modifiers.length - 1; i >= 0; i--) {
+            const mod = this.modifiers[i];
+            mod.elapsed += dt;
+            if (mod.elapsed >= mod.duration) {
+                this.modifiers.splice(i, 1);
+            }
+        }
+    }
+
+    /**
+     * 델타룬 Graze 판정
+     */
+    updateGraze(enemyBullets, dt) {
+        if (!enemyBullets || enemyBullets.length === 0) return;
+
+        if (this.grazeEffectTimer > 0) {
+            this.grazeEffectTimer = Math.max(0, this.grazeEffectTimer - dt);
+        }
+
+        for (const b of enemyBullets) {
+            if (!b || b.isDead) continue;
+
+            if (!b.grazedSlots) {
+                b.grazedSlots = [];
+            }
+
+            if (b.grazedSlots.includes(this.slotIndex)) continue;
+
+            const dist = Math.hypot(b.x - this.x, b.y - this.y);
+
+            if (dist > this.radius && dist <= this.grazeRadius) {
+                b.grazedSlots.push(this.slotIndex);
+                this.gauge = Math.min(this.maxGauge, this.gauge + 1);
+                this.grazeEffectTimer = 0.2;
+            }
+        }
+    }
+
+    /**
+     * 클래스별 개별 maxGauge 기준 100% 충전 여부 판단
+     */
+    isSkillReady() {
+        const isStun = typeof this.isStunned === 'function' ? this.isStunned() : false;
+        const targetMax = this.maxGauge || 100;
+        const currentGauge = this.gauge || 0;
+
+        if (isStun) return false;
+        if (currentGauge < targetMax) return false;
+
+        return true;
+    }
+
+    /**
+     * 기본 스킬 시전 검사 및 게이지 초기화
+     */
+    useSkill(params = {}) {
+        if (!this.isSkillReady()) return false;
+        this.gauge = 0;
+        return true;
+    }
+
+    /**
+     * 화면 크기에 맞춰 슬롯 위치 초기화
+     */
+    resetPosition(canvasWidth, canvasHeight, totalSlots) {
+        const spacing = canvasWidth / (totalSlots + 1);
+        this.x = spacing * (this.slotIndex + 1);
+        this.y = canvasHeight - 180;
+        this.targetX = this.x;
+        this.targetY = this.y;
+        this.netTargetX = this.x;
+        this.netTargetY = this.y;
+    }
+
+    /**
+     * 기절 상태 여부 확인
+     */
+    isStunned() {
+        return this.stunTimer > 0;
+    }
+
+    /**
+     * 피격 대미지 처리 (무적 시간 판정 및 기절 트리거)
+     */
+    takeDamage(amount = 1) {
+        if (this.invulnerableTimer > 0 || this.isStunned()) {
+            return false;
+        }
+
+        this.hp = Math.max(0, this.hp - amount);
+        this.invulnerableTimer = 1.0;
+
+        if (this.hp <= 0) {
+            this.stunTimer = 3.0;
+            this.hp = this.maxHp;
+        }
+
+        return true;
+    }
+
+    /**
+     * [IsLocalOwner - 로컬 기체 조작]
+     * Client Prediction: 키보드/조이스틱 입력으로 즉시 이동 목표점 계산
+     */
+    handleHumanInput(keys, joystick, skillParams = null) {
+        if (this.isStunned()) return;
+
+        const isSpaceOrRightClick = keys['Space'] || keys['KeySpace'] || keys['RightClick'];
+        if (isSpaceOrRightClick && skillParams) {
+            keys['Space'] = false;
+            keys['KeySpace'] = false;
+            keys['RightClick'] = false;
+            this.useSkill(skillParams);
+        }
+
+        let dx = 0;
+        let dy = 0;
+
+        if (keys['KeyW'] || keys['ArrowUp']) dy -= 1;
+        if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
+        if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
+
+        if (joystick && joystick.active) {
+            dx = joystick.moveX;
+            dy = joystick.moveY;
+        }
+
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+            const factor = len > 1 ? len : 1;
+            // deltaTime 연산을 위해 속도 벡터로 저장
+            const normX = dx / factor;
+            const normY = dy / factor;
+            this.targetX = this.x + normX * this.moveSpeed * 0.1;
+            this.targetY = this.y + normY * this.moveSpeed * 0.1;
+        } else {
+            this.targetX = this.x;
+            this.targetY = this.y;
+        }
+    }
+
+    /**
+     * [RemoteProxy - 원격 기체 패킷 적용 & Dead Reckoning 설정]
+     * @param {object} inputAction 릴레이 수신된 원격 패킷
+     * @param {object} skillParams
+     */
+    handleHumanInputPacket(inputAction, skillParams = null) {
+        if (this.isStunned() || !inputAction) return;
+
+        if (typeof inputAction.mouseX === 'number' && typeof inputAction.mouseY === 'number') {
+            this.lastMousePos = { x: inputAction.mouseX, y: inputAction.mouseY };
+        }
+
+        const moveX = inputAction.moveX !== undefined ? inputAction.moveX : inputAction.dx || 0;
+        const moveY = inputAction.moveY !== undefined ? inputAction.moveY : inputAction.dy || 0;
+        const len = Math.hypot(moveX, moveY);
+
+        // 1. 송신지 실제 좌표가 포함되어 있는 경우 Dead Reckoning 목적지 설정
+        if (typeof inputAction.posX === 'number' && typeof inputAction.posY === 'number') {
+            const pingSec = Math.max(0.01, (inputAction.estimatedPing || 50) / 1000);
+            
+            // 상대방의 현재 속도 추정
+            const speed = this.moveSpeed;
+            const vx = len > 0 ? (moveX / len) * speed : 0;
+            const vy = len > 0 ? (moveY / len) * speed : 0;
+
+            this.netVelocityX = vx;
+            this.netVelocityY = vy;
+
+            // Ping 지연 시간만큼 미래의 예측 위치 계산 (Dead Reckoning)
+            this.netTargetX = inputAction.posX + vx * pingSec;
+            this.netTargetY = inputAction.posY + vy * pingSec;
+
+            // 💡 [Hard Snap / Teleport Threshold]: 150px 이상 오차 시 강제 스냅
+            const distFromCurrent = Math.hypot(this.x - inputAction.posX, this.y - inputAction.posY);
+            if (distFromCurrent > this.HARD_SNAP_THRESHOLD) {
+                this.x = inputAction.posX;
+                this.y = inputAction.posY;
+                this.targetX = inputAction.posX;
+                this.targetY = inputAction.posY;
+            } else {
+                this.targetX = this.netTargetX;
+                this.targetY = this.netTargetY;
+            }
+        } else {
+            // 위치 좌표가 없을 경우 기존 방향 벡터 누적
+            if (len > 0) {
+                const factor = len > 1 ? len : 1;
+                this.targetX = this.x + (moveX / factor) * this.moveSpeed * 0.1;
+                this.targetY = this.y + (moveY / factor) * this.moveSpeed * 0.1;
+            } else {
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
+        }
+
+        // 3. 1회성 스킬 트리거 실행 (useSkill)
+        if (inputAction.useSkill && skillParams) {
+            this.useSkill(skillParams);
+            inputAction.useSkill = false; // 1회성 소모
+        }
+    }
+
+    /**
+     * 프레임 업데이트 공통 처리 (DeltaTime Base 보간)
+     */
+    updateMovement(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
+        if (this.invulnerableTimer > 0) {
+            this.invulnerableTimer = Math.max(0, this.invulnerableTimer - dt);
+        }
+
+        // 동적 스탯 수정자 업데이트
+        this.updateModifiers(dt);
+
+        // 델타룬 스치기 체크
+        this.updateGraze(enemyBullets, dt);
+
+        if (this.stunTimer > 0) {
+            this.stunTimer = Math.max(0, this.stunTimer - dt);
+            this.targetX = this.x;
+            this.targetY = this.y;
+            return;
+        }
+
+        // 💡 [DeltaTime Base & Dead Reckoning 미세 속도 보간]
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist > this.HARD_SNAP_THRESHOLD) {
+            // 임계치 초과 시 즉시 Hard Snap
+            this.x = this.targetX;
+            this.y = this.targetY;
+        } else if (dist > 1) {
+            // 원격 기체(RemoteProxy)는 거리에 따라 미세 가속/감속 보정 (도착 시간 맞춤)
+            let currentSpeed = this.moveSpeed;
+            if (!this.isLocalOwner && this.isHuman) {
+                // 오차가 크면 약간 가속(최대 1.5배), 거의 도착하면 감속
+                const speedMultiplier = Math.min(1.8, Math.max(0.6, dist / 30));
+                currentSpeed *= speedMultiplier;
+            }
+
+            const step = Math.min(dist, currentSpeed * dt);
+            this.x += (dx / dist) * step;
+            this.y += (dy / dist) * step;
+        } else {
+            this.x = this.targetX;
+            this.y = this.targetY;
+        }
+
+        // 맵 경계 제한
+        this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x));
+        this.y = Math.max(120, Math.min(canvasHeight - this.radius, this.y));
+    }
+
+    /**
+     * 탄환 생성 및 사격 처리
+     */
+    shoot(bulletContainer, targetInfo) {
+        if (this.isStunned()) return;
+
+        let targetAngle = -Math.PI / 2;
+
+        if (this.isHuman) {
+            const mousePos = (targetInfo && targetInfo.mousePos) ? targetInfo.mousePos : { x: this.x, y: this.y - 100 };
+            targetAngle = Math.atan2(mousePos.y - this.y, mousePos.x - this.x);
+        } else {
+            const boss = targetInfo ? targetInfo.boss : null;
+            const enemyMinions = targetInfo ? (targetInfo.enemyMinions || []) : [];
+            const allEnemies = [boss, ...enemyMinions].filter(e => e && !e.isDead);
+
+            let closestEnemy = null;
+            let minDist = Infinity;
+
+            for (const enemy of allEnemies) {
+                const dist = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestEnemy = enemy;
+                }
+            }
+
+            if (closestEnemy) {
+                targetAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
+            }
+        }
+
+        bulletContainer.push(new PlayerBullet(this.x, this.y, targetAngle, this.color, this));
+    }
+
+    updateAttack(onShoot) {
+        if (this.isStunned()) return;
+
+        const currentAttackSpeed = this.attackSpeed * (1 + this.getModifierValue('attackSpeed') / 100);
+        this.attackCooldown += currentAttackSpeed;
+        if (this.attackCooldown >= 60) {
+            this.attackCooldown = 0;
+            if (typeof onShoot === 'function') {
+                onShoot();
+            }
+        }
+    }
+
+    draw(ctx, allyPlayers = []) {
+        ctx.save();
+
+        if (this.isStunned()) {
+            ctx.globalAlpha = 0.4 + 0.3 * Math.sin(Date.now() * 0.01);
+        }
+
+        // Graze 연출
+        if (this.grazeEffectTimer > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.grazeRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.grazeEffectTimer * 4})`;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 본체 렌더링
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+
+        // 닉네임 / 소유자 표시
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = this.isLocalOwner ? '#22d3ee' : '#cbd5e1';
+        ctx.textAlign = 'center';
+        const label = this.isLocalOwner ? `[YOU] P${this.id}` : `P${this.id}`;
+        ctx.fillText(label, this.x, this.y - this.radius - 6);
+
+        ctx.restore();
+    }
+}
+```
+
+# 📄 [요청 2 ➡️ 불러온함수 (PlayerBullet 본체)] TARGET: extraction_target_project/js/player/playerBullet.js (6-70라인)
+# ----------------------------------------------------------
+```python
+export class PlayerBullet {
+    /**
+     * @param {number} x 시작 X
+     * @param {number} y 시작 Y
+     * @param {number} angle 진행 각도 (라디안)
+     * @param {number} slotIndex 발사한 플레이어의 슬롯 인덱스
+     * @param {string} color 탄환 네온 색상
+     */
+    constructor(x, y, angle, slotIndex, color) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.speed = 14;
+        this.radius = 4;
+        this.slotIndex = slotIndex;
+        this.color = color;
+        this.baseDamage = 22;
+        this.damage = 22;
+        this.modifiers = [];
+    }
+
+    /**
+     * 탄환 자체 스탯 수정자 파이프라인 산출
+     */
+    getModifiedDamage() {
+        let finalDmg = this.damage;
+        for (const m of this.modifiers) {
+            if (m.targetStat === 'bulletDamage' && m.type === 'MULTIPLY') {
+                finalDmg *= m.value;
+            }
+        }
+        return Math.round(finalDmg);
+    }
+
+    /**
+     * 탄환 위치 업데이트
+     */
+    update() {
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+    }
+
+    /**
+     * 탄환 렌더링
+     * @param {CanvasRenderingContext2D} ctx 
+     */
+    draw(ctx) {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+    }
+
+    /**
+     * 화면 바깥으로 나갔는지 확인
+     * @param {number} width 캔버스 너비
+     * @param {number} height 캔버스 높이
+     * @returns {boolean}
+     */
+    isOutOfBounds(width, height) {
+        return (this.y < -10 || this.x < -10 || this.x > width + 10 || this.y > height + 10);
+    }
+}
+```
+
+# 📄 [요청 2 ➡️ 불러온함수 (BasePlayer 본체)] TARGET: extraction_target_project/js/player/basePlayer.js (15-462라인)
+# ----------------------------------------------------------
+```python
+export default class BasePlayer {
+    /**
+     * @param {number} slotIndex 슬롯 인덱스 (0 ~ TOTAL_SLOTS - 1)
+     * @param {string} classType 플레이어 직업 타입 ('bufferPlayer', 'defaultPlayer')
+     */
+    constructor(slotIndex, classType = 'defaultPlayer') {
+        this.slotIndex = slotIndex;
+        this.id = slotIndex + 1;
+        this.color = SLOT_COLORS[slotIndex % SLOT_COLORS.length];
+        this.isHuman = (slotIndex === 0);
+        this.classType = classType;
+
+        // 💡 [멀티플레이 권한 시스템]: 내가 직접 키보드/마우스로 조종하는 기체인지 여부 (IsLocalOwner)
+        this.isLocalOwner = false;
+
+        // 💡 [Dead Reckoning & 원격 상태 수신 변수]
+        this.remoteInputPacket = null;
+        this.lastReceivedSeq = 0;
+        this.netTargetX = 0;
+        this.netTargetY = 0;
+        this.netVelocityX = 0;
+        this.netVelocityY = 0;
+        this.netEstimatedPing = 50; // ms
+
+        // Hard Snap 임계값 (예측 오차가 이 값을 초과하면 즉시 강제 이동)
+        this.HARD_SNAP_THRESHOLD = 150;
+
+        // --- 공통 메타 속성 (하위 캐릭터 파일에서 오버라이드) ---
+        this.className = '기본 기체';
+        this.themeColor = '#06b6d4';
+        this.hasActiveSkill = false;
+        this.skillIconClass = 'fa-solid fa-bolt';
+        this.skillName = 'SKILL';
+        this.skillFloatText = 'SKILL ACTIVATED!';
+
+        this.radius = 8;
+        this.moveSpeed = 300; // px/sec 기준 (기본)
+        this.speed = 5.2;
+
+        // 체력 및 기절 시스템
+        this.maxHp = 5;
+        this.hp = 5;
+        this.stunTimer = 0.0;
+
+        // 위치 및 목표 좌표
+        this.x = 0;
+        this.y = 0;
+        this.targetX = 0;
+        this.targetY = 0;
+
+        // 통계 및 상태값
+        this.damageDealt = 0;
+        this.kills = 0;
+        this.mistakesCount = 0;
+        this.attackCooldown = 0;
+        this.attackSpeed = 8;
+        this.invulnerableTimer = 0.0;
+
+        // 델타룬 Graze 게이지
+        this.gauge = 0;             
+        this.maxGauge = 100;
+        this.grazeRadius = 45;   
+        this.grazeCheckTimer = 0.0; 
+        this.grazeEffectTimer = 0;  
+
+        // 동적 스탯 수정자 파이프라인
+        this.modifiers = [];     
+
+        // AI FSM 필드
+        this.fsmState = 'IDLE';
+        this.actionLockTimer = 0.0;
+        this.dodgeFatigue = 0.0;
+        this.lastMistakeType = 'NONE';
+    }
+
+    /**
+     * 동적 스탯 수정자(Modifier) 추가
+     */
+    addModifier(mod) {
+        if (!mod || !mod.key) return;
+        this.removeModifier(mod.key);
+        this.modifiers.push({
+            key: mod.key,
+            type: mod.type || 'buff',
+            stat: mod.stat || 'all',
+            value: mod.value || 0,
+            duration: mod.duration || 1.0,
+            elapsed: 0
+        });
+    }
+
+    removeModifier(key) {
+        this.modifiers = this.modifiers.filter(m => m.key !== key);
+    }
+
+    getModifierValue(stat) {
+        let total = 0;
+        for (const mod of this.modifiers) {
+            if (mod.stat === stat || mod.stat === 'all') {
+                total += mod.value;
+            }
+        }
+        return total;
+    }
+
+    updateModifiers(dt) {
+        for (let i = this.modifiers.length - 1; i >= 0; i--) {
+            const mod = this.modifiers[i];
+            mod.elapsed += dt;
+            if (mod.elapsed >= mod.duration) {
+                this.modifiers.splice(i, 1);
+            }
+        }
+    }
+
+    /**
+     * 델타룬 Graze 판정
+     */
+    updateGraze(enemyBullets, dt) {
+        if (!enemyBullets || enemyBullets.length === 0) return;
+
+        if (this.grazeEffectTimer > 0) {
+            this.grazeEffectTimer = Math.max(0, this.grazeEffectTimer - dt);
+        }
+
+        for (const b of enemyBullets) {
+            if (!b || b.isDead) continue;
+
+            if (!b.grazedSlots) {
+                b.grazedSlots = [];
+            }
+
+            if (b.grazedSlots.includes(this.slotIndex)) continue;
+
+            const dist = Math.hypot(b.x - this.x, b.y - this.y);
+
+            if (dist > this.radius && dist <= this.grazeRadius) {
+                b.grazedSlots.push(this.slotIndex);
+                this.gauge = Math.min(this.maxGauge, this.gauge + 1);
+                this.grazeEffectTimer = 0.2;
+            }
+        }
+    }
+
+    /**
+     * 클래스별 개별 maxGauge 기준 100% 충전 여부 판단
+     */
+    isSkillReady() {
+        const isStun = typeof this.isStunned === 'function' ? this.isStunned() : false;
+        const targetMax = this.maxGauge || 100;
+        const currentGauge = this.gauge || 0;
+
+        if (isStun) return false;
+        if (currentGauge < targetMax) return false;
+
+        return true;
+    }
+
+    /**
+     * 기본 스킬 시전 검사 및 게이지 초기화
+     */
+    useSkill(params = {}) {
+        if (!this.isSkillReady()) return false;
+        this.gauge = 0;
+        return true;
+    }
+
+    /**
+     * 화면 크기에 맞춰 슬롯 위치 초기화
+     */
+    resetPosition(canvasWidth, canvasHeight, totalSlots) {
+        const spacing = canvasWidth / (totalSlots + 1);
+        this.x = spacing * (this.slotIndex + 1);
+        this.y = canvasHeight - 180;
+        this.targetX = this.x;
+        this.targetY = this.y;
+        this.netTargetX = this.x;
+        this.netTargetY = this.y;
+    }
+
+    /**
+     * 기절 상태 여부 확인
+     */
+    isStunned() {
+        return this.stunTimer > 0;
+    }
+
+    /**
+     * 피격 대미지 처리 (무적 시간 판정 및 기절 트리거)
+     */
+    takeDamage(amount = 1) {
+        if (this.invulnerableTimer > 0 || this.isStunned()) {
+            return false;
+        }
+
+        this.hp = Math.max(0, this.hp - amount);
+        this.invulnerableTimer = 1.0;
+
+        if (this.hp <= 0) {
+            this.stunTimer = 3.0;
+            this.hp = this.maxHp;
+        }
+
+        return true;
+    }
+
+    /**
+     * [IsLocalOwner - 로컬 기체 조작]
+     * Client Prediction: 키보드/조이스틱 입력으로 즉시 이동 목표점 계산
+     */
+    handleHumanInput(keys, joystick, skillParams = null) {
+        if (this.isStunned()) return;
+
+        const isSpaceOrRightClick = keys['Space'] || keys['KeySpace'] || keys['RightClick'];
+        if (isSpaceOrRightClick && skillParams) {
+            keys['Space'] = false;
+            keys['KeySpace'] = false;
+            keys['RightClick'] = false;
+            this.useSkill(skillParams);
+        }
+
+        let dx = 0;
+        let dy = 0;
+
+        if (keys['KeyW'] || keys['ArrowUp']) dy -= 1;
+        if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
+        if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
+        if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
+
+        if (joystick && joystick.active) {
+            dx = joystick.moveX;
+            dy = joystick.moveY;
+        }
+
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+            const factor = len > 1 ? len : 1;
+            // deltaTime 연산을 위해 속도 벡터로 저장
+            const normX = dx / factor;
+            const normY = dy / factor;
+            this.targetX = this.x + normX * this.moveSpeed * 0.1;
+            this.targetY = this.y + normY * this.moveSpeed * 0.1;
+        } else {
+            this.targetX = this.x;
+            this.targetY = this.y;
+        }
+    }
+
+    /**
+     * [RemoteProxy - 원격 기체 패킷 적용 & Dead Reckoning 설정]
+     * @param {object} inputAction 릴레이 수신된 원격 패킷
+     * @param {object} skillParams
+     */
+    handleHumanInputPacket(inputAction, skillParams = null) {
+        if (this.isStunned() || !inputAction) return;
+
+        if (typeof inputAction.mouseX === 'number' && typeof inputAction.mouseY === 'number') {
+            this.lastMousePos = { x: inputAction.mouseX, y: inputAction.mouseY };
+        }
+
+        const moveX = inputAction.moveX !== undefined ? inputAction.moveX : inputAction.dx || 0;
+        const moveY = inputAction.moveY !== undefined ? inputAction.moveY : inputAction.dy || 0;
+        const len = Math.hypot(moveX, moveY);
+
+        // 1. 송신지 실제 좌표가 포함되어 있는 경우 Dead Reckoning 목적지 설정
+        if (typeof inputAction.posX === 'number' && typeof inputAction.posY === 'number') {
+            const pingSec = Math.max(0.01, (inputAction.estimatedPing || 50) / 1000);
+            
+            // 상대방의 현재 속도 추정
+            const speed = this.moveSpeed;
+            const vx = len > 0 ? (moveX / len) * speed : 0;
+            const vy = len > 0 ? (moveY / len) * speed : 0;
+
+            this.netVelocityX = vx;
+            this.netVelocityY = vy;
+
+            // Ping 지연 시간만큼 미래의 예측 위치 계산 (Dead Reckoning)
+            this.netTargetX = inputAction.posX + vx * pingSec;
+            this.netTargetY = inputAction.posY + vy * pingSec;
+
+            // 💡 [Hard Snap / Teleport Threshold]: 150px 이상 오차 시 강제 스냅
+            const distFromCurrent = Math.hypot(this.x - inputAction.posX, this.y - inputAction.posY);
+            if (distFromCurrent > this.HARD_SNAP_THRESHOLD) {
+                this.x = inputAction.posX;
+                this.y = inputAction.posY;
+                this.targetX = inputAction.posX;
+                this.targetY = inputAction.posY;
+            } else {
+                this.targetX = this.netTargetX;
+                this.targetY = this.netTargetY;
+            }
+        } else {
+            // 위치 좌표가 없을 경우 기존 방향 벡터 누적
+            if (len > 0) {
+                const factor = len > 1 ? len : 1;
+                this.targetX = this.x + (moveX / factor) * this.moveSpeed * 0.1;
+                this.targetY = this.y + (moveY / factor) * this.moveSpeed * 0.1;
+            } else {
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
+        }
+
+        // 3. 1회성 스킬 트리거 실행 (useSkill)
+        if (inputAction.useSkill && skillParams) {
+            this.useSkill(skillParams);
+            inputAction.useSkill = false; // 1회성 소모
+        }
+    }
+
+    /**
+     * 프레임 업데이트 공통 처리 (DeltaTime Base 보간)
+     */
+    updateMovement(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
+        if (this.invulnerableTimer > 0) {
+            this.invulnerableTimer = Math.max(0, this.invulnerableTimer - dt);
+        }
+
+        // 동적 스탯 수정자 업데이트
+        this.updateModifiers(dt);
+
+        // 델타룬 스치기 체크
+        this.updateGraze(enemyBullets, dt);
+
+        if (this.stunTimer > 0) {
+            this.stunTimer = Math.max(0, this.stunTimer - dt);
+            this.targetX = this.x;
+            this.targetY = this.y;
+            return;
+        }
+
+        // 💡 [DeltaTime Base & Dead Reckoning 미세 속도 보간]
+        const dx = this.targetX - this.x;
+        const dy = this.targetY - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist > this.HARD_SNAP_THRESHOLD) {
+            // 임계치 초과 시 즉시 Hard Snap
+            this.x = this.targetX;
+            this.y = this.targetY;
+        } else if (dist > 1) {
+            // 원격 기체(RemoteProxy)는 거리에 따라 미세 가속/감속 보정 (도착 시간 맞춤)
+            let currentSpeed = this.moveSpeed;
+            if (!this.isLocalOwner && this.isHuman) {
+                // 오차가 크면 약간 가속(최대 1.5배), 거의 도착하면 감속
+                const speedMultiplier = Math.min(1.8, Math.max(0.6, dist / 30));
+                currentSpeed *= speedMultiplier;
+            }
+
+            const step = Math.min(dist, currentSpeed * dt);
+            this.x += (dx / dist) * step;
+            this.y += (dy / dist) * step;
+        } else {
+            this.x = this.targetX;
+            this.y = this.targetY;
+        }
+
+        // 맵 경계 제한
+        this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x));
+        this.y = Math.max(120, Math.min(canvasHeight - this.radius, this.y));
+    }
+
+    /**
+     * 탄환 생성 및 사격 처리
+     */
+    shoot(bulletContainer, targetInfo) {
+        if (this.isStunned()) return;
+
+        let targetAngle = -Math.PI / 2;
+
+        if (this.isHuman) {
+            const mousePos = (targetInfo && targetInfo.mousePos) ? targetInfo.mousePos : { x: this.x, y: this.y - 100 };
+            targetAngle = Math.atan2(mousePos.y - this.y, mousePos.x - this.x);
+        } else {
+            const boss = targetInfo ? targetInfo.boss : null;
+            const enemyMinions = targetInfo ? (targetInfo.enemyMinions || []) : [];
+            const allEnemies = [boss, ...enemyMinions].filter(e => e && !e.isDead);
+
+            let closestEnemy = null;
+            let minDist = Infinity;
+
+            for (const enemy of allEnemies) {
+                const dist = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestEnemy = enemy;
+                }
+            }
+
+            if (closestEnemy) {
+                targetAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
+            }
+        }
+
+        bulletContainer.push(new PlayerBullet(this.x, this.y, targetAngle, this.color, this));
+    }
+
+    updateAttack(onShoot) {
+        if (this.isStunned()) return;
+
+        const currentAttackSpeed = this.attackSpeed * (1 + this.getModifierValue('attackSpeed') / 100);
+        this.attackCooldown += currentAttackSpeed;
+        if (this.attackCooldown >= 60) {
+            this.attackCooldown = 0;
+            if (typeof onShoot === 'function') {
+                onShoot();
+            }
+        }
+    }
+
+    draw(ctx, allyPlayers = []) {
+        ctx.save();
+
+        if (this.isStunned()) {
+            ctx.globalAlpha = 0.4 + 0.3 * Math.sin(Date.now() * 0.01);
+        }
+
+        // Graze 연출
+        if (this.grazeEffectTimer > 0) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.grazeRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.grazeEffectTimer * 4})`;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 본체 렌더링
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+
+        // 닉네임 / 소유자 표시
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = this.isLocalOwner ? '#22d3ee' : '#cbd5e1';
+        ctx.textAlign = 'center';
+        const label = this.isLocalOwner ? `[YOU] P${this.id}` : `P${this.id}`;
+        ctx.fillText(label, this.x, this.y - this.radius - 6);
+
+        ctx.restore();
+    }
+}
+```
+
+# 📄 [요청 3] TARGET: js/core/input.js (12-268라인)
+# ----------------------------------------------------------
+```python
+export class InputHandler {
+    constructor() {
+        this.keys = {};
+        this.mousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        this.joystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            moveX: 0,
+            moveY: 0
+        };
+
+        // 스킬 전용 1회성 트리거 큐 플래그
+        this.skillTriggered = false;
+        this.lastSkillTriggerTime = 0;
+
+        // AI 자율 주행 모드 여부
+        this.isAiMode = false;
+
+        this.initKeyboard();
+        this.initMouse();
+        this.initJoystick();
+    }
+
+    /**
+     * Lazy Evaluation 헬퍼: 현재 유효한 networkManager 인스턴스 실시간 탐색
+     * @returns {import('../network/networkManager.js').NetworkManager|null}
+     */
+    getNetworkManager() {
+        return this.networkManager || window.networkManager || null;
+    }
+
+    /**
+     * AI 모드 토글 및 설정
+     * @param {boolean} [enable] 
+     */
+    setAiMode(enable) {
+        if (typeof enable === 'boolean') {
+            this.isAiMode = enable;
+        } else {
+            this.isAiMode = !this.isAiMode;
+        }
+        console.log(`🤖 [InputHandler] AI 모드 상태: ${this.isAiMode ? 'ON (AUTO)' : 'OFF (MANUAL)'}`);
+        return this.isAiMode;
+    }
+
+    /**
+     * 키보드 이벤트 리스너 등록
+     */
+    initKeyboard() {
+        window.addEventListener('keydown', (e) => {
+            if (!this.keys[e.code]) {
+                if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
+                    this.skillTriggered = true;
+                    this.lastSkillTriggerTime = Date.now();
+                    e.preventDefault();
+                }
+                // 💡 [Lazy Evaluation]: this.networkManager || window.networkManager 실시간 탐색
+                const net = this.getNetworkManager();
+                console.log(`[LOCAL KEY LOG] Key Down: ${e.code}`);
+                if (net && typeof net.sendDebugInput === 'function') {
+                    net.sendDebugInput('KEYBOARD', `Key Down: ${e.code}`);
+                }
+            }
+            this.keys[e.code] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+        });
+    }
+
+    /**
+     * 마우스 리스너 등록 (UI 버튼과 캔버스 좌클릭 구별)
+     */
+    initMouse() {
+        window.addEventListener('mousemove', (e) => {
+            this.mousePos.x = e.clientX;
+            this.mousePos.y = e.clientY;
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            // 💡 [Lazy Evaluation]
+            const net = this.getNetworkManager();
+
+            if (e.button === 2) {
+                this.skillTriggered = true;
+                this.lastSkillTriggerTime = Date.now();
+                console.log('[LOCAL MOUSE LOG] Right Click (Skill Trigger)');
+                if (net && typeof net.sendDebugInput === 'function') {
+                    net.sendDebugInput('MOUSE', 'Right Click (Skill Trigger)');
+                }
+            } else if (e.button === 0) {
+                // UI 버튼 요소와 캔버스 구분
+                const target = e.target;
+                const isButton = target && (target.tagName === 'BUTTON' || target.closest('button'));
+                const clickType = isButton ? `UI Button Click [${target.id || target.innerText || 'BTN'}]` : `Canvas Field Click (X:${e.clientX}, Y:${e.clientY})`;
+
+                console.log(`[LOCAL MOUSE LOG] ${clickType}`);
+                if (net && typeof net.sendDebugInput === 'function') {
+                    net.sendDebugInput('MOUSE_LEFT', clickType);
+                }
+            }
+        });
+
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+    }
+
+    /**
+     * 모바일 터치 조이스틱 인터랙션 초기화
+     */
+    initJoystick() {
+        const joystickZone = document.getElementById('joystickZone');
+        const joystickKnob = document.getElementById('joystickKnob');
+
+        if (!joystickZone || !joystickKnob) return;
+
+        joystickZone.addEventListener('touchstart', (e) => {
+            this.joystick.active = true;
+            const touch = e.touches[0];
+            const rect = joystickZone.getBoundingClientRect();
+            this.joystick.startX = rect.left + rect.width / 2;
+            this.joystick.startY = rect.top + rect.height / 2;
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!this.joystick.active) return;
+            const touch = e.touches[0];
+            const dx = touch.clientX - this.joystick.startX;
+            const dy = touch.clientY - this.joystick.startY;
+            const dist = Math.hypot(dx, dy);
+            const maxDist = 35;
+
+            const angle = Math.atan2(dy, dx);
+            const intensity = Math.min(dist, maxDist);
+
+            this.joystick.moveX = Math.cos(angle) * (intensity / maxDist);
+            this.joystick.moveY = Math.sin(angle) * (intensity / maxDist);
+
+            const knobX = Math.cos(angle) * intensity;
+            const knobY = Math.sin(angle) * intensity;
+            joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+        }, { passive: true });
+
+        const endTouch = () => {
+            this.joystick.active = false;
+            this.joystick.moveX = 0;
+            this.joystick.moveY = 0;
+            joystickKnob.style.transform = `translate(0px, 0px)`;
+        };
+
+        window.addEventListener('touchend', endTouch);
+        window.addEventListener('touchcancel', endTouch);
+    }
+
+    /**
+     * playerAiSpread 독립 시드 기반 결정론적 AI 입력 액션 생성
+     */
+    getAiInputAction(slotIndex = 0, context = null) {
+        let moveX = 0;
+        let moveY = 0;
+        let mouseX = this.mousePos.x;
+        let mouseY = this.mousePos.y;
+        let useSkill = false;
+
+        const player = (context && context.player) || 
+            (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);
+
+        if (player) {
+            const dx = (player.targetX || player.x) - player.x;
+            const dy = (player.targetY || player.y) - player.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > 5) {
+                const spreadAngle = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 0.1;
+                const baseAngle = Math.atan2(dy, dx) + spreadAngle;
+                moveX = Math.cos(baseAngle);
+                moveY = Math.sin(baseAngle);
+            }
+
+            const boss = (context && context.boss) || (window.gameLoopInstance && window.gameLoopInstance.boss);
+            if (boss) {
+                const aimSpread = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 20;
+                mouseX = boss.x + aimSpread;
+                mouseY = boss.y + aimSpread;
+            }
+
+            if (player.dodgeFatigue > 0.8 && player.hasActiveSkill && !player.isSkillOnCooldown) {
+                useSkill = rngPlayerAi.getSpread(slotIndex) < 0.3;
+            }
+        }
+
+        return {
+            moveX,
+            moveY,
+            dx: moveX,
+            dy: moveY,
+            mouseX,
+            mouseY,
+            useSkill,
+            timeStamp: Date.now()
+        };
+    }
+
+    /**
+     * 현재 프레임의 클라이언트 조작 상태 패킷 추출 (Continuous Movement & Trigger Action)
+     */
+    getInputAction(slotIndex = 0, context = null) {
+        if (this.isAiMode) {
+            return this.getAiInputAction(slotIndex, context);
+        }
+
+        let moveX = 0;
+        let moveY = 0;
+
+        if (this.keys['KeyW'] || this.keys['ArrowUp']) moveY -= 1;
+        if (this.keys['KeyS'] || this.keys['ArrowDown']) moveY += 1;
+        if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
+        if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
+
+        // 대각선 이동 정규화
+        const len = Math.hypot(moveX, moveY);
+        if (len > 0) {
+            moveX /= len;
+            moveY /= len;
+        }
+
+        if (this.joystick && this.joystick.active) {
+            moveX = this.joystick.moveX;
+            moveY = this.joystick.moveY;
+        }
+
+        const useSkill = this.skillTriggered;
+        const skillTime = this.lastSkillTriggerTime || Date.now();
+        this.skillTriggered = false;
+
+        const myPlayer = (context && context.player) || 
+            (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);
+
+        return {
+            moveX,
+            moveY,
+            dx: moveX,
+            dy: moveY,
+            mouseX: this.mousePos.x,
+            mouseY: this.mousePos.y,
+            useSkill,
+            timeStamp: skillTime,
+            posX: myPlayer ? myPlayer.x : undefined,
+            posY: myPlayer ? myPlayer.y : undefined,
+            speed: myPlayer ? myPlayer.speed : undefined
+        };
+    }
+}
+```
+
+# 📄 [요청 3 ➡️ 불러온함수 (InputHandler 본체)] TARGET: extraction_target_project/js/core/input.js (12-268라인)
+# ----------------------------------------------------------
+```python
+export class InputHandler {
+    constructor() {
+        this.keys = {};
+        this.mousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        this.joystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            moveX: 0,
+            moveY: 0
+        };
+
+        // 스킬 전용 1회성 트리거 큐 플래그
+        this.skillTriggered = false;
+        this.lastSkillTriggerTime = 0;
+
+        // AI 자율 주행 모드 여부
+        this.isAiMode = false;
+
+        this.initKeyboard();
+        this.initMouse();
+        this.initJoystick();
+    }
+
+    /**
+     * Lazy Evaluation 헬퍼: 현재 유효한 networkManager 인스턴스 실시간 탐색
+     * @returns {import('../network/networkManager.js').NetworkManager|null}
+     */
+    getNetworkManager() {
+        return this.networkManager || window.networkManager || null;
+    }
+
+    /**
+     * AI 모드 토글 및 설정
+     * @param {boolean} [enable] 
+     */
+    setAiMode(enable) {
+        if (typeof enable === 'boolean') {
+            this.isAiMode = enable;
+        } else {
+            this.isAiMode = !this.isAiMode;
+        }
+        console.log(`🤖 [InputHandler] AI 모드 상태: ${this.isAiMode ? 'ON (AUTO)' : 'OFF (MANUAL)'}`);
+        return this.isAiMode;
+    }
+
+    /**
+     * 키보드 이벤트 리스너 등록
+     */
+    initKeyboard() {
+        window.addEventListener('keydown', (e) => {
+            if (!this.keys[e.code]) {
+                if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
+                    this.skillTriggered = true;
+                    this.lastSkillTriggerTime = Date.now();
+                    e.preventDefault();
+                }
+                // 💡 [Lazy Evaluation]: this.networkManager || window.networkManager 실시간 탐색
+                const net = this.getNetworkManager();
+                console.log(`[LOCAL KEY LOG] Key Down: ${e.code}`);
+                if (net && typeof net.sendDebugInput === 'function') {
+                    net.sendDebugInput('KEYBOARD', `Key Down: ${e.code}`);
+                }
+            }
+            this.keys[e.code] = true;
+        });
+
+        window.addEventListener('keyup', (e) => {
+            this.keys[e.code] = false;
+        });
+    }
+
+    /**
+     * 마우스 리스너 등록 (UI 버튼과 캔버스 좌클릭 구별)
+     */
+    initMouse() {
+        window.addEventListener('mousemove', (e) => {
+            this.mousePos.x = e.clientX;
+            this.mousePos.y = e.clientY;
+        });
+
+        window.addEventListener('mousedown', (e) => {
+            // 💡 [Lazy Evaluation]
+            const net = this.getNetworkManager();
+
+            if (e.button === 2) {
+                this.skillTriggered = true;
+                this.lastSkillTriggerTime = Date.now();
+                console.log('[LOCAL MOUSE LOG] Right Click (Skill Trigger)');
+                if (net && typeof net.sendDebugInput === 'function') {
+                    net.sendDebugInput('MOUSE', 'Right Click (Skill Trigger)');
+                }
+            } else if (e.button === 0) {
+                // UI 버튼 요소와 캔버스 구분
+                const target = e.target;
+                const isButton = target && (target.tagName === 'BUTTON' || target.closest('button'));
+                const clickType = isButton ? `UI Button Click [${target.id || target.innerText || 'BTN'}]` : `Canvas Field Click (X:${e.clientX}, Y:${e.clientY})`;
+
+                console.log(`[LOCAL MOUSE LOG] ${clickType}`);
+                if (net && typeof net.sendDebugInput === 'function') {
+                    net.sendDebugInput('MOUSE_LEFT', clickType);
+                }
+            }
+        });
+
+        window.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+    }
+
+    /**
+     * 모바일 터치 조이스틱 인터랙션 초기화
+     */
+    initJoystick() {
+        const joystickZone = document.getElementById('joystickZone');
+        const joystickKnob = document.getElementById('joystickKnob');
+
+        if (!joystickZone || !joystickKnob) return;
+
+        joystickZone.addEventListener('touchstart', (e) => {
+            this.joystick.active = true;
+            const touch = e.touches[0];
+            const rect = joystickZone.getBoundingClientRect();
+            this.joystick.startX = rect.left + rect.width / 2;
+            this.joystick.startY = rect.top + rect.height / 2;
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!this.joystick.active) return;
+            const touch = e.touches[0];
+            const dx = touch.clientX - this.joystick.startX;
+            const dy = touch.clientY - this.joystick.startY;
+            const dist = Math.hypot(dx, dy);
+            const maxDist = 35;
+
+            const angle = Math.atan2(dy, dx);
+            const intensity = Math.min(dist, maxDist);
+
+            this.joystick.moveX = Math.cos(angle) * (intensity / maxDist);
+            this.joystick.moveY = Math.sin(angle) * (intensity / maxDist);
+
+            const knobX = Math.cos(angle) * intensity;
+            const knobY = Math.sin(angle) * intensity;
+            joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+        }, { passive: true });
+
+        const endTouch = () => {
+            this.joystick.active = false;
+            this.joystick.moveX = 0;
+            this.joystick.moveY = 0;
+            joystickKnob.style.transform = `translate(0px, 0px)`;
+        };
+
+        window.addEventListener('touchend', endTouch);
+        window.addEventListener('touchcancel', endTouch);
+    }
+
+    /**
+     * playerAiSpread 독립 시드 기반 결정론적 AI 입력 액션 생성
+     */
+    getAiInputAction(slotIndex = 0, context = null) {
+        let moveX = 0;
+        let moveY = 0;
+        let mouseX = this.mousePos.x;
+        let mouseY = this.mousePos.y;
+        let useSkill = false;
+
+        const player = (context && context.player) || 
+            (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);
+
+        if (player) {
+            const dx = (player.targetX || player.x) - player.x;
+            const dy = (player.targetY || player.y) - player.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist > 5) {
+                const spreadAngle = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 0.1;
+                const baseAngle = Math.atan2(dy, dx) + spreadAngle;
+                moveX = Math.cos(baseAngle);
+                moveY = Math.sin(baseAngle);
+            }
+
+            const boss = (context && context.boss) || (window.gameLoopInstance && window.gameLoopInstance.boss);
+            if (boss) {
+                const aimSpread = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 20;
+                mouseX = boss.x + aimSpread;
+                mouseY = boss.y + aimSpread;
+            }
+
+            if (player.dodgeFatigue > 0.8 && player.hasActiveSkill && !player.isSkillOnCooldown) {
+                useSkill = rngPlayerAi.getSpread(slotIndex) < 0.3;
+            }
+        }
+
+        return {
+            moveX,
+            moveY,
+            dx: moveX,
+            dy: moveY,
+            mouseX,
+            mouseY,
+            useSkill,
+            timeStamp: Date.now()
+        };
+    }
+
+    /**
+     * 현재 프레임의 클라이언트 조작 상태 패킷 추출 (Continuous Movement & Trigger Action)
+     */
+    getInputAction(slotIndex = 0, context = null) {
+        if (this.isAiMode) {
+            return this.getAiInputAction(slotIndex, context);
+        }
+
+        let moveX = 0;
+        let moveY = 0;
+
+        if (this.keys['KeyW'] || this.keys['ArrowUp']) moveY -= 1;
+        if (this.keys['KeyS'] || this.keys['ArrowDown']) moveY += 1;
+        if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
+        if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
+
+        // 대각선 이동 정규화
+        const len = Math.hypot(moveX, moveY);
+        if (len > 0) {
+            moveX /= len;
+            moveY /= len;
+        }
+
+        if (this.joystick && this.joystick.active) {
+            moveX = this.joystick.moveX;
+            moveY = this.joystick.moveY;
+        }
+
+        const useSkill = this.skillTriggered;
+        const skillTime = this.lastSkillTriggerTime || Date.now();
+        this.skillTriggered = false;
+
+        const myPlayer = (context && context.player) || 
+            (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);
+
+        return {
+            moveX,
+            moveY,
+            dx: moveX,
+            dy: moveY,
+            mouseX: this.mousePos.x,
+            mouseY: this.mousePos.y,
+            useSkill,
+            timeStamp: skillTime,
+            posX: myPlayer ? myPlayer.x : undefined,
+            posY: myPlayer ? myPlayer.y : undefined,
+            speed: myPlayer ? myPlayer.speed : undefined
+        };
+    }
+}
+```
+
+# 📄 [요청 4] TARGET: js/core/gameLoop.js (14-23라인)
+# ----------------------------------------------------------
+```python
+export class GameLoop {
+    /**
+     * @param {HTMLCanvasElement} canvas 
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {import('./sceneManager.js').SceneManager} sceneManager 
+     * @param {import('./input.js').InputHandler} input 
+     * @param {import('./ui.js').UIManager} ui 
+     */
+```
+
+# 📄 [요청 4 ➡️ 불러온함수 (GameLoop 본체)] TARGET: extraction_target_project/js/core/gameLoop.js (14-23라인)
+# ----------------------------------------------------------
+```python
+export class GameLoop {
+    /**
+     * @param {HTMLCanvasElement} canvas 
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {import('./sceneManager.js').SceneManager} sceneManager 
+     * @param {import('./input.js').InputHandler} input 
+     * @param {import('./ui.js').UIManager} ui 
+     */
+```
+
+# 📄 [요청 5] TARGET: js/core/ui.js (248-278라인)
+# ----------------------------------------------------------
+```python
+        const triggerSkill = () => {
+            const userPlayer = typeof getUserPlayerFn === 'function' ? getUserPlayerFn() : null;
+            if (!userPlayer || typeof userPlayer.useSkill !== 'function') return;
+
+            const allEnemyBullets = [
+                ...(gameLoopInstance.bossBullets || []),
+                ...(gameLoopInstance.minionBullets || [])
+            ];
+
+            const success = userPlayer.useSkill({
+                boss: gameLoopInstance.boss,
+                enemyMinions: gameLoopInstance.enemyMinions,
+                bossBullets: gameLoopInstance.bossBullets,
+                minionBullets: gameLoopInstance.minionBullets,
+                enemyBullets: allEnemyBullets,
+                allyMinions: gameLoopInstance.allyMinions,
+                allyPlayers: gameLoopInstance.slots
+            });
+
+            if (success && Array.isArray(gameLoopInstance.floatingTexts)) {
+                gameLoopInstance.floatingTexts.push({
+                    x: userPlayer.x,
+                    y: userPlayer.y - 20,
+                    text: userPlayer.skillFloatText || 'SKILL ACTIVATED!',
+                    color: userPlayer.themeColor || '#10b981',
+                    alpha: 1.0,
+                    vy: -1.5,
+                    life: 1.0
+                });
+            }
+        };
+```
+
+# 📄 [요청 6] TARGET: server.js (92-119라인)
+# ----------------------------------------------------------
+```python
+function broadcastRoomState() {
+    const activeSlots = [];
+    const slotDetails = [];
+
+    for (let i = 1; i <= 4; i++) {
+        const s = slots[i];
+        if (s.active) {
+            activeSlots.push(i);
+        }
+        slotDetails.push({
+            slotIndex: i,
+            active: s.active,
+            ready: s.ready,
+            vote: s.vote,
+            isAiMode: s.isAiMode,
+            nickname: s.nickname,
+            classType: s.classType
+        });
+    }
+
+    broadcast({
+        type: 'ROOM_STATE',
+        phase: currentPhase,
+        activeSlots,
+        slotDetails,
+        masterSeed: currentMasterSeed
+    });
+}
+```
+
+# 📄 [요청 6 ➡️ 불러온함수 (broadcast 본체)] TARGET: extraction_target_project/server.js (80-87라인)
+# ----------------------------------------------------------
+```python
+function broadcast(payloadObj) {
+    const jsonStr = JSON.stringify(payloadObj);
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(jsonStr);
+        }
+    });
+}
+```
+
+# 📄 [요청 6 ➡️ 불러온함수 (broadcastRoomState 본체)] TARGET: extraction_target_project/server.js (92-119라인)
+# ----------------------------------------------------------
+```python
+function broadcastRoomState() {
+    const activeSlots = [];
+    const slotDetails = [];
+
+    for (let i = 1; i <= 4; i++) {
+        const s = slots[i];
+        if (s.active) {
+            activeSlots.push(i);
+        }
+        slotDetails.push({
+            slotIndex: i,
+            active: s.active,
+            ready: s.ready,
+            vote: s.vote,
+            isAiMode: s.isAiMode,
+            nickname: s.nickname,
+            classType: s.classType
+        });
+    }
+
+    broadcast({
+        type: 'ROOM_STATE',
+        phase: currentPhase,
+        activeSlots,
+        slotDetails,
+        masterSeed: currentMasterSeed
+    });
+}
+```
+
+# 📄 [요청 7] TARGET: js/player/characters/shielderPlayer.js (11-238라인)
+# ----------------------------------------------------------
+```python
+export class ShielderPlayer extends BasePlayer {
+    constructor(slotIndex) {
+        super(slotIndex, 'shielderPlayer');
+
+        // --- 쉴더 전용 메타 설정 ---
+        this.className = '쉴더 (Shielder)';
+        this.themeColor = '#3b82f6';                // 파란색 테마
+        this.hasActiveSkill = true;
+        this.skillIconClass = 'fa-solid fa-shield-halved';
+        this.skillName = 'SHIELD';
+        this.skillFloatText = 'BARRIER DEPLOYED!';
+
+        this.maxGauge = 70;                         // 스킬 게이지 70
+        this.activeShield = null;                   // 현재 설치된 배리어 정보
+    }
+
+    /**
+     * 쉴더 전용 스킬 시전 (방어막 설치)
+     * @param {object} targetInfo 마우스/조작 입력 및 보스 정보
+     */
+    useSkill(targetInfo = {}) {
+        if (!super.useSkill(targetInfo)) return false;
+
+        let deployAngle = -Math.PI / 2; // 기본 방향: 위쪽
+
+        if (this.isHuman) {
+            const keys = targetInfo.keys || {};
+            let dx = 0;
+            let dy = 0;
+
+            if (keys['KeyW'] || keys['ArrowUp']) dy -= 1;
+            if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
+            if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
+            if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
+
+            if (dx !== 0 || dy !== 0) {
+                deployAngle = Math.atan2(dy, dx);
+            } else {
+                const mousePos = targetInfo.mousePos;
+                if (mousePos) {
+                    deployAngle = Math.atan2(mousePos.y - this.y, mousePos.x - this.x);
+                }
+            }
+        } else {
+            const boss = targetInfo.boss;
+            const enemyMinions = targetInfo.enemyMinions || [];
+            const allEnemies = [boss, ...enemyMinions].filter(e => e && !e.isDead);
+
+            let closest = null;
+            let minDist = Infinity;
+            for (const enemy of allEnemies) {
+                const d = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+                if (d < minDist) {
+                    minDist = d;
+                    closest = enemy;
+                }
+            }
+
+            if (closest) {
+                deployAngle = Math.atan2(closest.y - this.y, closest.x - this.x);
+            }
+        }
+
+        // 곡선 배리어 생성 (체력 100, 반지름 70px, 90도 호)
+        this.activeShield = {
+            id: `shield_${this.slotIndex}_${Date.now()}`,
+            x: this.x,
+            y: this.y,
+            angle: deployAngle,
+            radius: 70,
+            arcAngle: Math.PI / 2,
+            hp: 100,
+            maxHp: 100,
+            thickness: 12,
+            duration: 20.0
+        };
+
+        // 소유자(Owner)인 경우 전체 기기에 방벽 생성 브로드캐스트
+        if (this.isLocalOwner && window.networkManager) {
+            window.networkManager.sendObjectStateSync(this.slotIndex + 1, [this.activeShield]);
+        }
+
+        return true;
+    }
+
+    /**
+     * 프레임 업데이트 및 배리어-적 탄환 충돌 상호작용 (Owner Authority)
+     */
+    updateMovement(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
+        super.updateMovement(dt, canvasWidth, canvasHeight, enemyBullets, allyPlayers);
+
+        if (this.activeShield) {
+            const shield = this.activeShield;
+            shield.duration -= dt;
+
+            if (shield.duration <= 0 || shield.hp <= 0) {
+                this.activeShield = null;
+                if (this.isLocalOwner && window.networkManager) {
+                    window.networkManager.sendObjectStateSync(this.slotIndex + 1, []);
+                }
+                return;
+            }
+
+            // 💡 [Owner Authority]: 내 소유 기체(isLocalOwner)이거나 AI인 경우만 직접 HP 차감 연산
+            const hasAuthority = this.isLocalOwner || !this.isHuman;
+
+            if (hasAuthority) {
+                let shieldDamaged = false;
+
+                // 적 탄환 소멸 처리
+                for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                    const b = enemyBullets[i];
+                    if (!b || b.isDead) continue;
+
+                    const dist = Math.hypot(b.x - shield.x, b.y - shield.y);
+
+                    if (Math.abs(dist - shield.radius) <= shield.thickness + (b.radius || 4)) {
+                        let bAngle = Math.atan2(b.y - shield.y, b.x - shield.x);
+                        let diff = bAngle - shield.angle;
+
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+
+                        if (Math.abs(diff) <= shield.arcAngle / 2) {
+                            b.isDead = true;
+                            shield.hp -= 1;
+                            shieldDamaged = true;
+
+                            if (shield.hp <= 0) {
+                                this.activeShield = null;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // 보스 레이저(dangerAreas) 선분 차단 및 방패 내구도 차감
+                if (this.activeShield && window.gameLoopInstance && window.gameLoopInstance.boss) {
+                    const boss = window.gameLoopInstance.boss;
+                    if (Array.isArray(boss.dangerAreas)) {
+                        boss.dangerAreas.forEach(area => {
+                            if (area.isFiring && this.activeShield) {
+                                const A = shield.x - area.x1;
+                                const B = shield.y - area.y1;
+                                const C = area.x2 - area.x1;
+                                const D = area.y2 - area.y1;
+                                const dot = A * C + B * D;
+                                const lenSq = C * C + D * D;
+                                let param = -1;
+                                if (lenSq !== 0) param = dot / lenSq;
+
+                                let xx, yy;
+                                if (param < 0) { xx = area.x1; yy = area.y1; }
+                                else if (param > 1) { xx = area.x2; yy = area.y2; }
+                                else { xx = area.x1 + param * C; yy = area.y1 + param * D; }
+
+                                const distToLaser = Math.hypot(shield.x - xx, shield.y - yy);
+
+                                if (Math.abs(distToLaser - shield.radius) <= shield.thickness + (area.width / 2)) {
+                                    let laserAngle = Math.atan2(yy - shield.y, xx - shield.x);
+                                    let diff = laserAngle - shield.angle;
+                                    while (diff < -Math.PI) diff += Math.PI * 2;
+                                    while (diff > Math.PI) diff -= Math.PI * 2;
+
+                                    if (Math.abs(diff) <= shield.arcAngle / 2) {
+                                        shield.hp -= 15 * dt;
+                                        shieldDamaged = true;
+                                        area.isBlockedByShield = true;
+                                        if (shield.hp <= 0) {
+                                            this.activeShield = null;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // 피해가 발생했거나 일정 주기마다 OBJECT_STATE_SYNC 전송
+                if (this.isLocalOwner && window.networkManager && (shieldDamaged || Math.random() < 0.1)) {
+                    window.networkManager.sendObjectStateSync(
+                        this.slotIndex + 1,
+                        this.activeShield ? [this.activeShield] : []
+                    );
+                }
+            }
+
+            // SafeSpot 계산
+            if (this.activeShield) {
+                const wallCenterX = shield.x + Math.cos(shield.angle) * shield.radius;
+                const wallCenterY = shield.y + Math.sin(shield.angle) * shield.radius;
+                const BODY_MARGIN = 22;
+
+                const insideAngle = shield.angle + Math.PI;
+                shield.safeSpot = {
+                    x: wallCenterX + Math.cos(insideAngle) * BODY_MARGIN,
+                    y: wallCenterY + Math.sin(insideAngle) * BODY_MARGIN,
+                    radius: 18
+                };
+            }
+        }
+    }
+
+    draw(ctx, allyPlayers = []) {
+        super.draw(ctx, allyPlayers);
+
+        // 배리어 호 렌더링
+        if (this.activeShield) {
+            const s = this.activeShield;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, s.angle - s.arcAngle / 2, s.angle + s.arcAngle / 2);
+            ctx.lineWidth = s.thickness;
+            ctx.strokeStyle = `rgba(59, 130, 246, ${Math.min(1.0, s.hp / s.maxHp)})`;
+            ctx.stroke();
+
+            // 배리어 HP 바 표기
+            ctx.font = '9px Orbitron';
+            ctx.fillStyle = '#60a5fa';
+            ctx.textAlign = 'center';
+            const textX = s.x + Math.cos(s.angle) * (s.radius + 15);
+            const textY = s.y + Math.sin(s.angle) * (s.radius + 15);
+            ctx.fillText(`SHIELD: ${Math.ceil(s.hp)}`, textX, textY);
+
+            ctx.restore();
+        }
+    }
+}
+```
+
+# 📄 [요청 7 ➡️ 불러온함수 (ShielderPlayer 본체)] TARGET: extraction_target_project/js/player/characters/shielderPlayer.js (11-238라인)
+# ----------------------------------------------------------
+```python
+export class ShielderPlayer extends BasePlayer {
+    constructor(slotIndex) {
+        super(slotIndex, 'shielderPlayer');
+
+        // --- 쉴더 전용 메타 설정 ---
+        this.className = '쉴더 (Shielder)';
+        this.themeColor = '#3b82f6';                // 파란색 테마
+        this.hasActiveSkill = true;
+        this.skillIconClass = 'fa-solid fa-shield-halved';
+        this.skillName = 'SHIELD';
+        this.skillFloatText = 'BARRIER DEPLOYED!';
+
+        this.maxGauge = 70;                         // 스킬 게이지 70
+        this.activeShield = null;                   // 현재 설치된 배리어 정보
+    }
+
+    /**
+     * 쉴더 전용 스킬 시전 (방어막 설치)
+     * @param {object} targetInfo 마우스/조작 입력 및 보스 정보
+     */
+    useSkill(targetInfo = {}) {
+        if (!super.useSkill(targetInfo)) return false;
+
+        let deployAngle = -Math.PI / 2; // 기본 방향: 위쪽
+
+        if (this.isHuman) {
+            const keys = targetInfo.keys || {};
+            let dx = 0;
+            let dy = 0;
+
+            if (keys['KeyW'] || keys['ArrowUp']) dy -= 1;
+            if (keys['KeyS'] || keys['ArrowDown']) dy += 1;
+            if (keys['KeyA'] || keys['ArrowLeft']) dx -= 1;
+            if (keys['KeyD'] || keys['ArrowRight']) dx += 1;
+
+            if (dx !== 0 || dy !== 0) {
+                deployAngle = Math.atan2(dy, dx);
+            } else {
+                const mousePos = targetInfo.mousePos;
+                if (mousePos) {
+                    deployAngle = Math.atan2(mousePos.y - this.y, mousePos.x - this.x);
+                }
+            }
+        } else {
+            const boss = targetInfo.boss;
+            const enemyMinions = targetInfo.enemyMinions || [];
+            const allEnemies = [boss, ...enemyMinions].filter(e => e && !e.isDead);
+
+            let closest = null;
+            let minDist = Infinity;
+            for (const enemy of allEnemies) {
+                const d = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+                if (d < minDist) {
+                    minDist = d;
+                    closest = enemy;
+                }
+            }
+
+            if (closest) {
+                deployAngle = Math.atan2(closest.y - this.y, closest.x - this.x);
+            }
+        }
+
+        // 곡선 배리어 생성 (체력 100, 반지름 70px, 90도 호)
+        this.activeShield = {
+            id: `shield_${this.slotIndex}_${Date.now()}`,
+            x: this.x,
+            y: this.y,
+            angle: deployAngle,
+            radius: 70,
+            arcAngle: Math.PI / 2,
+            hp: 100,
+            maxHp: 100,
+            thickness: 12,
+            duration: 20.0
+        };
+
+        // 소유자(Owner)인 경우 전체 기기에 방벽 생성 브로드캐스트
+        if (this.isLocalOwner && window.networkManager) {
+            window.networkManager.sendObjectStateSync(this.slotIndex + 1, [this.activeShield]);
+        }
+
+        return true;
+    }
+
+    /**
+     * 프레임 업데이트 및 배리어-적 탄환 충돌 상호작용 (Owner Authority)
+     */
+    updateMovement(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
+        super.updateMovement(dt, canvasWidth, canvasHeight, enemyBullets, allyPlayers);
+
+        if (this.activeShield) {
+            const shield = this.activeShield;
+            shield.duration -= dt;
+
+            if (shield.duration <= 0 || shield.hp <= 0) {
+                this.activeShield = null;
+                if (this.isLocalOwner && window.networkManager) {
+                    window.networkManager.sendObjectStateSync(this.slotIndex + 1, []);
+                }
+                return;
+            }
+
+            // 💡 [Owner Authority]: 내 소유 기체(isLocalOwner)이거나 AI인 경우만 직접 HP 차감 연산
+            const hasAuthority = this.isLocalOwner || !this.isHuman;
+
+            if (hasAuthority) {
+                let shieldDamaged = false;
+
+                // 적 탄환 소멸 처리
+                for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                    const b = enemyBullets[i];
+                    if (!b || b.isDead) continue;
+
+                    const dist = Math.hypot(b.x - shield.x, b.y - shield.y);
+
+                    if (Math.abs(dist - shield.radius) <= shield.thickness + (b.radius || 4)) {
+                        let bAngle = Math.atan2(b.y - shield.y, b.x - shield.x);
+                        let diff = bAngle - shield.angle;
+
+                        while (diff < -Math.PI) diff += Math.PI * 2;
+                        while (diff > Math.PI) diff -= Math.PI * 2;
+
+                        if (Math.abs(diff) <= shield.arcAngle / 2) {
+                            b.isDead = true;
+                            shield.hp -= 1;
+                            shieldDamaged = true;
+
+                            if (shield.hp <= 0) {
+                                this.activeShield = null;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // 보스 레이저(dangerAreas) 선분 차단 및 방패 내구도 차감
+                if (this.activeShield && window.gameLoopInstance && window.gameLoopInstance.boss) {
+                    const boss = window.gameLoopInstance.boss;
+                    if (Array.isArray(boss.dangerAreas)) {
+                        boss.dangerAreas.forEach(area => {
+                            if (area.isFiring && this.activeShield) {
+                                const A = shield.x - area.x1;
+                                const B = shield.y - area.y1;
+                                const C = area.x2 - area.x1;
+                                const D = area.y2 - area.y1;
+                                const dot = A * C + B * D;
+                                const lenSq = C * C + D * D;
+                                let param = -1;
+                                if (lenSq !== 0) param = dot / lenSq;
+
+                                let xx, yy;
+                                if (param < 0) { xx = area.x1; yy = area.y1; }
+                                else if (param > 1) { xx = area.x2; yy = area.y2; }
+                                else { xx = area.x1 + param * C; yy = area.y1 + param * D; }
+
+                                const distToLaser = Math.hypot(shield.x - xx, shield.y - yy);
+
+                                if (Math.abs(distToLaser - shield.radius) <= shield.thickness + (area.width / 2)) {
+                                    let laserAngle = Math.atan2(yy - shield.y, xx - shield.x);
+                                    let diff = laserAngle - shield.angle;
+                                    while (diff < -Math.PI) diff += Math.PI * 2;
+                                    while (diff > Math.PI) diff -= Math.PI * 2;
+
+                                    if (Math.abs(diff) <= shield.arcAngle / 2) {
+                                        shield.hp -= 15 * dt;
+                                        shieldDamaged = true;
+                                        area.isBlockedByShield = true;
+                                        if (shield.hp <= 0) {
+                                            this.activeShield = null;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+
+                // 피해가 발생했거나 일정 주기마다 OBJECT_STATE_SYNC 전송
+                if (this.isLocalOwner && window.networkManager && (shieldDamaged || Math.random() < 0.1)) {
+                    window.networkManager.sendObjectStateSync(
+                        this.slotIndex + 1,
+                        this.activeShield ? [this.activeShield] : []
+                    );
+                }
+            }
+
+            // SafeSpot 계산
+            if (this.activeShield) {
+                const wallCenterX = shield.x + Math.cos(shield.angle) * shield.radius;
+                const wallCenterY = shield.y + Math.sin(shield.angle) * shield.radius;
+                const BODY_MARGIN = 22;
+
+                const insideAngle = shield.angle + Math.PI;
+                shield.safeSpot = {
+                    x: wallCenterX + Math.cos(insideAngle) * BODY_MARGIN,
+                    y: wallCenterY + Math.sin(insideAngle) * BODY_MARGIN,
+                    radius: 18
+                };
+            }
+        }
+    }
+
+    draw(ctx, allyPlayers = []) {
+        super.draw(ctx, allyPlayers);
+
+        // 배리어 호 렌더링
+        if (this.activeShield) {
+            const s = this.activeShield;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, s.angle - s.arcAngle / 2, s.angle + s.arcAngle / 2);
+            ctx.lineWidth = s.thickness;
+            ctx.strokeStyle = `rgba(59, 130, 246, ${Math.min(1.0, s.hp / s.maxHp)})`;
+            ctx.stroke();
+
+            // 배리어 HP 바 표기
+            ctx.font = '9px Orbitron';
+            ctx.fillStyle = '#60a5fa';
+            ctx.textAlign = 'center';
+            const textX = s.x + Math.cos(s.angle) * (s.radius + 15);
+            const textY = s.y + Math.sin(s.angle) * (s.radius + 15);
+            ctx.fillText(`SHIELD: ${Math.ceil(s.hp)}`, textX, textY);
+
+            ctx.restore();
+        }
+    }
+}
+```
+
+# 📄 [요청 8] TARGET: js/player/characters/summonerPlayer.js (12-84라인)
+# ----------------------------------------------------------
+```python
+export class SummonerPlayer extends BasePlayer {
+    constructor(slotIndex) {
+        super(slotIndex, 'summonerPlayer');
+
+        this.className = '서머너 (Summoner)';
+        this.themeColor = '#10b981';
+        this.hasActiveSkill = true;
+        this.skillIconClass = 'fa-solid fa-robot';
+        this.skillName = 'SUMMON ALL';
+        this.skillFloatText = 'BERSERKERS & DRONE SUMMONED!';
+
+        this.maxGauge = 120;
+    }
+
+    /**
+     * 게이지 120 소모 시 무적 드론 1마리 + 탱커 버서커 2마리 동시 소환
+     */
+    useSkill(context = {}) {
+        if (!super.useSkill(context)) return false;
+
+        if (context.allyMinions && Array.isArray(context.allyMinions)) {
+            // 1. 원거리 무적 궤도 드론 1마리 소환
+            const drone = new ShooterMinion(this, 0);
+            context.allyMinions.push(drone);
+
+            // 2. 스폰 위치 중첩 방지 (좌/우 35px 오프셋)
+            const leftX = Math.max(20, this.x - 35);
+            const rightX = Math.min(1260, this.x + 35);
+
+            const b1 = new BerserkerMinion(this, leftX, this.y);
+            const b2 = new BerserkerMinion(this, rightX, this.y);
+            context.allyMinions.push(b1);
+            context.allyMinions.push(b2);
+
+            // 소유자(Owner)인 경우 OBJECT_STATE_SYNC 브로드캐스트
+            if (this.isLocalOwner && window.networkManager) {
+                const minionStates = [
+                    { id: `drone_${this.slotIndex}_${Date.now()}`, type: 'drone', hp: drone.hp, maxHp: drone.maxHp, x: drone.x, y: drone.y },
+                    { id: `b1_${this.slotIndex}_${Date.now()}`, type: 'berserker', hp: b1.hp, maxHp: b1.maxHp, x: b1.x, y: b1.y },
+                    { id: `b2_${this.slotIndex}_${Date.now()}`, type: 'berserker', hp: b2.hp, maxHp: b2.maxHp, x: b2.x, y: b2.y }
+                ];
+                window.networkManager.sendObjectStateSync(this.slotIndex + 1, minionStates);
+            }
+        }
+
+        return true;
+    }
+
+    draw(ctx, allyPlayers = []) {
+        super.draw(ctx, allyPlayers);
+
+        if (!this.isStunned()) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(Date.now() * 0.002);
+            ctx.strokeStyle = this.themeColor;
+            ctx.lineWidth = 1.5;
+
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+                const a = (Math.PI * 2 / 3) * i;
+                const hx = Math.cos(a) * 12;
+                const hy = Math.sin(a) * 12;
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    }
+}
+```
+
+# 📄 [요청 8 ➡️ 불러온함수 (SummonerPlayer 본체)] TARGET: extraction_target_project/js/player/characters/summonerPlayer.js (12-84라인)
+# ----------------------------------------------------------
+```python
+export class SummonerPlayer extends BasePlayer {
+    constructor(slotIndex) {
+        super(slotIndex, 'summonerPlayer');
+
+        this.className = '서머너 (Summoner)';
+        this.themeColor = '#10b981';
+        this.hasActiveSkill = true;
+        this.skillIconClass = 'fa-solid fa-robot';
+        this.skillName = 'SUMMON ALL';
+        this.skillFloatText = 'BERSERKERS & DRONE SUMMONED!';
+
+        this.maxGauge = 120;
+    }
+
+    /**
+     * 게이지 120 소모 시 무적 드론 1마리 + 탱커 버서커 2마리 동시 소환
+     */
+    useSkill(context = {}) {
+        if (!super.useSkill(context)) return false;
+
+        if (context.allyMinions && Array.isArray(context.allyMinions)) {
+            // 1. 원거리 무적 궤도 드론 1마리 소환
+            const drone = new ShooterMinion(this, 0);
+            context.allyMinions.push(drone);
+
+            // 2. 스폰 위치 중첩 방지 (좌/우 35px 오프셋)
+            const leftX = Math.max(20, this.x - 35);
+            const rightX = Math.min(1260, this.x + 35);
+
+            const b1 = new BerserkerMinion(this, leftX, this.y);
+            const b2 = new BerserkerMinion(this, rightX, this.y);
+            context.allyMinions.push(b1);
+            context.allyMinions.push(b2);
+
+            // 소유자(Owner)인 경우 OBJECT_STATE_SYNC 브로드캐스트
+            if (this.isLocalOwner && window.networkManager) {
+                const minionStates = [
+                    { id: `drone_${this.slotIndex}_${Date.now()}`, type: 'drone', hp: drone.hp, maxHp: drone.maxHp, x: drone.x, y: drone.y },
+                    { id: `b1_${this.slotIndex}_${Date.now()}`, type: 'berserker', hp: b1.hp, maxHp: b1.maxHp, x: b1.x, y: b1.y },
+                    { id: `b2_${this.slotIndex}_${Date.now()}`, type: 'berserker', hp: b2.hp, maxHp: b2.maxHp, x: b2.x, y: b2.y }
+                ];
+                window.networkManager.sendObjectStateSync(this.slotIndex + 1, minionStates);
+            }
+        }
+
+        return true;
+    }
+
+    draw(ctx, allyPlayers = []) {
+        super.draw(ctx, allyPlayers);
+
+        if (!this.isStunned()) {
+            ctx.save();
+            ctx.translate(this.x, this.y);
+            ctx.rotate(Date.now() * 0.002);
+            ctx.strokeStyle = this.themeColor;
+            ctx.lineWidth = 1.5;
+
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+                const a = (Math.PI * 2 / 3) * i;
+                const hx = Math.cos(a) * 12;
+                const hy = Math.sin(a) * 12;
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    }
+}
+```
+
+# 📄 [요청 8 ➡️ 불러온함수 (BerserkerMinion 본체)] TARGET: extraction_target_project/js/minian/ally/berserkerMinion.js (7-241라인)
+# ----------------------------------------------------------
+```python
+export class BerserkerMinion extends BaseAllyMinion {
+    constructor(owner, spawnX = 0, spawnY = 0) {
+        super(owner, {
+            radius: 13,
+            hp: 120,        // 체력 120 고체력 탱커
+            maxHp: 120,
+            color: '#ef4444',
+            fireRate: 1.3 // 와리가리 도끼 스윙 연사력
+        });
+
+        if (spawnX && spawnY) {
+            this.x = spawnX;
+            this.y = spawnY;
+        }
+
+        this.baseSpeed = 20; // 이동속도 1/2 감축 (90 px/s)
+        this.weaponLength = 32;
+
+        this.vx = 0;
+        this.vy = 0;
+
+        // 2초 소환중 연출 (검붉은 삼각형 회전 소환진, 소환 중 무적)
+        this.spawnTimer = 2;
+        this.isSpawning = true;
+
+        // 광폭화 (HP 50% / 20 이하 시 +12 HP 회복 & 5초간 피격 50% 감쇄)
+        this.isBerserkMode = false;
+        this.berserkBuffTimer = 0;
+
+        // 도끼 와리가리 애니메이션 변수
+        this.axeSwingAngle = 0;
+        this.axeSwingDir = 1;
+        this.isSwinging = false;
+        this.swingProgress = 0;
+        this.targetAngle = 0;
+    }
+
+    takeDamage(amount) {
+        if (this.isDead || this.isSpawning) return;
+
+        // 광폭화 5초 버프 활성화 시 탄막 피해 50% 반감
+        const finalDamage = (this.isBerserkMode && this.berserkBuffTimer > 0) ? amount * 0.5 : amount;
+
+        this.hp -= finalDamage;
+
+        // 체력 50% (20 HP) 이하에서 광폭화 1회 트리거
+        if (this.hp <= 20 && !this.isBerserkMode) {
+            this.isBerserkMode = true;
+            this.hp = Math.min(this.maxHp, this.hp + 50); // +50 HP 회복
+            this.berserkBuffTimer = 5.0;                   // 5초간 50% 반감 버프
+        }
+
+        if (this.hp <= 0) {
+            this.hp = 0;
+            this.isDead = true;
+        }
+    }
+
+    updateMovement(enemyEntities = [], dt = 0.016) {
+        super.updateMovement(enemyEntities, dt);
+        if (this.isDead) return;
+
+        // 소환 대기 연출 처리
+        if (this.isSpawning) {
+            this.spawnTimer -= dt;
+            if (this.spawnTimer <= 0) {
+                this.isSpawning = false;
+            }
+            return;
+        }
+
+        if (this.berserkBuffTimer > 0) {
+            this.berserkBuffTimer -= dt;
+        }
+
+        // 유도미사일식 관성 곡선 이동
+        const target = this.findClosestTarget(enemyEntities);
+        if (target) {
+            const dist = Math.hypot(target.x - this.x, target.y - this.y);
+            this.targetAngle = Math.atan2(target.y - this.y, target.x - this.x);
+
+            const idealDistance = (target.radius || 25) + this.radius + this.weaponLength;
+
+            if (dist > idealDistance + 5) {
+                const desiredVx = Math.cos(this.targetAngle) * this.baseSpeed;
+                const desiredVy = Math.sin(this.targetAngle) * this.baseSpeed;
+
+                this.vx = this.vx * 0.85 + desiredVx * 0.15;
+                this.vy = this.vy * 0.85 + desiredVy * 0.15;
+            } else {
+                this.vx *= 0.8;
+                this.vy *= 0.8;
+            }
+
+            this.x += this.vx * dt;
+            this.y += this.vy * dt;
+        }
+
+        // 도끼 와리가리 스윙 애니메이션
+        if (this.isSwinging) {
+            this.swingProgress += dt * 18;
+            this.axeSwingAngle = Math.sin(this.swingProgress) * 0.9 * this.axeSwingDir;
+
+            if (this.swingProgress >= Math.PI) {
+                this.isSwinging = false;
+                this.swingProgress = 0;
+                this.axeSwingAngle = 0;
+                this.axeSwingDir *= -1;
+            }
+        }
+    }
+
+    updateAttack(enemyEntities = [], allyBullets = [], dt = 0.016) {
+        if (this.isDead || this.isSpawning) return;
+
+        this.attackTimer += dt;
+
+        if (this.attackTimer >= this.fireRate) {
+            const target = this.findClosestTarget(enemyEntities);
+            if (target) {
+                const dist = Math.hypot(target.x - this.x, target.y - this.y);
+                const idealDistance = (target.radius || 25) + this.radius + this.weaponLength;
+
+                if (dist <= idealDistance + 15) {
+                    this.isSwinging = true;
+                    this.swingProgress = 0;
+
+                    if (typeof target.takeDamage === 'function') {
+                        target.takeDamage(1); // 공격력 1
+                    }
+                    this.attackTimer = 0;
+                }
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.isDead) return;
+
+        // 💡 [동적 캔버스 크기 기반 맵 이탈 방지] 렌더링 시점의 캔버스 너비/높이에 맞춰 위치 클램핑
+        if (ctx && ctx.canvas) {
+            const margin = this.radius + 12;
+            this.x = Math.max(margin, Math.min(ctx.canvas.width - margin, this.x));
+            this.y = Math.max(margin, Math.min(ctx.canvas.height - margin, this.y));
+        }
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // 1. 2초 검붉은 선 회전 삼각형 소환진 연출
+        if (this.isSpawning) {
+            const spawnProgress = Math.max(0, 1 - (this.spawnTimer / 2));
+            const scale = 0.3 + spawnProgress * 0.9;
+            const rotAngle = Date.now() * 0.01;
+
+            ctx.rotate(rotAngle);
+            ctx.strokeStyle = '#dc2626';
+            ctx.lineWidth = 2.5;
+            ctx.shadowColor = '#991b1b';
+            ctx.shadowBlur = 15;
+
+            ctx.beginPath();
+            for (let i = 0; i < 3; i++) {
+                const a = (Math.PI * 2 / 3) * i;
+                const sx = Math.cos(a) * (26 * scale);
+                const sy = Math.sin(a) * (26 * scale);
+                if (i === 0) ctx.moveTo(sx, sy);
+                else ctx.lineTo(sx, sy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.restore();
+            return;
+        }
+
+        // 2. 버서커 본체 렌더링 (광폭화 시 1.35배 거대화)
+        const currentRadius = this.isBerserkMode ? this.radius * 1.35 : this.radius;
+
+        if (this.isBerserkMode && this.berserkBuffTimer > 0) {
+            const pulse = Math.sin(Date.now() * 0.02) * 5;
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 20 + pulse;
+            ctx.fillStyle = '#b91c1c';
+        } else {
+            ctx.shadowColor = '#dc2626';
+            ctx.shadowBlur = 8;
+            ctx.fillStyle = '#f87171';
+        }
+
+        ctx.beginPath();
+        ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 뿔 연출
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-currentRadius * 0.5, -currentRadius * 0.5);
+        ctx.lineTo(-currentRadius * 1.0, -currentRadius * 1.2);
+        ctx.moveTo(currentRadius * 0.5, -currentRadius * 0.5);
+        ctx.lineTo(currentRadius * 1.0, -currentRadius * 1.2);
+        ctx.stroke();
+
+        // 🪓 양날도끼 와리가리 스윙
+        ctx.rotate(this.targetAngle + this.axeSwingAngle);
+
+        const handleLen = currentRadius + 18;
+        const axeSize = currentRadius * 0.85;
+
+        // 도끼 자루
+        ctx.strokeStyle = '#d97706';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(handleLen, 0);
+        ctx.stroke();
+
+        // 양날도끼 헤드
+        ctx.fillStyle = this.isBerserkMode ? '#fca5a5' : '#e2e8f0';
+        ctx.strokeStyle = '#94a3b8';
+        ctx.lineWidth = 1.5;
+
+        ctx.beginPath();
+        ctx.moveTo(handleLen - 2, 0);
+        ctx.lineTo(handleLen + axeSize, -axeSize);
+        ctx.lineTo(handleLen + axeSize * 1.2, 0);
+        ctx.lineTo(handleLen + axeSize, axeSize);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+    }
+}
+```
+
+# 📄 [요청 8 ➡️ 불러온함수 (ShooterMinion 본체)] TARGET: extraction_target_project/js/minian/ally/shooterMinion.js (9-109라인)
+# ----------------------------------------------------------
+```python
+export class ShooterMinion extends BaseAllyMinion {
+    constructor(owner, orbitAngleOffset = 0) {
+        super(owner, {
+            radius: 9,
+            hp: 9999, // 무적
+            maxHp: 9999,
+            color: '#34d399',
+            fireRate: 2.0 // 공속 1/10 수준
+        });
+
+        this.orbitAngleOffset = orbitAngleOffset;
+        this.orbitRadius = 42;
+    }
+
+    updateMovement(enemyEntities, dt) {
+        super.updateMovement(enemyEntities, dt);
+        if (this.isDead || !this.owner) return;
+
+        const time = Date.now() * 0.002;
+        const targetX = this.owner.x + Math.cos(time + this.orbitAngleOffset) * this.orbitRadius;
+        const targetY = this.owner.y + Math.sin(time + this.orbitAngleOffset) * this.orbitRadius;
+
+        this.x += (targetX - this.x) * dt * 6;
+        this.y += (targetY - this.y) * dt * 6;
+    }
+
+    updateAttack(enemyEntities = [], allyBullets = [], dt = 0.016) {
+        if (this.isDead) return;
+
+        this.attackTimer += dt;
+
+        if (this.attackTimer >= this.fireRate) {
+            const target = this.findClosestTarget(enemyEntities);
+            if (target) {
+                this.shoot(target, allyBullets);
+                this.attackTimer = 0;
+            }
+        }
+    }
+
+    shoot(target, allyBullets) {
+        // AI 특유의 오차 조준 (±0.3 라디안) - 미니언 공격 독립 PRNG 적용
+        const baseAngle = Math.atan2(target.y - this.y, target.x - this.x);
+        const aimError = (rngMinion.attack() - 0.5) * 0.6;
+        const finalAngle = baseAngle + aimError;
+
+        const bulletSpeed = 350;
+
+        allyBullets.push({
+            x: this.x,
+            y: this.y,
+            vx: Math.cos(finalAngle) * bulletSpeed,
+            vy: Math.sin(finalAngle) * bulletSpeed,
+            radius: 3.5,
+            damage: 3,
+            color: '#a7f3d0',
+            isAlly: true,
+            isDead: false,
+            update(slots, dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+            },
+            draw(ctx) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = '#34d399';
+                ctx.shadowBlur = 8;
+                ctx.fill();
+                ctx.restore();
+            }
+        });
+    }
+
+    draw(ctx) {
+        if (this.isDead) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(Date.now() * 0.004);
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#059669';
+        ctx.shadowBlur = 10;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -this.radius);
+        ctx.lineTo(this.radius * 0.8, this.radius * 0.8);
+        ctx.lineTo(-this.radius * 0.8, this.radius * 0.8);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(0, 0, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        ctx.restore();
+    }
+}
+```
+
+# 📄 [요청 9] TARGET: js/main.js (28-38라인)
+# ----------------------------------------------------------
+```python
+    function resizeCanvas() {
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
         const scale = Math.min(windowWidth / GAME_WIDTH, windowHeight / GAME_HEIGHT);
 
-        this.canvas.style.width = `${GAME_WIDTH * scale}px`;
-        this.canvas.style.height = `${GAME_HEIGHT * scale}px`;
-        this.canvas.style.position = 'absolute';
-        this.canvas.style.left = `${(windowWidth - GAME_WIDTH * scale) / 2}px`;
-        this.canvas.style.top = `${(windowHeight - GAME_HEIGHT * scale) / 2}px`;
-
-        if (this.slots) {
-            this.slots.forEach(slot => slot.resetPosition(GAME_WIDTH, GAME_HEIGHT, TOTAL_SLOTS));
-        }
+        canvas.style.width = `${GAME_WIDTH * scale}px`;
+        canvas.style.height = `${GAME_HEIGHT * scale}px`;
+        canvas.style.position = 'absolute';
+        canvas.style.left = `${(windowWidth - GAME_WIDTH * scale) / 2}px`;
+        canvas.style.top = `${(windowHeight - GAME_HEIGHT * scale) / 2}px`;
     }
-
-    /**
-     * 유저 조작 슬롯의 액티브 스킬 발동 트리거 (조작 키 및 위치 타겟 전달)
-     */
-    useUserSkill() {
-        const humanSlot = this.slots.find(s => s.isHuman && !s.isStunned());
-        if (humanSlot && humanSlot.hasActiveSkill && humanSlot.gauge >= humanSlot.maxGauge) {
-            const success = humanSlot.useSkill({
-                keys: this.input.keys,
-                mousePos: this.input.mousePos,
-                boss: this.boss,
-                enemyMinions: this.enemyMinions
-            });
-            if (success) {
-                this.floatingTexts.push(createFloatingText(humanSlot.x, humanSlot.y - 20, humanSlot.skillFloatText, humanSlot.themeColor));
-            }
-        }
 ```
 
-# 📄 [요청 3 ➡️ 불러온함수 (createFloatingText 본체)] TARGET: extraction_target_project/js/player/particle.js (71-81라인)
+# 📄 [요청 9 ➡️ 불러온함수 (resizeCanvas 본체)] TARGET: extraction_target_project/js/main.js (28-38라인)
 # ----------------------------------------------------------
 ```python
-export function createFloatingText(x, y, text, color = '#ec4899') {
-    return {
-        x,
-        y,
-        text,
-        color,
-        alpha: 1.0,
-        vy: -1.5,
-        life: 1.0
-    };
-}
-```
+    function resizeCanvas() {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const scale = Math.min(windowWidth / GAME_WIDTH, windowHeight / GAME_HEIGHT);
 
-# 📄 [요청 3 ➡️ 불러온함수 (setGameSeed 본체)] TARGET: extraction_target_project/js/utils/math.js (18-23라인)
-# ----------------------------------------------------------
-```python
-export function setGameSeed(seed) {
-    currentSeed = seed;
-    seededRNG.initDerivations(seed);
-    // 전역 Math.random()을 독립 PRNG의 범용 난수로 덮어씌움
-    Math.random = seededRandom;
-}
+        canvas.style.width = `${GAME_WIDTH * scale}px`;
+        canvas.style.height = `${GAME_HEIGHT * scale}px`;
+        canvas.style.position = 'absolute';
+        canvas.style.left = `${(windowWidth - GAME_WIDTH * scale) / 2}px`;
+        canvas.style.top = `${(windowHeight - GAME_HEIGHT * scale) / 2}px`;
+    }
 ```

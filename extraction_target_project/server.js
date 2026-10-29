@@ -59,12 +59,12 @@ let currentPhase = Phase.LOBBY;
 let currentMasterSeed = null;
 
 // 슬롯 상태: P1~P4 (최대 4명)
-// 각 슬롯 구조: { slotIndex: 1~4, active: boolean, ready: boolean, vote: string|null, ws: WebSocket|null }
+// 각 슬롯 구조: { slotIndex: 1~4, active: boolean, ready: boolean, vote: string|null, isAiMode: boolean, nickname: string, classType: string, ws: WebSocket|null }
 const slots = {
-    1: { slotIndex: 1, active: false, ready: false, vote: null, ws: null },
-    2: { slotIndex: 2, active: false, ready: false, vote: null, ws: null },
-    3: { slotIndex: 3, active: false, ready: false, vote: null, ws: null },
-    4: { slotIndex: 4, active: false, ready: false, vote: null, ws: null }
+    1: { slotIndex: 1, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 1', classType: 'bufferPlayer', ws: null },
+    2: { slotIndex: 2, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 2', classType: 'empPlayer', ws: null },
+    3: { slotIndex: 3, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 3', classType: 'shielderPlayer', ws: null },
+    4: { slotIndex: 4, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 4', classType: 'summonerPlayer', ws: null }
 };
 
 /**
@@ -102,7 +102,10 @@ function broadcastRoomState() {
             slotIndex: i,
             active: s.active,
             ready: s.ready,
-            vote: s.vote
+            vote: s.vote,
+            isAiMode: s.isAiMode,
+            nickname: s.nickname,
+            classType: s.classType
         });
     }
 
@@ -270,9 +273,32 @@ wss.on('connection', (ws) => {
                 const s = slots[ws.slotIndex];
                 if (s && s.active) {
                     s.ready = !!data.ready;
-                    console.log(`👍 [Ready Changed] P${ws.slotIndex} Ready: ${s.ready}`);
+                    if (data.nickname) s.nickname = String(data.nickname).slice(0, 20);
+                    if (data.classType) s.classType = String(data.classType);
+                    console.log(`👍 [Ready Changed] P${ws.slotIndex} Ready: ${s.ready} (${s.nickname}, ${s.classType})`);
                     broadcastRoomState();
                     checkReadyUnanimity();
+                }
+            }
+            // A-1. 상태 관리 신호 (Strict Sync): 프로필/슬롯 상태 변경 요청
+            else if (data.type === 'UPDATE_SLOT_PROFILE') {
+                const s = slots[ws.slotIndex];
+                if (s && s.active) {
+                    if (data.nickname) s.nickname = String(data.nickname).slice(0, 20);
+                    if (data.classType) s.classType = String(data.classType);
+                    if (typeof data.isAiMode === 'boolean') s.isAiMode = data.isAiMode;
+                    console.log(`👤 [Slot Profile Updated] P${ws.slotIndex} Nickname: ${s.nickname}, Class: ${s.classType}, AiMode: ${s.isAiMode}`);
+                    broadcastRoomState();
+                }
+            }
+            // A-2. USER <-> AI 모드 토글 (서버 검증 후 ROOM_STATE 동기화)
+            else if (data.type === 'TOGGLE_AI_MODE') {
+                const targetSlot = (typeof data.slotIndex === 'number') ? data.slotIndex : ws.slotIndex;
+                const s = slots[targetSlot];
+                if (s && s.active) {
+                    s.isAiMode = (typeof data.isAiMode === 'boolean') ? data.isAiMode : !s.isAiMode;
+                    console.log(`🤖 [AI Mode Toggled] P${targetSlot} AiMode: ${s.isAiMode}`);
+                    broadcastRoomState();
                 }
             }
             // B. SCOREBOARD 표결(VOTE) 신호 수신 (REPLAY 또는 MENU)
@@ -284,13 +310,26 @@ wss.on('connection', (ws) => {
                     checkScoreboardVoting();
                 }
             }
-            // C. 조작 입력 동기화 (INPUT_SYNC)
+            // C. 조작 입력 동기화 (Continuous Movement & Trigger Action Relay)
             else if (data.type === 'INPUT_SYNC' || data.type === 'CLIENT_INPUT') {
-                // 발신자 포함 전체 노드에 릴레이 중계 (INPUT_SYNC 규격 통합)
+                // 패킷 릴레이: sequenceNumber, timeStamp, slotIndex, inputAction 유지
                 broadcast({
                     type: 'INPUT_SYNC',
                     slotIndex: ws.slotIndex,
+                    sequenceNumber: data.sequenceNumber,
+                    timeStamp: data.timeStamp || Date.now(),
                     inputAction: data.inputAction
+                });
+            }
+            // D. 설치형 오브젝트 및 HP 상태 동기화 (Object & HP Sync - Owner Authority)
+            else if (data.type === 'OBJECT_STATE_SYNC') {
+                // 소유자(Owner)가 판정한 오브젝트 및 HP 상태를 전체 브로드캐스트
+                broadcast({
+                    type: 'OBJECT_STATE_SYNC',
+                    slotIndex: ws.slotIndex,
+                    timeStamp: data.timeStamp || Date.now(),
+                    objects: data.objects || [],
+                    hpState: data.hpState || null
                 });
             }
             // C-1. 💡 [신규 - 입력 디버그 로그 브로드캐스트]: 키보드/마우스 입력 수신 시 서버 터미널 출력 및 전체 방송

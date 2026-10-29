@@ -225,8 +225,10 @@ export class UIManager {
                     // 전환할 목표 AI 모드 상태 (현재 isHuman이 true이면 AI 모드 true로 전환)
                     const targetAiMode = myPlayer.isHuman; 
 
-                    // 💡 [확장 이벤트 송신]: 로컬 직접 변경 대신 서버로 AI 모드 전환 신호 발송
-                    if (window.networkManager && typeof window.networkManager.sendSlotEvent === 'function') {
+                    // 💡 [Strict Sync]: 클라이언트 단독 즉시 변경 금지 -> 서버로 요청 후 ROOM_STATE로 수신 적용
+                    if (window.networkManager && typeof window.networkManager.requestToggleAiMode === 'function') {
+                        window.networkManager.requestToggleAiMode(mySlotNum, targetAiMode);
+                    } else if (window.networkManager && typeof window.networkManager.sendSlotEvent === 'function') {
                         window.networkManager.sendSlotEvent(mySlotNum, 'TOGGLE_AI_MODE', {
                             isAiMode: targetAiMode
                         });
@@ -434,13 +436,27 @@ export class UIManager {
             const nicknameEl = card.querySelector('.slot-nickname');
             const classEl = card.querySelector('.slot-class');
 
-            // 닉네임 및 선택 캐릭터 정보 가져오기 (인풋 또는 기본값)
+            // 닉네임 및 선택 캐릭터 정보 가져오기 (인풋 또는 서버 detail 우선)
             const nicknameInput = document.getElementById(`p${idx}-nickname`);
             const classSelect = document.getElementById(`p${idx}-class`);
-            const nickname = (nicknameInput && nicknameInput.value.trim()) ? nicknameInput.value.trim() : `PLAYER ${idx}`;
-            const className = (classSelect && classSelect.options[classSelect.selectedIndex]) 
-                ? classSelect.options[classSelect.selectedIndex].text 
-                : '기본 기체';
+            
+            // 💡 [Strict Sync]: 서버가 보낸 slot.nickname, slot.classType 우선 적용
+            const nickname = slot.nickname || ((nicknameInput && nicknameInput.value.trim()) ? nicknameInput.value.trim() : `PLAYER ${idx}`);
+            let className = '기본 기체';
+            if (slot.classType && classSelect) {
+                const opt = classSelect.querySelector(`option[value="${slot.classType}"]`);
+                if (opt) className = opt.text;
+            } else if (classSelect && classSelect.options[classSelect.selectedIndex]) {
+                className = classSelect.options[classSelect.selectedIndex].text;
+            }
+
+            // 인풋 값도 서버 중앙 데이터와 동기화
+            if (nicknameInput && slot.nickname && nicknameInput.value !== slot.nickname) {
+                nicknameInput.value = slot.nickname;
+            }
+            if (classSelect && slot.classType && classSelect.value !== slot.classType) {
+                classSelect.value = slot.classType;
+            }
 
             const isMySlot = (mySlotIndex === idx);
 

@@ -3,8 +3,9 @@
  * 키보드, 마우스, 모바일 터치 가상 조이스틱 핸들러 및 네트워크 입력 제어기
  * 
  * [동작 명세]
- * 1. WASD/조이스틱/스페이스바 입력을 정제하여 네트워크 패킷(moveX, moveY, useSkill) 형태로 압축 전송.
- * 2. isAiMode === true일 경우 파생된 playerAiSpread 시드 기반의 getAiInputAction() 연산값으로 자동 전환되어 전 클라이언트 동일 보장.
+ * 1. WASD/조이스틱/스페이스바 입력을 정제하여 네트워크 패킷(moveX, moveY, useSkill, timeStamp) 형태로 압축 전송.
+ * 2. 이벤트 리스너 참조 시점 문제 해결 (Lazy Evaluation): this.networkManager || window.networkManager 실시간 탐색.
+ * 3. 1회성 스킬 트리거 시 timeStamp 부여 및 전달.
  */
 import { rngPlayerAi } from '../utils/seededRNG.js';
 
@@ -22,6 +23,7 @@ export class InputHandler {
 
         // 스킬 전용 1회성 트리거 큐 플래그
         this.skillTriggered = false;
+        this.lastSkillTriggerTime = 0;
 
         // AI 자율 주행 모드 여부
         this.isAiMode = false;
@@ -29,6 +31,14 @@ export class InputHandler {
         this.initKeyboard();
         this.initMouse();
         this.initJoystick();
+    }
+
+    /**
+     * Lazy Evaluation 헬퍼: 현재 유효한 networkManager 인스턴스 실시간 탐색
+     * @returns {import('../network/networkManager.js').NetworkManager|null}
+     */
+    getNetworkManager() {
+        return this.networkManager || window.networkManager || null;
     }
 
     /**
@@ -53,11 +63,12 @@ export class InputHandler {
             if (!this.keys[e.code]) {
                 if (e.code === 'Space' || e.key === ' ' || e.keyCode === 32) {
                     this.skillTriggered = true;
+                    this.lastSkillTriggerTime = Date.now();
                     e.preventDefault();
                 }
-                // 💡 [네트워크 매니저 추적]: this.networkManager 우선 참조 후 전역 fallback
-                const net = this.networkManager || window.networkManager;
-                console.log(`[LOCAL KEY LOG] Key Down: ${e.code}`); // 로컬 콘솔 즉시 출력
+                // 💡 [Lazy Evaluation]: this.networkManager || window.networkManager 실시간 탐색
+                const net = this.getNetworkManager();
+                console.log(`[LOCAL KEY LOG] Key Down: ${e.code}`);
                 if (net && typeof net.sendDebugInput === 'function') {
                     net.sendDebugInput('KEYBOARD', `Key Down: ${e.code}`);
                 }
@@ -80,21 +91,23 @@ export class InputHandler {
         });
 
         window.addEventListener('mousedown', (e) => {
-            const net = this.networkManager || window.networkManager;
+            // 💡 [Lazy Evaluation]
+            const net = this.getNetworkManager();
 
             if (e.button === 2) {
                 this.skillTriggered = true;
-                console.log('[LOCAL MOUSE LOG] Right Click');
+                this.lastSkillTriggerTime = Date.now();
+                console.log('[LOCAL MOUSE LOG] Right Click (Skill Trigger)');
                 if (net && typeof net.sendDebugInput === 'function') {
                     net.sendDebugInput('MOUSE', 'Right Click (Skill Trigger)');
                 }
             } else if (e.button === 0) {
-                // 💡 [좌클릭 구별]: 클릭 대상이 UI 버튼 요소인지 캔버스인지 구분
+                // UI 버튼 요소와 캔버스 구분
                 const target = e.target;
                 const isButton = target && (target.tagName === 'BUTTON' || target.closest('button'));
                 const clickType = isButton ? `UI Button Click [${target.id || target.innerText || 'BTN'}]` : `Canvas Field Click (X:${e.clientX}, Y:${e.clientY})`;
 
-                console.log(`[LOCAL MOUSE LOG] ${clickType}`); // 로컬 콘솔 즉시 출력
+                console.log(`[LOCAL MOUSE LOG] ${clickType}`);
                 if (net && typeof net.sendDebugInput === 'function') {
                     net.sendDebugInput('MOUSE_LEFT', clickType);
                 }
@@ -156,9 +169,6 @@ export class InputHandler {
 
     /**
      * playerAiSpread 독립 시드 기반 결정론적 AI 입력 액션 생성
-     * @param {number} slotIndex 
-     * @param {object} [context] { player, boss, gameLoop }
-     * @returns {{moveX: number, moveY: number, dx: number, dy: number, mouseX: number, mouseY: number, useSkill: boolean}}
      */
     getAiInputAction(slotIndex = 0, context = null) {
         let moveX = 0;
@@ -171,20 +181,17 @@ export class InputHandler {
             (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);
 
         if (player) {
-            // AI FSM에 의해 계산된 targetX, targetY 방향으로 조작 생성
             const dx = (player.targetX || player.x) - player.x;
             const dy = (player.targetY || player.y) - player.y;
             const dist = Math.hypot(dx, dy);
 
             if (dist > 5) {
-                // 파생된 playerAiSpread 시드를 적용한 미세 조향 오차각 부여
                 const spreadAngle = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 0.1;
                 const baseAngle = Math.atan2(dy, dx) + spreadAngle;
                 moveX = Math.cos(baseAngle);
                 moveY = Math.sin(baseAngle);
             }
 
-            // 가장 가까운 적(보스)을 향해 마우스 조준점 동기화
             const boss = (context && context.boss) || (window.gameLoopInstance && window.gameLoopInstance.boss);
             if (boss) {
                 const aimSpread = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 20;
@@ -192,7 +199,6 @@ export class InputHandler {
                 mouseY = boss.y + aimSpread;
             }
 
-            // 위급 상황 시 시드 기반 확률적 스킬 시전
             if (player.dodgeFatigue > 0.8 && player.hasActiveSkill && !player.isSkillOnCooldown) {
                 useSkill = rngPlayerAi.getSpread(slotIndex) < 0.3;
             }
@@ -201,20 +207,17 @@ export class InputHandler {
         return {
             moveX,
             moveY,
-            dx: moveX, // 하위 호환
-            dy: moveY, // 하위 호환
+            dx: moveX,
+            dy: moveY,
             mouseX,
             mouseY,
-            useSkill
+            useSkill,
+            timeStamp: Date.now()
         };
     }
 
     /**
-     * 현재 프레임의 클라이언트 조작 상태 패킷 추출 (압축 및 네트워크 규격 동기화)
-     * isAiMode === true일 경우 파생된 playerAiSpread 시드 기반 getAiInputAction()으로 자동 전환
-     * @param {number} [slotIndex] 
-     * @param {object} [context] 
-     * @returns {{moveX: number, moveY: number, dx: number, dy: number, mouseX: number, mouseY: number, useSkill: boolean}}
+     * 현재 프레임의 클라이언트 조작 상태 패킷 추출 (Continuous Movement & Trigger Action)
      */
     getInputAction(slotIndex = 0, context = null) {
         if (this.isAiMode) {
@@ -229,7 +232,7 @@ export class InputHandler {
         if (this.keys['KeyA'] || this.keys['ArrowLeft']) moveX -= 1;
         if (this.keys['KeyD'] || this.keys['ArrowRight']) moveX += 1;
 
-        // 대각선 이동 시 단위 벡터 정규화
+        // 대각선 이동 정규화
         const len = Math.hypot(moveX, moveY);
         if (len > 0) {
             moveX /= len;
@@ -242,16 +245,24 @@ export class InputHandler {
         }
 
         const useSkill = this.skillTriggered;
+        const skillTime = this.lastSkillTriggerTime || Date.now();
         this.skillTriggered = false;
+
+        const myPlayer = (context && context.player) || 
+            (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);
 
         return {
             moveX,
             moveY,
-            dx: moveX, // 기존 코드 호환
-            dy: moveY, // 기존 코드 호환
+            dx: moveX,
+            dy: moveY,
             mouseX: this.mousePos.x,
             mouseY: this.mousePos.y,
-            useSkill
+            useSkill,
+            timeStamp: skillTime,
+            posX: myPlayer ? myPlayer.x : undefined,
+            posY: myPlayer ? myPlayer.y : undefined,
+            speed: myPlayer ? myPlayer.speed : undefined
         };
     }
 }

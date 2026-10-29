@@ -1,7 +1,12 @@
 /**
  * js/player/basePlayer.js
  * 모든 플레이어/봇 슬롯의 기반이 되는 BasePlayer 추상 클래스
- * 입력 처리(Human Input), 사격(Shoot) 및 HP/기절/무적 시스템 통합 완료
+ * 
+ * [동작 명세 - 4단계 신호 동기화 & 네트워크 예외 처리 적용]
+ * 1. IsLocalOwner (로컬 직접 제어) vs RemoteProxy (원격 복제본) 분리.
+ * 2. Dead Reckoning: 도착 시간 맞춤 미세 속도 보간 (Ping 기반 속도 가속/감속).
+ * 3. DeltaTime Base: 주사율 차이(60Hz, 144Hz 등)와 무관한 일관된 이동 연산.
+ * 4. Hard Snap Threshold: 핑 튐으로 예측 위치와 실제 수신 위치 차이가 150px 초과 시 즉시 강제 텔레포트.
  */
 import { SLOT_COLORS } from '../config/constants.js';
 import { PlayerBullet } from './playerBullet.js';
@@ -19,13 +24,20 @@ export default class BasePlayer {
         this.isHuman = (slotIndex === 0);
         this.classType = classType;
 
-        // 💡 [멀티플레이 권한 시스템]: 내가 직접 키보드/마우스로 조종하는 기체인지 여부
+        // 💡 [멀티플레이 권한 시스템]: 내가 직접 키보드/마우스로 조종하는 기체인지 여부 (IsLocalOwner)
         this.isLocalOwner = false;
 
-        // 💡 [네트워크 위치 보간(Interpolation) 좌표]: 상대 기체가 전송한 위치로 부드럽게 Lerp 이동
+        // 💡 [Dead Reckoning & 원격 상태 수신 변수]
+        this.remoteInputPacket = null;
+        this.lastReceivedSeq = 0;
         this.netTargetX = 0;
         this.netTargetY = 0;
-        this.remoteInputPacket = null;
+        this.netVelocityX = 0;
+        this.netVelocityY = 0;
+        this.netEstimatedPing = 50; // ms
+
+        // Hard Snap 임계값 (예측 오차가 이 값을 초과하면 즉시 강제 이동)
+        this.HARD_SNAP_THRESHOLD = 150;
 
         // --- 공통 메타 속성 (하위 캐릭터 파일에서 오버라이드) ---
         this.className = '기본 기체';
@@ -36,7 +48,7 @@ export default class BasePlayer {
         this.skillFloatText = 'SKILL ACTIVATED!';
 
         this.radius = 8;
-        this.moveSpeed = 300;
+        this.moveSpeed = 300; // px/sec 기준 (기본)
         this.speed = 5.2;
 
         // 체력 및 기절 시스템
@@ -65,7 +77,7 @@ export default class BasePlayer {
         this.grazeCheckTimer = 0.0; 
         this.grazeEffectTimer = 0;  
 
-        // --- 동적 스탯 수정자 (Stat Modifiers & Status Effects) 파이프라인 ---
+        // 동적 스탯 수정자 파이프라인
         this.modifiers = [];     
 
         // AI FSM 필드
@@ -78,95 +90,48 @@ export default class BasePlayer {
     /**
      * 동적 스탯 수정자(Modifier) 추가
      */
-    addModifier(modifier) {
-        if (!modifier || !modifier.id) return;
-        // 동일 ID가 이미 존재하면 지속시간만 리셋 또는 교체
-        const existingIdx = this.modifiers.findIndex(m => m.id === modifier.id);
-        if (existingIdx >= 0) {
-            this.modifiers[existingIdx] = { ...this.modifiers[existingIdx], ...modifier };
-        } else {
-            this.modifiers.push({ ...modifier });
-        }
+    addModifier(mod) {
+        if (!mod || !mod.key) return;
+        this.removeModifier(mod.key);
+        this.modifiers.push({
+            key: mod.key,
+            type: mod.type || 'buff',
+            stat: mod.stat || 'all',
+            value: mod.value || 0,
+            duration: mod.duration || 1.0,
+            elapsed: 0
+        });
     }
 
-    /**
-     * ID 기반 수정자 제거
-     */
-    removeModifier(id) {
-        this.modifiers = this.modifiers.filter(m => m.id !== id);
+    removeModifier(key) {
+        this.modifiers = this.modifiers.filter(m => m.key !== key);
     }
 
-    /**
-     * 지정된 스탯의 최종 수정 수치 파이프라인 산출 (ADD -> MULTIPLY -> OVERRIDE)
-     * @param {string} statName 'damage', 'moveSpeed', 'defense', 'damageTaken'
-     * @param {number} baseValue 기본 원본값
-     * @returns {number}
-     */
-    getModifiedStat(statName, baseValue) {
-        let finalValue = baseValue;
-
-        // 1. 합연산 (ADD)
-        for (const m of this.modifiers) {
-            if (m.targetStat === statName && m.type === 'ADD') {
-                finalValue += m.value;
+    getModifierValue(stat) {
+        let total = 0;
+        for (const mod of this.modifiers) {
+            if (mod.stat === stat || mod.stat === 'all') {
+                total += mod.value;
             }
         }
-
-        // 2. 곱연산 (MULTIPLY)
-        for (const m of this.modifiers) {
-            if (m.targetStat === statName && m.type === 'MULTIPLY') {
-                finalValue *= m.value;
-            }
-        }
-
-        // 3. 고정값 덮어쓰기 (OVERRIDE)
-        for (const m of this.modifiers) {
-            if (m.targetStat === statName && m.type === 'OVERRIDE') {
-                finalValue = m.value;
-            }
-        }
-
-        // 4. 💡 깃발 버퍼/특수 상태이상 등 틱 회복 속도(gaugeTickRate) 곱연산 수치 추가 보정
-        if (statName === 'gaugeTickRate') {
-            let tickMult = 1.0;
-            for (const m of this.modifiers) {
-                if (m.targetStat === 'gaugeTickRate' && m.type === 'MULTIPLY') {
-                    tickMult *= m.value;
-                }
-            }
-            finalValue *= tickMult;
-        }
-
-        return finalValue;
+        return total;
     }
 
-    /**
-     * 프레임별 지속시간 차감 및 도트 상태이상(onTick) 업데이트
-     */
     updateModifiers(dt) {
         for (let i = this.modifiers.length - 1; i >= 0; i--) {
-            const m = this.modifiers[i];
-
-            // 도트 대미지/치유 등 주기적 효과 실행
-            if (typeof m.onTick === 'function') {
-                m.onTick(this, dt);
-            }
-
-            // 지속시간 차감
-            if (typeof m.duration === 'number') {
-                m.duration -= dt;
-                if (m.duration <= 0) {
-                    this.modifiers.splice(i, 1);
-                }
+            const mod = this.modifiers[i];
+            mod.elapsed += dt;
+            if (mod.elapsed >= mod.duration) {
+                this.modifiers.splice(i, 1);
             }
         }
     }
 
     /**
-     * 탄막 스치기 검사 (탄환 1개당 슬롯별 최초 1회만 확정 게이지 수급)
+     * 델타룬 Graze 판정
      */
-    updateGraze(enemyBullets = [], dt = 0.016) {
-        if (this.isStunned()) return;
+    updateGraze(enemyBullets, dt) {
+        if (!enemyBullets || enemyBullets.length === 0) return;
 
         if (this.grazeEffectTimer > 0) {
             this.grazeEffectTimer = Math.max(0, this.grazeEffectTimer - dt);
@@ -175,45 +140,32 @@ export default class BasePlayer {
         for (const b of enemyBullets) {
             if (!b || b.isDead) continue;
 
-            // 탄환에 이미 스친 슬롯 목록(grazedSlots) 배열이 없으면 생성
             if (!b.grazedSlots) {
                 b.grazedSlots = [];
             }
 
-            // 이미 이 슬롯(P1~P4)이 스친 탄환이라면 패스
             if (b.grazedSlots.includes(this.slotIndex)) continue;
 
             const dist = Math.hypot(b.x - this.x, b.y - this.y);
 
-            // 판정 범위 안으로 들어온 '새로운' 탄환 발견!
             if (dist > this.radius && dist <= this.grazeRadius) {
-                b.grazedSlots.push(this.slotIndex); // 해당 탄환 목록에 이 슬롯 등록 (재수급 방지)
-                this.gauge = Math.min(this.maxGauge, this.gauge + 1); // 게이지 1 증가
-                this.grazeEffectTimer = 0.2; // 스치기 링 피드백 연출
+                b.grazedSlots.push(this.slotIndex);
+                this.gauge = Math.min(this.maxGauge, this.gauge + 1);
+                this.grazeEffectTimer = 0.2;
             }
         }
     }
 
     /**
-     * 클래스별 개별 maxGauge 기준 100% 충전 여부 판단 및 실시간 변수 출력
+     * 클래스별 개별 maxGauge 기준 100% 충전 여부 판단
      */
     isSkillReady() {
         const isStun = typeof this.isStunned === 'function' ? this.isStunned() : false;
         const targetMax = this.maxGauge || 100;
         const currentGauge = this.gauge || 0;
-        const percent = Math.floor((currentGauge / targetMax) * 100);
 
-        console.log(`🔍 [Skill Check] Class: ${this.className} | Gauge: ${currentGauge.toFixed(1)} / ${targetMax} (${percent}%) | Stunned: ${isStun} | HasActiveSkill: ${this.hasActiveSkill}`);
-
-        if (isStun) {
-            console.warn(`❌ [Skill Blocked] 이유: 기절 상태입니다. (StunTimer: ${this.stunTimer}s)`);
-            return false;
-        }
-
-        if (currentGauge < targetMax) {
-            console.warn(`❌ [Skill Blocked] 이유: 게이지 부족 (${currentGauge.toFixed(1)} < ${targetMax})`);
-            return false;
-        }
+        if (isStun) return false;
+        if (currentGauge < targetMax) return false;
 
         return true;
     }
@@ -227,12 +179,8 @@ export default class BasePlayer {
         return true;
     }
 
-
     /**
      * 화면 크기에 맞춰 슬롯 위치 초기화
-     * @param {number} canvasWidth 
-     * @param {number} canvasHeight 
-     * @param {number} totalSlots 
      */
     resetPosition(canvasWidth, canvasHeight, totalSlots) {
         const spacing = canvasWidth / (totalSlots + 1);
@@ -240,11 +188,12 @@ export default class BasePlayer {
         this.y = canvasHeight - 180;
         this.targetX = this.x;
         this.targetY = this.y;
+        this.netTargetX = this.x;
+        this.netTargetY = this.y;
     }
 
     /**
      * 기절 상태 여부 확인
-     * @returns {boolean}
      */
     isStunned() {
         return this.stunTimer > 0;
@@ -252,41 +201,30 @@ export default class BasePlayer {
 
     /**
      * 피격 대미지 처리 (무적 시간 판정 및 기절 트리거)
-     * @param {number} amount 대미지 양 (기본 1)
-     * @returns {boolean} 실제 피격 성공 여부
      */
     takeDamage(amount = 1) {
-        // 이미 무적 상태이거나 기절 상태면 대미지 계산 무시
         if (this.invulnerableTimer > 0 || this.isStunned()) {
             return false;
         }
 
-        // 대미지 차감
         this.hp = Math.max(0, this.hp - amount);
-        
-        // 피격 성공 시 1초간 무적 타임 부여
         this.invulnerableTimer = 1.0;
 
-        // 체력이 0에 도달하면 3초간 전면 기절 발동 후 체력 완충
         if (this.hp <= 0) {
-            this.stunTimer = 3.0; // 3초간 기절
-            this.hp = this.maxHp; // 기절 해제 후 체력 풀회복
+            this.stunTimer = 3.0;
+            this.hp = this.maxHp;
         }
 
         return true;
     }
 
     /**
-     * 유저 조작(키보드/조이스틱/스페이스바 스킬)에 의한 목표 위치 갱신 및 스킬 발동
-     * @param {object} keys 키 입력 상태 맵
-     * @param {object} joystick 조이스틱 상태 객체
-     * @param {object} skillParams 스킬 발동용 인자 객체 (gameLoop 상태)
+     * [IsLocalOwner - 로컬 기체 조작]
+     * Client Prediction: 키보드/조이스틱 입력으로 즉시 이동 목표점 계산
      */
     handleHumanInput(keys, joystick, skillParams = null) {
-        // 기절 중에는 조작 완전히 차단
         if (this.isStunned()) return;
 
-        // 💡 [스페이스바 / 우클릭 스킬 다이렉트 트리거]: 스페이스바 또는 우클릭 시 스킬 직접 실행
         const isSpaceOrRightClick = keys['Space'] || keys['KeySpace'] || keys['RightClick'];
         if (isSpaceOrRightClick && skillParams) {
             keys['Space'] = false;
@@ -311,8 +249,11 @@ export default class BasePlayer {
         const len = Math.hypot(dx, dy);
         if (len > 0) {
             const factor = len > 1 ? len : 1;
-            this.targetX = this.x + (dx / factor) * this.speed * 8;
-            this.targetY = this.y + (dy / factor) * this.speed * 8;
+            // deltaTime 연산을 위해 속도 벡터로 저장
+            const normX = dx / factor;
+            const normY = dy / factor;
+            this.targetX = this.x + normX * this.moveSpeed * 0.1;
+            this.targetY = this.y + normY * this.moveSpeed * 0.1;
         } else {
             this.targetX = this.x;
             this.targetY = this.y;
@@ -320,9 +261,9 @@ export default class BasePlayer {
     }
 
     /**
-     * 유저/클라이언트 조작 패킷 수신 및 이동 처리
-     * @param {object} inputAction 네트워크 입력 패킷
-     * @param {object} skillParams 스킬 발동용 인자 객체
+     * [RemoteProxy - 원격 기체 패킷 적용 & Dead Reckoning 설정]
+     * @param {object} inputAction 릴레이 수신된 원격 패킷
+     * @param {object} skillParams
      */
     handleHumanInputPacket(inputAction, skillParams = null) {
         if (this.isStunned() || !inputAction) return;
@@ -331,36 +272,68 @@ export default class BasePlayer {
             this.lastMousePos = { x: inputAction.mouseX, y: inputAction.mouseY };
         }
 
-        // 💡 이동 및 마우스 좌표 업데이트만 전담 (스킬 이중 실행 유발 구문 제거)
+        const moveX = inputAction.moveX !== undefined ? inputAction.moveX : inputAction.dx || 0;
+        const moveY = inputAction.moveY !== undefined ? inputAction.moveY : inputAction.dy || 0;
+        const len = Math.hypot(moveX, moveY);
 
-        const len = Math.hypot(inputAction.dx, inputAction.dy);
-        if (len > 0) {
-            const factor = len > 1 ? len : 1;
-            this.targetX = this.x + (inputAction.dx / factor) * this.speed * 8;
-            this.targetY = this.y + (inputAction.dy / factor) * this.speed * 8;
+        // 1. 송신지 실제 좌표가 포함되어 있는 경우 Dead Reckoning 목적지 설정
+        if (typeof inputAction.posX === 'number' && typeof inputAction.posY === 'number') {
+            const pingSec = Math.max(0.01, (inputAction.estimatedPing || 50) / 1000);
+            
+            // 상대방의 현재 속도 추정
+            const speed = this.moveSpeed;
+            const vx = len > 0 ? (moveX / len) * speed : 0;
+            const vy = len > 0 ? (moveY / len) * speed : 0;
+
+            this.netVelocityX = vx;
+            this.netVelocityY = vy;
+
+            // Ping 지연 시간만큼 미래의 예측 위치 계산 (Dead Reckoning)
+            this.netTargetX = inputAction.posX + vx * pingSec;
+            this.netTargetY = inputAction.posY + vy * pingSec;
+
+            // 💡 [Hard Snap / Teleport Threshold]: 150px 이상 오차 시 강제 스냅
+            const distFromCurrent = Math.hypot(this.x - inputAction.posX, this.y - inputAction.posY);
+            if (distFromCurrent > this.HARD_SNAP_THRESHOLD) {
+                this.x = inputAction.posX;
+                this.y = inputAction.posY;
+                this.targetX = inputAction.posX;
+                this.targetY = inputAction.posY;
+            } else {
+                this.targetX = this.netTargetX;
+                this.targetY = this.netTargetY;
+            }
         } else {
-            this.targetX = this.x;
-            this.targetY = this.y;
+            // 위치 좌표가 없을 경우 기존 방향 벡터 누적
+            if (len > 0) {
+                const factor = len > 1 ? len : 1;
+                this.targetX = this.x + (moveX / factor) * this.moveSpeed * 0.1;
+                this.targetY = this.y + (moveY / factor) * this.moveSpeed * 0.1;
+            } else {
+                this.targetX = this.x;
+                this.targetY = this.y;
+            }
+        }
+
+        // 3. 1회성 스킬 트리거 실행 (useSkill)
+        if (inputAction.useSkill && skillParams) {
+            this.useSkill(skillParams);
+            inputAction.useSkill = false; // 1회성 소모
         }
     }
 
     /**
-     * 프레임 업데이트 공통 처리
-     * @param {number} dt 델타 타임
-     * @param {number} canvasWidth 
-     * @param {number} canvasHeight 
-     * @param {Array} enemyBullets 적 탄환 배열
-     * @param {Array} allyPlayers 아군 플레이어 배열
+     * 프레임 업데이트 공통 처리 (DeltaTime Base 보간)
      */
     updateMovement(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
         if (this.invulnerableTimer > 0) {
             this.invulnerableTimer = Math.max(0, this.invulnerableTimer - dt);
         }
 
-        // 1. 동적 스탯 수정자/상태이상 파이프라인 타임 틱 업데이트
+        // 동적 스탯 수정자 업데이트
         this.updateModifiers(dt);
 
-        // 2. 델타룬 스치기 체크 (BasePlayer에서 버퍼 오라 잔재 완전 제거)
+        // 델타룬 스치기 체크
         this.updateGraze(enemyBullets, dt);
 
         if (this.stunTimer > 0) {
@@ -370,12 +343,25 @@ export default class BasePlayer {
             return;
         }
 
+        // 💡 [DeltaTime Base & Dead Reckoning 미세 속도 보간]
         const dx = this.targetX - this.x;
         const dy = this.targetY - this.y;
         const dist = Math.hypot(dx, dy);
 
-        if (dist > 1) {
-            const step = Math.min(dist, this.moveSpeed * dt);
+        if (dist > this.HARD_SNAP_THRESHOLD) {
+            // 임계치 초과 시 즉시 Hard Snap
+            this.x = this.targetX;
+            this.y = this.targetY;
+        } else if (dist > 1) {
+            // 원격 기체(RemoteProxy)는 거리에 따라 미세 가속/감속 보정 (도착 시간 맞춤)
+            let currentSpeed = this.moveSpeed;
+            if (!this.isLocalOwner && this.isHuman) {
+                // 오차가 크면 약간 가속(최대 1.5배), 거의 도착하면 감속
+                const speedMultiplier = Math.min(1.8, Math.max(0.6, dist / 30));
+                currentSpeed *= speedMultiplier;
+            }
+
+            const step = Math.min(dist, currentSpeed * dt);
             this.x += (dx / dist) * step;
             this.y += (dy / dist) * step;
         } else {
@@ -383,27 +369,23 @@ export default class BasePlayer {
             this.y = this.targetY;
         }
 
+        // 맵 경계 제한
         this.x = Math.max(this.radius, Math.min(canvasWidth - this.radius, this.x));
         this.y = Math.max(120, Math.min(canvasHeight - this.radius, this.y));
     }
 
     /**
      * 탄환 생성 및 사격 처리
-     * @param {Array} bulletContainer 전역 플레이어 탄환 배열
-     * @param {object} targetInfo 유저 마우스 위치 또는 보스 위치
      */
     shoot(bulletContainer, targetInfo) {
-        // 기절 상태에서는 사격 완전 차단
         if (this.isStunned()) return;
 
         let targetAngle = -Math.PI / 2;
 
         if (this.isHuman) {
-            // 유저 마우스 지점 지향 사격
             const mousePos = (targetInfo && targetInfo.mousePos) ? targetInfo.mousePos : { x: this.x, y: this.y - 100 };
             targetAngle = Math.atan2(mousePos.y - this.y, mousePos.x - this.x);
         } else {
-            // AI 타겟팅: 보스 및 적 미니언 목록 전체 중 가장 가까운 적을 탐색
             const boss = targetInfo ? targetInfo.boss : null;
             const enemyMinions = targetInfo ? (targetInfo.enemyMinions || []) : [];
             const allEnemies = [boss, ...enemyMinions].filter(e => e && !e.isDead);
@@ -420,145 +402,61 @@ export default class BasePlayer {
             }
 
             if (closestEnemy) {
-                const spread = (rngPlayerAi.getSpread(this.slotIndex) - 0.5) * 0.15;
-                targetAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x) + spread;
+                targetAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
             }
         }
 
-        const bullet = new PlayerBullet(this.x, this.y, targetAngle, this.slotIndex, this.color);
-        // 동적 스탯 파이프라인으로 최종 데미지 산출
-        bullet.damage = Math.round(this.getModifiedStat('damage', bullet.damage));
-        
-        // 기체에 적용된 버프/상태이상 파이프라인을 탄환에도 전이
-        bullet.modifiers = this.modifiers.map(m => ({ ...m }));
-        bulletContainer.push(bullet);
+        bulletContainer.push(new PlayerBullet(this.x, this.y, targetAngle, this.color, this));
     }
 
-    /**
-     * 공격 주기 업데이트 및 발사 트리거
-     * @param {Function} shootCallback 사격 실행 함수
-     */
-    updateAttack(shootCallback) {
-        // 기절 상태에서는 사격 쿨다운 차단
+    updateAttack(onShoot) {
         if (this.isStunned()) return;
 
-        this.attackCooldown++;
-        if (this.attackCooldown >= this.attackSpeed) {
-            shootCallback();
+        const currentAttackSpeed = this.attackSpeed * (1 + this.getModifierValue('attackSpeed') / 100);
+        this.attackCooldown += currentAttackSpeed;
+        if (this.attackCooldown >= 60) {
             this.attackCooldown = 0;
+            if (typeof onShoot === 'function') {
+                onShoot();
+            }
         }
     }
 
-    /**
-     * 기본 본체, HP 바 및 기절 연출 렌더링
-     * @param {CanvasRenderingContext2D} ctx 
-     */
-    draw(ctx) {
+    draw(ctx, allyPlayers = []) {
         ctx.save();
-        ctx.translate(this.x, this.y);
 
-        // 1. 기절 상태 연출 (체력 0일 때 회색으로 변경 및 STUNNED 문구 표시)
         if (this.isStunned()) {
-            ctx.globalAlpha = 0.6;
-            
-            // 회색 기체 바디
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius + 3, 0, Math.PI * 2);
-            ctx.fillStyle = '#475569';
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-            ctx.fillStyle = '#94a3b8';
-            ctx.fill();
-
-            // STUNNED 라벨 표기
-            ctx.fillStyle = '#f43f5e';
-            ctx.font = 'bold 9px Orbitron';
-            ctx.textAlign = 'center';
-            ctx.fillText(`STUNNED (${this.stunTimer.toFixed(1)}s)`, 0, -this.radius - 14);
-
-            ctx.restore();
-            return; // 기절 중에는 이하 오라/스치기 연출을 진행하지 않고 즉시 리턴
+            ctx.globalAlpha = 0.4 + 0.3 * Math.sin(Date.now() * 0.01);
         }
 
-        // 2. 델타룬 스치기(Graze) 피드백: 흰색 네온 테두리 원 깜빡임 (1:1 동일 크기)
+        // Graze 연출
         if (this.grazeEffectTimer > 0) {
-            const alpha = this.grazeEffectTimer / 0.3;
             ctx.save();
             ctx.beginPath();
-            ctx.arc(0, 0, this.grazeRadius, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-            ctx.lineWidth = 2;
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 10;
+            ctx.arc(this.x, this.y, this.grazeRadius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, ${this.grazeEffectTimer * 4})`;
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
             ctx.stroke();
             ctx.restore();
         }
 
-        // 7. 외곽 네온 글로우
+        // 본체 렌더링
         ctx.beginPath();
-        ctx.arc(0, 0, this.radius + 5, 0, Math.PI * 2);
-        ctx.fillStyle = this.color + '33';
-        ctx.fill();
-
-        // 8. 중앙 코어 바디
-        ctx.beginPath();
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 10;
         ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
 
-        // 5. 상단 슬롯 및 제어 타입 라벨
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 9px Orbitron';
+        // 닉네임 / 소유자 표시
+        ctx.font = '10px sans-serif';
+        ctx.fillStyle = this.isLocalOwner ? '#22d3ee' : '#cbd5e1';
         ctx.textAlign = 'center';
-        ctx.fillText(`P${this.id} [${this.isHuman ? 'USER' : 'AI'}]`, 0, -this.radius - 12);
-
-        // 6. 하단 미니 HP 바 (5칸)
-        const barWidth = 24;
-        const barHeight = 3;
-        const startX = -barWidth / 2;
-        const startY = this.radius + 6;
-
-        // 배경 바
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-        ctx.fillRect(startX, startY, barWidth, barHeight);
-
-        // 현재 체력 비율 바
-        const hpRatio = this.hp / this.maxHp;
-        ctx.fillStyle = hpRatio > 0.4 ? '#22c55e' : '#f43f5e';
-        ctx.fillRect(startX, startY, barWidth * hpRatio, barHeight);
+        const label = this.isLocalOwner ? `[YOU] P${this.id}` : `P${this.id}`;
+        ctx.fillText(label, this.x, this.y - this.radius - 6);
 
         ctx.restore();
-
-        // 💡 [깃발 버프 이펙트] 깃발 범위 내 아군 머리 위 하얀색 🚩 아이콘 및 오라 렌더링
-        const hasBannerBuff = Array.isArray(this.modifiers) && this.modifiers.some(m => m.id === 'banner_tick_buff');
-        if (hasBannerBuff && !this.isStunned()) {
-            ctx.save();
-            ctx.translate(this.x, this.y);
-
-            // 하얀색 맥동 테두리 링
-            const pulse = Math.sin(Date.now() * 0.01) * 2;
-            ctx.beginPath();
-            ctx.arc(0, 0, this.radius + 5 + pulse, 0, Math.PI * 2);
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.lineWidth = 1.5;
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 12;
-            ctx.stroke();
-
-            // 머리 위 🚩 깃발 아이콘 및 하얀색 TICK x1.2 표시
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '12px "Font Awesome 6 Free", Orbitron, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('🚩', 0, -this.radius - 18);
-
-            ctx.font = '900 8px Orbitron';
-            ctx.fillText('TICK x1.2', 0, -this.radius - 8);
-
-            ctx.restore();
-        }
     }
 }

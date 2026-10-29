@@ -57,15 +57,21 @@ export class GameLoop {
 
         // 💡 [UI 스킬 버튼 바인딩 연동]
         if (this.ui && typeof this.ui.bindSkillButton === 'function') {
-            this.ui.bindSkillButton(() => this.slots.find(s => s.isHuman), this);
+            this.ui.bindSkillButton(() => this.slots.find(s => s.isLocalOwner) || this.slots.find(s => s.isHuman), this);
         }
 
-        // 💡 [신규 - 네트워크 슬롯 이벤트 바인딩]: 수신된 AI 모드 전환 신호를 실시간 처리
+        // 💡 [네트워크 이벤트 바인딩 - 4단계 신호 표준 규격]
         if (window.networkManager) {
+            // A. 상태 관리 신호 (Strict Sync): AI 모드 전환 등
             window.networkManager.on('SLOT_EVENT_SYNC', (packet) => {
                 if (packet.eventType === 'TOGGLE_AI_MODE' && packet.payload) {
                     this.applySlotAiMode(packet.slotIndex, packet.payload.isAiMode);
                 }
+            });
+
+            // B. 설치형 오브젝트 & HP 동기화 (Object & HP Sync - Owner Authority)
+            window.networkManager.on('OBJECT_STATE_SYNC', (packet) => {
+                this.handleObjectStateSync(packet);
             });
         }
 
@@ -97,61 +103,69 @@ export class GameLoop {
 
     /**
      * 메인 프레임 업데이트 중 유저 입력 처리 연동 (네트워크 동기화 포함)
+     * [IsLocalOwner / RemoteProxy 권한 분리 및 Client Prediction]
      */
-    updateInputs() {
+    updateInputs(dt = 0.016) {
         const net = window.networkManager;
         const mySlotNum = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
         const mySlotIdx = mySlotNum - 1;
 
         // 1. 내 기체 입력 액션 추출 (isAiMode 여부에 따라 수동/AI 자동 생성)
         const myPlayer = this.slots ? this.slots[mySlotIdx] : null;
-        const localInputAction = this.input.getInputAction(mySlotIdx, {
-            player: myPlayer,
-            boss: this.boss,
-            gameLoop: this
-        });
+        let localInputAction = null;
 
-        // 2. 내 컴퓨터 슬롯 조작 신호를 네트워크 소켓으로 송신 (INPUT_SYNC)
-        if (net && net.mySlotIndex) {
-            net.sendInputSync(net.mySlotIndex, localInputAction);
+        if (myPlayer) {
+            localInputAction = this.input.getInputAction(mySlotIdx, {
+                player: myPlayer,
+                boss: this.boss,
+                gameLoop: this
+            });
+
+            // 내 위치 좌표를 입력 패킷에 실어 Dead Reckoning 기준점 제공
+            localInputAction.posX = myPlayer.x;
+            localInputAction.posY = myPlayer.y;
+            localInputAction.speed = myPlayer.speed;
+
+            // 2. 내 컴퓨터 슬롯 조작 신호를 네트워크 소켓으로 프레임 단위 송신 (INPUT_SYNC)
+            if (net && net.mySlotIndex) {
+                net.sendInputSync(net.mySlotIndex, localInputAction);
+            }
         }
 
-        // 3. 각 슬롯별 권한 분리 및 입력/네트워크 위치 보간 동기화
+        const skillParams = {
+            boss: this.boss,
+            enemyMinions: this.enemyMinions,
+            bossBullets: this.bossBullets,
+            minionBullets: this.minionBullets,
+            enemyBullets: [...(this.bossBullets || []), ...(this.minionBullets || [])],
+            allyMinions: this.allyMinions,
+            allyPlayers: this.slots
+        };
+
+        // 3. 각 슬롯별 권한 분리(IsLocalOwner vs RemoteProxy) 및 위치 보간
         this.slots.forEach((player, idx) => {
             const slotNum = idx + 1;
             const isMySlot = (net && net.mySlotIndex === slotNum);
-            player.isLocalOwner = isMySlot; // 내 소유 기체 설정
+            player.isLocalOwner = isMySlot; // 내 소유 기체 권한 플래그
 
-            const remoteInput = net ? net.consumeClientInput(slotNum) : null;
-            if (remoteInput) {
-                if (typeof remoteInput.isAiMode === 'boolean') {
-                    player.isHuman = !remoteInput.isAiMode;
+            if (isMySlot) {
+                // 💡 [Local Owner]: 키보드/마우스 입력을 내 기기에 즉시 실행 (Client Prediction)
+                if (player.isHuman && localInputAction) {
+                    player.handleHumanInputPacket(localInputAction, skillParams);
                 }
-                player.remoteInputPacket = remoteInput;
-            }
-
-            const skillParams = {
-                boss: this.boss,
-                enemyMinions: this.enemyMinions,
-                bossBullets: this.bossBullets,
-                minionBullets: this.minionBullets,
-                enemyBullets: [...(this.bossBullets || []), ...(this.minionBullets || [])],
-                allyMinions: this.allyMinions,
-                allyPlayers: this.slots
-            };
-
-            // 💡 [핵심 - 권한 분리]: 내 슬롯(Local Owner)만 키보드/마우스 입력을 직접 계산
-            if (isMySlot && player.isHuman) {
-                player.handleHumanInputPacket(localInputAction, skillParams);
-            } 
-            // 💡 [상대 슬롯 - Remote Proxy]: 수신받은 네트워크 패킷(remoteInputPacket)으로 위치 및 스킬 1회성 적용
-            else if (!isMySlot && player.isHuman && player.remoteInputPacket) {
-                const pkt = player.remoteInputPacket;
-                player.handleHumanInputPacket(pkt, skillParams);
-
-                // 스킬 연속 발동 방지 플래그 소모
-                if (pkt.useSkill) {
-                    pkt.useSkill = false;
+            } else {
+                // 💡 [Remote Proxy]: 상대방 기기에서 릴레이된 원격 패킷 소비
+                const remoteInput = net ? net.consumeClientInput(slotNum) : null;
+                if (remoteInput) {
+                    if (typeof remoteInput.isAiMode === 'boolean') {
+                        player.isHuman = !remoteInput.isAiMode;
+                    }
+                    player.remoteInputPacket = remoteInput;
+                    
+                    if (player.isHuman) {
+                        // Dead Reckoning 미세 속도 보간 및 1회성 스킬 적용
+                        player.handleHumanInputPacket(remoteInput, skillParams);
+                    }
                 }
             }
         });
@@ -229,6 +243,56 @@ export class GameLoop {
 
         if (this.slots) {
             this.slots.forEach(slot => slot.resetPosition(GAME_WIDTH, GAME_HEIGHT, TOTAL_SLOTS));
+        }
+    }
+
+    /**
+     * 💡 [Object & HP Sync]: 원격 기기의 설치형 오브젝트 및 HP 상태 패킷 수신 동기화
+     * 소유자(Owner)가 브로드캐스트한 데이터를 기반으로 원격 화면의 오브젝트/체력을 맞춤
+     * @param {object} packet 
+     */
+    handleObjectStateSync(packet) {
+        if (!packet || !packet.slotIndex) return;
+        const ownerSlotIdx = packet.slotIndex - 1;
+        const ownerPlayer = this.slots ? this.slots[ownerSlotIdx] : null;
+
+        // 내가 소유자인 경우 자신의 판정이 우선이므로 무시
+        if (ownerPlayer && ownerPlayer.isLocalOwner) return;
+
+        // 1. 방벽(Shield) 동기화 (쉴더 기체)
+        if (ownerPlayer && ownerPlayer.classType === 'shielderPlayer') {
+            const shieldObj = (packet.objects || []).find(o => o.radius !== undefined && o.arcAngle !== undefined);
+            if (shieldObj) {
+                ownerPlayer.activeShield = {
+                    ...shieldObj
+                };
+            } else {
+                ownerPlayer.activeShield = null;
+            }
+        }
+
+        // 2. 미니언(AllyMinions) 동기화 (서머너 기체)
+        if (ownerPlayer && packet.objects && Array.isArray(packet.objects)) {
+            packet.objects.forEach(obj => {
+                if (obj.type === 'berserker' || obj.type === 'drone') {
+                    // 기존 미니언 매칭
+                    const existing = (this.allyMinions || []).find(m => m.owner === ownerPlayer && m.id === obj.id);
+                    if (existing) {
+                        existing.hp = obj.hp;
+                        if (obj.isDead || obj.hp <= 0) {
+                            existing.isDead = true;
+                        }
+                    }
+                }
+            });
+        }
+
+        // 3. 기체 본체 HP 상태 동기화
+        if (ownerPlayer && packet.hpState) {
+            ownerPlayer.hp = packet.hpState.hp;
+            if (packet.hpState.isStunned && !ownerPlayer.isStunned()) {
+                ownerPlayer.stunTimer = 3.0;
+            }
         }
     }
 
@@ -322,6 +386,9 @@ export class GameLoop {
      */
     update(dt) {
         if (!this.sceneManager.isPlaying()) return;
+
+        // 💡 [입력 및 네트워크 동기화 프레임 틱 호출]
+        this.updateInputs(dt);
 
         // 보스 기동 및 탄막 발생 (플레이어 정보 전달)
         this.boss.update(this.bossBullets, this.canvas.width, this.slots, dt);

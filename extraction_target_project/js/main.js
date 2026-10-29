@@ -165,9 +165,15 @@ window.addEventListener('DOMContentLoaded', () => {
                 uiManager.setDebugVisibility(false);
             }
 
-            // 서버로 READY 상태 패킷 송신
+            // 💡 [Strict Sync]: 현재 내 닉네임과 직업을 포함하여 서버로 READY 패킷 송신
             if (window.networkManager) {
-                window.networkManager.sendReady(isLobbyReady);
+                const mySlot = window.networkManager.mySlotIndex || 1;
+                const nameInput = document.getElementById(`p${mySlot}-nickname`);
+                const classSelect = document.getElementById(`p${mySlot}-class`);
+                const nickname = nameInput ? nameInput.value.trim() : `PLAYER ${mySlot}`;
+                const classType = classSelect ? classSelect.value : 'bufferPlayer';
+
+                window.networkManager.sendReady(isLobbyReady, { nickname, classType });
             }
         });
     }

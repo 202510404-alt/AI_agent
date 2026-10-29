@@ -108,8 +108,8 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../utils/seededRNG.js
-🧬 class InputHandler [L11~L257]
-🎯 def endTouch() [L146~L151]
+🧬 class InputHandler [L12~L268]
+🎯 def endTouch() [L159~L164]
 ```
 
 --------------------------------------------------
@@ -126,11 +126,11 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../player/characters/index.js
-🧬 class UIManager [L8~L506]
+🧬 class UIManager [L8~L17]
 🎯 def updateSlotLockStatus() [L69~L87]
-🎯 def triggerSkill() [L246~L276]
-🧬 class truncate [L461~L473]
-🧬 class truncate [L499~L508]
+🎯 def triggerSkill() [L248~L278]
+🧬 class truncate [L477~L489]
+🧬 class truncate [L515~L524]
 ```
 
 --------------------------------------------------
@@ -261,7 +261,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../utils/seededRNG.js
-🧬 class NetworkManager [L13~L272]
+🧬 class NetworkManager [L14~L407]
 ```
 
 --------------------------------------------------
@@ -279,7 +279,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../config/constants.js, ../utils/seededRNG.js, ./playerBullet.js
-🧬 class BasePlayer [L10~L19]
+🧬 class BasePlayer [L15~L462]
 ```
 
 --------------------------------------------------
@@ -324,7 +324,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../basePlayer.js
-🧬 class ShielderPlayer [L7~L272]
+🧬 class ShielderPlayer [L11~L238]
 ```
 
 --------------------------------------------------
@@ -333,7 +333,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../../minian/ally/berserkerMinion.js, ../../minian/ally/shooterMinion.js, ../basePlayer.js
-🧬 class SummonerPlayer [L9~L68]
+🧬 class SummonerPlayer [L12~L84]
 ```
 
 --------------------------------------------------
@@ -397,7 +397,7 @@
 - **[JSON_KEY]** `lockfileVersion` (Line: 3~3)
 - **[JSON_KEY]** `requires` (Line: 4~4)
 - **[JSON_KEY]** `packages` (Line: 5~5)
-  - 🔗 *Calls (호출하는 것)*: `ipaddr.js, node_modules/ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/ipaddr.js, ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -434,12 +434,12 @@
 🎯 def ensureModule(moduleName) [L20~L28]
 🎯 def generateMasterSeed() [L73~L75]
 🎯 def broadcast(payloadObj) [L80~L87]
-🎯 def broadcastRoomState() [L92~L116]
-🎯 def broadcastVoteStatus() [L121~L133]
-🎯 def changePhase(nextPhase) [L139~L163]
-🎯 def checkReadyUnanimity() [L168~L178]
-🎯 def checkScoreboardVoting() [L183~L206]
-🎯 def getLocalIpAddress() [L209~L219]
+🎯 def broadcastRoomState() [L92~L119]
+🎯 def broadcastVoteStatus() [L124~L136]
+🎯 def changePhase(nextPhase) [L142~L166]
+🎯 def checkReadyUnanimity() [L171~L181]
+🎯 def checkScoreboardVoting() [L186~L209]
+🎯 def getLocalIpAddress() [L212~L222]
 ```
 
 --------------------------------------------------

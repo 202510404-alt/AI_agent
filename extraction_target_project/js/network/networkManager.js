@@ -2,11 +2,12 @@
  * js/network/networkManager.js
  * 클라이언트 네트워크 코어 (WebSocket 연결 및 패킷 디스패처)
  * 
- * [동작 명세]
- * 1. WebSocket 연결 생명주기 관리 및 자동 재연결.
- * 2. masterSeed 수신 시 seededRNG 모듈 초기화.
- * 3. ROOM_STATE, PHASE_CHANGE, INPUT_SYNC 패킷 디스패처 구축.
- * 4. 표결 및 레디 패킷 송신 (SET_READY, SUBMIT_VOTE).
+ * [동작 명세 - 4단계 신호 동기화 표준 규격 및 예외 처리 가이드라인]
+ * 1. 상태 관리 신호 (Strict Sync): ROOM_STATE 수신 시 단일 진실 공급원(Single Source of Truth)으로 동시 적용.
+ * 2. 실시간 이동 신호 (Continuous Movement): Client Prediction + sequenceNumber 부여 + Dead Reckoning 지원.
+ *    - 패킷 순서 엉킴(Out-of-Order / Packet Loss) 시 이전 sequenceNumber 패킷 무시(Discard).
+ * 3. 1회성 트리거 신호 (Trigger Action): timeStamp / frameNumber 포함 패킷 릴레이 및 1회 소비.
+ * 4. 설치형 오브젝트 & HP 판정 (Object & HP Sync): 시전자 소유권(Owner Authority) 기반 OBJECT_STATE_SYNC 송수신.
  */
 import { seededRNG } from '../utils/seededRNG.js';
 
@@ -23,14 +24,24 @@ export class NetworkManager {
         this.port = options.port || 8080;
         this.socket = null;
 
-        this.mySlotIndex = null;      // 서버가 할당해줄 슬롯 번호 (1~4)
+        this.mySlotIndex = null;      // 서버가 할당해준 내 슬롯 번호 (1~4)
         this.activeSlots = [1];       // 현재 활성 슬롯 인덱스 목록
-        this.slotDetails = [];        // 슬롯별 레디/투표 상세 상태
+        this.slotDetails = [];        // 슬롯별 레디/투표/닉네임/직업 상세 상태
         this.currentPhase = 'LOBBY';  // LOBBY, MENU, GAME, SCOREBOARD
         this.masterSeed = null;
 
-        // 원격 입력 버퍼: { 1: inputAction, 2: inputAction, 3: inputAction, 4: inputAction }
+        // 원격 입력 버퍼: slotIndex -> inputAction
         this.clientInputs = {};
+
+        // 패킷 시퀀스 번호 (송신용 단조 증가 카운터)
+        this.sequenceCounter = 0;
+
+        // 원격 슬롯별 마지막 수신 시퀀스 번호 추적 (Out-of-Order 무시용)
+        this.lastReceivedSequences = {};
+
+        // RTT(Ping) 추적을 위한 타임스탬프 맵
+        this.estimatedPing = 50; // 기본 ms
+        this.lastPingSentAt = 0;
 
         // 리스너 콜백 맵: eventName -> [callbacks]
         this.listeners = {
@@ -39,7 +50,9 @@ export class NetworkManager {
             INPUT_SYNC: [],
             SLOT_ASSIGNED: [],
             SLOT_EVENT_SYNC: [],
-            VOTE_STATUS_UPDATE: []
+            OBJECT_STATE_SYNC: [],
+            VOTE_STATUS_UPDATE: [],
+            DEBUG_INPUT_EVENT: []
         };
     }
 
@@ -57,6 +70,8 @@ export class NetworkManager {
 
             this.socket.onopen = () => {
                 console.log(`🌐 [NetworkManager] 웹소켓 서버 연결 완료 (${wsUrl})`);
+                // 내 닉네임 / 직업 정보가 준비되어 있다면 초기 동기화
+                this.syncLocalProfile();
             };
 
             this.socket.onmessage = (event) => {
@@ -110,21 +125,33 @@ export class NetworkManager {
                     this.setMasterSeed(packet.masterSeed);
                 }
                 console.log(`🎮 [NetworkManager] 내 슬롯 할당: P${this.mySlotIndex}`);
+                this.syncLocalProfile();
                 break;
 
             case 'ROOM_STATE':
+                // 1. 상태 관리 신호 (Strict Sync) - Single Source of Truth
                 this.activeSlots = packet.activeSlots || [];
                 this.slotDetails = packet.slotDetails || [];
                 if (packet.phase) this.currentPhase = packet.phase;
                 if (packet.masterSeed && packet.masterSeed !== this.masterSeed) {
                     this.setMasterSeed(packet.masterSeed);
                 }
-                
-                // 현재 게임 진행 중일 경우 접속된 유저 슬롯들의 isHuman 제어 플래그 실시간 갱신
+
+                // 기체/닉네임/AI 모드 및 human 플래그 전 기기 동시 적용
                 if (window.gameLoopInstance && window.gameLoopInstance.slots) {
                     window.gameLoopInstance.slots.forEach((player, idx) => {
                         const slotNum = idx + 1;
-                        player.isHuman = this.activeSlots.includes(slotNum);
+                        const detail = this.slotDetails.find(d => d.slotIndex === slotNum);
+                        if (detail) {
+                            // AI 모드가 활성화되어 있으면 isHuman = false
+                            player.isHuman = detail.active && !detail.isAiMode;
+                            if (detail.nickname) player.nickname = detail.nickname;
+                            if (detail.classType && player.classType !== detail.classType) {
+                                player.classType = detail.classType;
+                            }
+                        } else {
+                            player.isHuman = this.activeSlots.includes(slotNum);
+                        }
                     });
                 }
                 break;
@@ -138,19 +165,45 @@ export class NetworkManager {
                 break;
 
             case 'INPUT_SYNC':
-            case 'CLIENT_INPUT':
-                // 원격 조작 입력 패킷 캐싱
-                if (packet.slotIndex) {
-                    this.clientInputs[packet.slotIndex] = packet.inputAction;
+            case 'CLIENT_INPUT': {
+                const sIdx = packet.slotIndex;
+                if (!sIdx) break;
+
+                // 2. 패킷 순서 엉킴 및 손실 방지 (Out-of-Order / Packet Loss)
+                const seq = packet.sequenceNumber;
+                if (typeof seq === 'number') {
+                    const lastSeq = this.lastReceivedSequences[sIdx] || 0;
+                    if (seq < lastSeq) {
+                        // 오래된 순번의 패킷은 즉시 폐기 (Discard)
+                        return;
+                    }
+                    this.lastReceivedSequences[sIdx] = seq;
                 }
+
+                // 핑(Ping) 계산: timeStamp 기반 RTT 근사치 갱신
+                if (packet.timeStamp) {
+                    const latency = Math.max(0, Date.now() - packet.timeStamp);
+                    this.estimatedPing = Math.round(this.estimatedPing * 0.8 + latency * 0.2);
+                }
+
+                // 원격 조작 입력 패킷 캐싱
+                const action = packet.inputAction || {};
+                action.sequenceNumber = seq;
+                action.timeStamp = packet.timeStamp || Date.now();
+                action.estimatedPing = this.estimatedPing;
+
+                this.clientInputs[sIdx] = action;
+                break;
+            }
+
+            case 'OBJECT_STATE_SYNC':
+                // 4. 설치형 오브젝트 & HP 판정 (Object & HP Sync)
                 break;
 
-            // 💡 [신규 - 디버그 수신 전역 로그]: 상대방 및 전체 노드에서 전달된 입력 로그 출력
             case 'DEBUG_INPUT_EVENT':
                 console.log(`[NET DEBUG RECV] Slot P${packet.slotIndex} | Source: [${packet.source}] | ${packet.description}`);
                 break;
 
-            // 💡 [신규 - 슬롯 이벤트 수신 로그]: 원격 슬롯 이벤트 수신 로깅
             case 'SLOT_EVENT_SYNC':
                 console.log(`⚡ [NetworkManager] 슬롯 이벤트 수신: P${packet.slotIndex} -> ${packet.eventType}`, packet.payload);
                 break;
@@ -172,6 +225,20 @@ export class NetworkManager {
     }
 
     /**
+     * 로컬 UI(닉네임, 선택 직업) 상태를 서버 중앙 데이터로 동기화 요청
+     */
+    syncLocalProfile() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN || !this.mySlotIndex) return;
+
+        const nameInput = document.getElementById(`p${this.mySlotIndex}-nickname`);
+        const classSelect = document.getElementById(`p${this.mySlotIndex}-class`);
+        const nickname = nameInput ? nameInput.value.trim() : `PLAYER ${this.mySlotIndex}`;
+        const classType = classSelect ? classSelect.value : 'bufferPlayer';
+
+        this.sendSlotProfile(this.mySlotIndex, { nickname, classType });
+    }
+
+    /**
      * masterSeed 수신 시 seededRNG 모듈 초기화
      * @param {number|string} seed 
      */
@@ -183,24 +250,96 @@ export class NetworkManager {
     }
 
     /**
-     * [클라이언트 ➔ 서버] 내 조작 입력 보따리 압축 송신 (INPUT_SYNC)
+     * [1. 상태 관리 신호 - Strict Sync] 슬롯 프로필(닉네임, 클래스) 변경 요청
      * @param {number} slotIndex 
-     * @param {object} inputAction { moveX, moveY, useSkill, mouseX, mouseY }
+     * @param {object} profile { nickname, classType, isAiMode }
      */
-    sendInputSync(slotIndex, inputAction) {
+    sendSlotProfile(slotIndex, profile = {}) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
         this.socket.send(JSON.stringify({
-            type: 'INPUT_SYNC',
+            type: 'UPDATE_SLOT_PROFILE',
             slotIndex: slotIndex || this.mySlotIndex,
-            inputAction
+            ...profile
         }));
     }
 
     /**
-     * 💡 [신규 - 확장형 범용 슬롯 이벤트 송신]: AI 모드 전환, 스킬, 상태 동기화 통일 규격 패킷
-     * @param {number} slotIndex 슬롯 번호 (1~4)
-     * @param {string} eventType 이벤트 이름 (예: 'TOGGLE_AI_MODE')
-     * @param {object} payload 상세 데이터 ({ isAiMode: true 등 })
+     * [1. 상태 관리 신호 - Strict Sync] USER <-> AI 모드 전환 요청
+     * 클라이언트 단독 즉시 전환을 금지하고 서버에 요청
+     * @param {number} slotIndex 
+     * @param {boolean} [isAiMode]
+     */
+    requestToggleAiMode(slotIndex, isAiMode) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+            // 오프라인 폴백
+            if (window.gameLoopInstance && typeof window.gameLoopInstance.applySlotAiMode === 'function') {
+                window.gameLoopInstance.applySlotAiMode(slotIndex, isAiMode);
+            }
+            return;
+        }
+        this.socket.send(JSON.stringify({
+            type: 'TOGGLE_AI_MODE',
+            slotIndex: slotIndex || this.mySlotIndex,
+            isAiMode
+        }));
+    }
+
+    /**
+     * [2. 실시간 이동 + 3. 1회성 트리거]
+     * 내 조작 입력 보따리 프레임 단위 압축 송신 (INPUT_SYNC)
+     * - sequenceNumber 단조 증가 부여
+     * - timeStamp 포함
+     * - posX, posY (Client Prediction 검증 및 Dead Reckoning용)
+     * @param {number} slotIndex 
+     * @param {object} inputAction { moveX, moveY, mouseX, mouseY, useSkill, posX, posY, timeStamp }
+     */
+    sendInputSync(slotIndex, inputAction) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        
+        this.sequenceCounter = (this.sequenceCounter + 1) >>> 0;
+
+        const payload = {
+            type: 'INPUT_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            sequenceNumber: this.sequenceCounter,
+            timeStamp: inputAction.timeStamp || Date.now(),
+            inputAction: {
+                moveX: inputAction.moveX || 0,
+                moveY: inputAction.moveY || 0,
+                dx: inputAction.dx !== undefined ? inputAction.dx : inputAction.moveX || 0,
+                dy: inputAction.dy !== undefined ? inputAction.dy : inputAction.moveY || 0,
+                mouseX: inputAction.mouseX,
+                mouseY: inputAction.mouseY,
+                useSkill: !!inputAction.useSkill,
+                posX: inputAction.posX,
+                posY: inputAction.posY,
+                speed: inputAction.speed
+            }
+        };
+
+        this.socket.send(JSON.stringify(payload));
+    }
+
+    /**
+     * [4. 설치형 오브젝트 & HP 판정 - Object & HP Sync]
+     * 시전자 기기(Owner)가 판정한 오브젝트 상태 및 HP 동기화 패킷 전송
+     * @param {number} slotIndex 소유자 슬롯
+     * @param {Array} objects 방벽 / 미니언 상태 목록 [{ id, type, x, y, hp, maxHp, isDead, angle, duration }]
+     * @param {object} [hpState] 기체 본체 HP 상태 { hp, maxHp, isStunned }
+     */
+    sendObjectStateSync(slotIndex, objects = [], hpState = null) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'OBJECT_STATE_SYNC',
+            slotIndex: slotIndex || this.mySlotIndex,
+            timeStamp: Date.now(),
+            objects,
+            hpState
+        }));
+    }
+
+    /**
+     * 확장형 범용 슬롯 이벤트 송신 (하위 호환)
      */
     sendSlotEvent(slotIndex, eventType, payload = {}) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
@@ -213,13 +352,10 @@ export class NetworkManager {
     }
 
     /**
-     * 💡 [신규 - 디버그 입력 전송 메서드]: 키/마우스 클릭 발생 시 서버로 신호 송신
+     * 디버그 입력 전송 메서드
      */
     sendDebugInput(source, description) {
-        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-            console.warn(`⚠️ [Debug Send Failed] Socket not open. (${source}: ${description})`);
-            return;
-        }
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
         this.socket.send(JSON.stringify({
             type: 'DEBUG_INPUT_EVENT',
             slotIndex: this.mySlotIndex || 1,
@@ -228,9 +364,6 @@ export class NetworkManager {
         }));
     }
 
-    /**
-     * 하위 호환용 sendClientInput alias
-     */
     sendClientInput(slotIndex, inputAction) {
         this.sendInputSync(slotIndex, inputAction);
     }
@@ -238,12 +371,14 @@ export class NetworkManager {
     /**
      * [클라이언트 ➔ 서버] LOBBY / MENU 상태 준비(READY) 신호 송신
      * @param {boolean} ready 
+     * @param {object} [profile]
      */
-    sendReady(ready = true) {
+    sendReady(ready = true, profile = {}) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
         this.socket.send(JSON.stringify({
             type: 'SET_READY',
-            ready
+            ready,
+            ...profile
         }));
     }
 
