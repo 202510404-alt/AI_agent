@@ -85,9 +85,6 @@ window.addEventListener('DOMContentLoaded', () => {
             if (gameLoopInstance) {
                 gameLoopInstance.useBomb();
             }
-        },
-        onRestart: () => {
-            window.location.reload();
         }
     });
 
@@ -115,7 +112,7 @@ window.addEventListener('DOMContentLoaded', () => {
         } else if (packet.phase === 'MENU') {
             sceneManager.setState('MENU');
         } else if (packet.phase === 'SCOREBOARD') {
-            sceneManager.setState('GAMEOVER');
+            if (gameLoopInstance) gameLoopInstance.enterScoreboard();
         }
     });
 
@@ -134,7 +131,7 @@ window.addEventListener('DOMContentLoaded', () => {
         } else if (currentPhase === 'MENU') {
             sceneManager.setState('MENU');
         } else if (currentPhase === 'SCOREBOARD') {
-            sceneManager.setState('GAMEOVER');
+            if (gameLoopInstance) gameLoopInstance.enterScoreboard();
         }
     });
 
@@ -147,6 +144,10 @@ window.addEventListener('DOMContentLoaded', () => {
             if (gameLoopInstance) gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails);
             sceneManager.setState('PLAY');
         }
+    });
+
+    window.networkManager.on('VOTE_STATUS_UPDATE', (packet) => {
+        uiManager.updateVoteStatus(packet.votes, window.networkManager.mySlotIndex);
     });
 
     // 네트워크를 통해 들어오는 다른 플레이어의 키 입력(INPUT_SYNC) 수신 처리

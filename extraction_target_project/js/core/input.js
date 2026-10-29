@@ -7,12 +7,14 @@
  * 2. 이벤트 리스너 참조 시점 문제 해결 (Lazy Evaluation): this.networkManager || window.networkManager 실시간 탐색.
  * 3. 1회성 스킬 트리거 시 timeStamp 부여 및 전달.
  */
-import { rngPlayerAi } from '../utils/seededRNG.js';
-
 export class InputHandler {
     constructor() {
         this.keys = {};
-        this.mousePos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+        const canvas = document.getElementById('gameCanvas');
+        this.mousePos = {
+            x: canvas ? canvas.width / 2 : window.innerWidth / 2,
+            y: canvas ? canvas.height / 2 : window.innerHeight / 2
+        };
         this.joystick = {
             active: false,
             pointerId: null,
@@ -94,8 +96,12 @@ export class InputHandler {
      */
     initMouse() {
         window.addEventListener('mousemove', (e) => {
-            this.mousePos.x = e.clientX;
-            this.mousePos.y = e.clientY;
+            const canvas = window.gameLoopInstance?.canvas || document.getElementById('gameCanvas');
+            if (!canvas) return;
+            const bounds = canvas.getBoundingClientRect();
+            if (bounds.width <= 0 || bounds.height <= 0) return;
+            this.mousePos.x = (e.clientX - bounds.left) * canvas.width / bounds.width;
+            this.mousePos.y = (e.clientY - bounds.top) * canvas.height / bounds.height;
         });
 
         window.addEventListener('mousedown', (e) => {
@@ -191,7 +197,7 @@ export class InputHandler {
     }
 
     /**
-     * playerAiSpread 독립 시드 기반 결정론적 AI 입력 액션 생성
+     * AI 상태에서 사용할 입력 액션을 난수 소비 없이 생성
      */
     getAiInputAction(slotIndex = 0, context = null) {
         let moveX = 0;
@@ -209,21 +215,15 @@ export class InputHandler {
             const dist = Math.hypot(dx, dy);
 
             if (dist > 5) {
-                const spreadAngle = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 0.1;
-                const baseAngle = Math.atan2(dy, dx) + spreadAngle;
+                const baseAngle = Math.atan2(dy, dx);
                 moveX = Math.cos(baseAngle);
                 moveY = Math.sin(baseAngle);
             }
 
             const boss = (context && context.boss) || (window.gameLoopInstance && window.gameLoopInstance.boss);
             if (boss) {
-                const aimSpread = (rngPlayerAi.getSpread(slotIndex) - 0.5) * 20;
-                mouseX = boss.x + aimSpread;
-                mouseY = boss.y + aimSpread;
-            }
-
-            if (player.dodgeFatigue > 0.8 && player.hasActiveSkill && !player.isSkillOnCooldown) {
-                useSkill = rngPlayerAi.getSpread(slotIndex) < 0.3;
+                mouseX = boss.x;
+                mouseY = boss.y;
             }
         }
 
@@ -273,8 +273,9 @@ export class InputHandler {
         }
 
         const useSkill = this.skillTriggered;
-        const skillTime = this.lastSkillTriggerTime || Date.now();
+        const skillTime = useSkill ? (this.lastSkillTriggerTime || Date.now()) : Date.now();
         this.skillTriggered = false;
+        if (useSkill) this.lastSkillTriggerTime = 0;
 
         const myPlayer = (context && context.player) || 
             (window.gameLoopInstance && window.gameLoopInstance.slots && window.gameLoopInstance.slots[slotIndex]);

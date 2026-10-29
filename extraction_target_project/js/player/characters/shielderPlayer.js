@@ -23,6 +23,7 @@ export class ShielderPlayer extends BasePlayer {
         this.maxGauge = 70;                         // 스킬 게이지 70
         this.activeShield = null;                   // 현재 설치된 배리어 정보
         this.shieldCastCount = 0;
+        this.shieldSyncTimer = 0;
     }
 
     /**
@@ -85,6 +86,7 @@ export class ShielderPlayer extends BasePlayer {
             thickness: 12,
             duration: 20.0
         };
+        this.shieldSyncTimer = 0;
 
         // 소유자(Owner)인 경우 전체 기기에 방벽 생성 브로드캐스트
         if (this.isLocalOwner && window.networkManager) {
@@ -103,6 +105,7 @@ export class ShielderPlayer extends BasePlayer {
         if (this.activeShield) {
             const shield = this.activeShield;
             shield.duration -= dt;
+            this.shieldSyncTimer += dt;
 
             if (shield.duration <= 0 || shield.hp <= 0) {
                 this.activeShield = null;
@@ -188,11 +191,12 @@ export class ShielderPlayer extends BasePlayer {
                 }
 
                 // 피해가 발생했거나 일정 주기마다 OBJECT_STATE_SYNC 전송
-                if (this.isLocalOwner && window.networkManager && (shieldDamaged || Math.random() < 0.1)) {
+                if (this.isLocalOwner && window.networkManager && (shieldDamaged || this.shieldSyncTimer >= 0.5 || !this.activeShield)) {
                     window.networkManager.sendObjectStateSync(
                         this.slotIndex + 1,
                         this.activeShield ? [this.activeShield] : []
                     );
+                    this.shieldSyncTimer = 0;
                 }
             }
 

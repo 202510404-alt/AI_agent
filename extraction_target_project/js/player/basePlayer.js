@@ -423,7 +423,7 @@ export default class BasePlayer {
             }
         }
 
-        bulletContainer.push(new PlayerBullet(this.x, this.y, targetAngle, this.color, this));
+        bulletContainer.push(new PlayerBullet(this.x, this.y, targetAngle, this.slotIndex, this.color));
     }
 
     updateAttack(dt, onShoot) {
@@ -475,6 +475,20 @@ export default class BasePlayer {
         ctx.textAlign = 'center';
         const label = this.isLocalOwner ? `[YOU] P${this.id}` : `P${this.id}`;
         ctx.fillText(label, this.x, this.y - this.radius - 6);
+
+        // Keep every player's HP visible above the name, including AI slots.
+        const barWidth = 44;
+        const barHeight = 5;
+        const barX = this.x - barWidth / 2;
+        const barY = this.y - this.radius - 29;
+        const hpRatio = this.maxHp > 0 ? Math.max(0, Math.min(1, this.hp / this.maxHp)) : 0;
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(barX, barY, barWidth, barHeight);
+        ctx.fillStyle = hpRatio > 0.5 ? '#22c55e' : hpRatio > 0.25 ? '#f59e0b' : '#ef4444';
+        ctx.fillRect(barX, barY, barWidth * hpRatio, barHeight);
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
 
         ctx.restore();
     }

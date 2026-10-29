@@ -104,7 +104,10 @@ export class AIEngine {
                 player.actionLockTimer = 0;
             } else {
                 // REPOSITION 진입 시점에 단 한 번 전략 결정 (APPROACH 또는 RETREAT)
-                if (player.fsmState !== 'REPOSITION' && player.fsmState !== 'COVER') {
+                if (player.fsmState !== 'REPOSITION' ||
+                    !['APPROACH', 'RETREAT'].includes(player.repositionStrategy) ||
+                    ![1, -1].includes(player.wallAvoidSide) ||
+                    !Number.isFinite(player.repositionAngleOffset)) {
                     player.fsmState = 'REPOSITION';
                     const stratRng = rngPlayerAi.getSpread(player.slotIndex);
                     const wallRng = rngPlayerAi.getSpread(player.slotIndex);

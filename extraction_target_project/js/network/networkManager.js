@@ -50,8 +50,10 @@ export class NetworkManager {
             ROOM_STATE: [],
             PHASE_CHANGE: [],
             INPUT_SYNC: [],
+            PLAYER_SHOT_SYNC: [],
             SLOT_ASSIGNED: [],
             SLOT_EVENT_SYNC: [],
+            AI_STATE_SYNC: [],
             OBJECT_STATE_SYNC: [],
             VOTE_STATUS_UPDATE: [],
             DEBUG_INPUT_EVENT: []
@@ -157,6 +159,20 @@ export class NetworkManager {
                             player.isHuman = this.activeSlots.includes(slotNum);
                         }
                     });
+                    const localPlayer = window.gameLoopInstance.slots[this.mySlotIndex - 1];
+                    const input = window.gameLoopInstance.input;
+                    if (localPlayer && input && input.isAiMode === localPlayer.isHuman) {
+                        input.setAiMode(!localPlayer.isHuman);
+                    }
+                    const gameLoop = window.gameLoopInstance;
+                    if (gameLoop.ui && typeof gameLoop.ui.updateSlotAndStats === 'function') {
+                        gameLoop.ui.updateSlotAndStats(gameLoop.slots);
+                    }
+                    const statusText = document.getElementById('top-ai-status-text');
+                    if (statusText && localPlayer) {
+                        statusText.innerText = localPlayer.isHuman ? 'USER (MANUAL)' : 'AI (AUTO)';
+                        statusText.className = localPlayer.isHuman ? 'text-cyan-400 font-bold' : 'text-pink-400 font-bold';
+                    }
                 }
                 break;
 
@@ -281,6 +297,15 @@ export class NetworkManager {
         }));
     }
 
+    sendAiStateSync(sequence, slots) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'AI_STATE_SYNC',
+            sequence,
+            slots
+        }));
+    }
+
     /**
      * [2. 실시간 이동 + 3. 1회성 트리거]
      * 내 조작 입력 보따리 프레임 단위 압축 송신 (INPUT_SYNC)
@@ -306,11 +331,13 @@ export class NetworkManager {
         const wasMoving = !!previous && (previous.moveX !== 0 || previous.moveY !== 0);
         const movementStartedOrStopped = !previous || moving !== wasMoving;
         const positionChanged = !previous || Math.hypot((inputAction.posX ?? 0) - (previous.posX ?? 0), (inputAction.posY ?? 0) - (previous.posY ?? 0)) >= 0.5;
-        // 이동 시작과 정지는 즉시 보내고, 이동 위치는 초당 최대 20회 동기화한다.
-        if (!movementStartedOrStopped && !currentSkill && (!positionChanged && !moving || now - this.lastInputSentAt < 50)) return;
+        const aimChanged = !previous || Math.hypot((inputAction.mouseX ?? 0) - (previous.mouseX ?? 0), (inputAction.mouseY ?? 0) - (previous.mouseY ?? 0)) >= 1;
+        // 이동과 조준 변화는 초당 최대 20회 보내며 시작·정지와 스킬은 즉시 보낸다.
+        if (!movementStartedOrStopped && !currentSkill &&
+            ((!positionChanged && !aimChanged && !moving) || now - this.lastInputSentAt < 50)) return;
 
         this.sequenceCounter = (this.sequenceCounter + 1) >>> 0;
-        this.lastSentAction = { moveX: currentMoveX, moveY: currentMoveY, posX: inputAction.posX, posY: inputAction.posY };
+        this.lastSentAction = { moveX: currentMoveX, moveY: currentMoveY, posX: inputAction.posX, posY: inputAction.posY, mouseX: inputAction.mouseX, mouseY: inputAction.mouseY };
         this.lastInputSentAt = now;
 
         const payload = {
@@ -334,6 +361,17 @@ export class NetworkManager {
         };
 
         this.socket.send(JSON.stringify(payload));
+    }
+
+    sendPlayerShot(slotIndex, bullet) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'PLAYER_SHOT_SYNC',
+            slotIndex,
+            x: bullet.x,
+            y: bullet.y,
+            angle: bullet.angle
+        }));
     }
 
     /**
@@ -408,6 +446,11 @@ export class NetworkManager {
             type: 'SUBMIT_VOTE',
             vote: voteChoice
         }));
+    }
+
+    requestScoreboard() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({ type: 'TRIGGER_SCOREBOARD' }));
     }
 
     /**

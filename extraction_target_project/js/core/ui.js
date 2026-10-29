@@ -12,7 +12,6 @@ export class UIManager {
      * @param {Function} callbacks.onToggleDebug 디버그 시각화 토글 시 호출
      * @param {Function} callbacks.onUseSkill 액티브 스킬 발동 시 호출
      * @param {Function} callbacks.onUseBomb EMP 특수폭탄 발동 시 호출
-     * @param {Function} callbacks.onRestart 새 매치 시작 시 호출
      */
     constructor(callbacks = {}) {
         this.callbacks = callbacks;
@@ -25,7 +24,7 @@ export class UIManager {
         this.elDebugBtn = document.getElementById('btnToggleDebug');
         this.elDebugStatus = document.getElementById('debugStatusText');
         this.elBombBtn = document.getElementById('btnSpecialBomb');
-        this.elModal = document.getElementById('gameOverModal');
+        this.elModal = document.getElementById('result-screen');
         this.elScoreboardList = document.getElementById('finalScoreboardList');
         this.elRestartBtn = document.getElementById('btnRestartMatch');
 
@@ -119,6 +118,7 @@ export class UIManager {
 
         // k090207 치트키 성공시에만 무제한 EMP 폭탄 버튼 표시
         if (this.elBombBtn) {
+            this.elBombBtn.style.display = isDebug ? 'flex' : 'none';
             if (isDebug) {
                 this.elBombBtn.classList.remove('hidden');
             } else {
@@ -195,15 +195,6 @@ export class UIManager {
             });
         }
 
-        if (this.elRestartBtn) {
-            this.elRestartBtn.addEventListener('click', () => {
-                if (this.callbacks.onRestart) {
-                    this.callbacks.onRestart();
-                } else {
-                    window.location.reload();
-                }
-            });
-        }
     }
 
     /**
@@ -365,11 +356,16 @@ export class UIManager {
             `;
 
             btn.onclick = () => {
-                slot.isHuman = !slot.isHuman;
+                const net = window.networkManager;
+                const nextAiMode = slot.isHuman;
+                if (net && typeof net.requestToggleAiMode === 'function') {
+                    net.requestToggleAiMode(slot.slotIndex + 1, nextAiMode);
+                } else if (window.gameLoopInstance && typeof window.gameLoopInstance.applySlotAiMode === 'function') {
+                    window.gameLoopInstance.applySlotAiMode(slot.slotIndex + 1, nextAiMode);
+                }
                 if (this.callbacks.onSlotToggle) {
                     this.callbacks.onSlotToggle(slot);
                 }
-                this.updateSlotAndStats(slots);
             };
             this.elSlotContainer.appendChild(btn);
         });
@@ -419,6 +415,17 @@ export class UIManager {
         });
 
         this.elModal.classList.remove('hidden');
+        const voteStatus = document.getElementById('vote-status');
+        if (voteStatus) voteStatus.textContent = '전원 같은 선택을 하면 함께 이동합니다.';
+    }
+
+    updateVoteStatus(votes = {}, mySlotIndex = null) {
+        const status = document.getElementById('vote-status');
+        if (!status) return;
+        const choices = Object.values(votes);
+        const voted = choices.filter(Boolean).length;
+        const mine = votes[mySlotIndex];
+        status.textContent = `투표 ${voted}/${choices.length}명 · 내 선택: ${mine === 'REPLAY' ? '다시 시작' : mine === 'MENU' ? '메인 메뉴' : '대기 중'} · 전원 같은 선택 시 이동`;
     }
 
     /**

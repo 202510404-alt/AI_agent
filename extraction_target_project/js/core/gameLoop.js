@@ -4,6 +4,7 @@
  */
 import { TOTAL_SLOTS, MATCH_CONFIG, CANVAS_GRID_SIZE } from '../config/constants.js';
 import { PlayerFactory } from '../player/playerFactory.js';
+import { PlayerBullet } from '../player/playerBullet.js';
 import { BossFactory } from '../enemy/bossFactory.js';
 import { AIEngine } from '../ai/aiEngine.js';
 import { createImpactParticles, createFloatingText } from '../player/particle.js';
@@ -33,6 +34,13 @@ export class GameLoop {
         this.gameTime = 0;
         this.matchSecondAccumulator = 0;
         this.simulationAccumulator = 0;
+        this.aiSyncAccumulator = 0;
+        this.aiStateSequence = 0;
+        this.lastAiStateSequence = -1;
+        this.lastAiAuthoritySlot = null;
+        this.hasRemoteAiState = false;
+        this.scoreboardRequestSent = false;
+        this.scoreboardShown = false;
 
         // 전역 참조 등록
         window.gameLoopInstance = this;
@@ -75,6 +83,17 @@ export class GameLoop {
             // B. 설치형 오브젝트 & HP 동기화 (Object & HP Sync - Owner Authority)
             window.networkManager.on('OBJECT_STATE_SYNC', (packet) => {
                 this.handleObjectStateSync(packet);
+            });
+            window.networkManager.on('AI_STATE_SYNC', (packet) => {
+                this.applyAiStateSync(packet);
+            });
+            window.networkManager.on('PLAYER_SHOT_SYNC', (packet) => {
+                const net = window.networkManager;
+                const slot = this.slots?.[packet.slotIndex - 1];
+                if (!this.sceneManager.isPlaying() || packet.slotIndex === net.mySlotIndex ||
+                    !slot || !slot.isHuman || !Number.isFinite(packet.x) ||
+                    !Number.isFinite(packet.y) || !Number.isFinite(packet.angle)) return;
+                this.playerBullets.push(new PlayerBullet(packet.x, packet.y, packet.angle, slot.slotIndex, slot.color));
             });
         }
 
@@ -121,7 +140,7 @@ export class GameLoop {
         const myPlayer = this.slots ? this.slots[mySlotIdx] : null;
         let localInputAction = null;
 
-        if (myPlayer && myPlayer.isLocalOwner && mySlotIdx === mySlotNum - 1) {
+        if (myPlayer && myPlayer.isLocalOwner && myPlayer.isHuman && mySlotIdx === mySlotNum - 1) {
             localInputAction = this.input.getInputAction(mySlotIdx, {
                 player: myPlayer,
                 boss: this.boss,
@@ -178,6 +197,58 @@ export class GameLoop {
         });
     }
 
+    isAiAuthority() {
+        const net = window.networkManager;
+        if (!net || !net.socket || net.socket.readyState !== 1) return true;
+        const activeSlots = (net.activeSlots || []).filter(Number.isInteger);
+        return net.mySlotIndex === Math.min(...activeSlots);
+    }
+
+    applyAiStateSync(packet) {
+        if (this.isAiAuthority() || !this.sceneManager.isPlaying() || !Array.isArray(packet.slots)) return;
+        if (packet.authoritySlot !== this.lastAiAuthoritySlot) {
+            this.lastAiAuthoritySlot = packet.authoritySlot;
+            this.lastAiStateSequence = -1;
+        }
+        if (!Number.isInteger(packet.sequence) || packet.sequence <= this.lastAiStateSequence) return;
+        this.lastAiStateSequence = packet.sequence;
+
+        for (const state of packet.slots) {
+            if (!state || !Number.isInteger(state.slotIndex)) continue;
+            const player = this.slots[state.slotIndex];
+            if (!player || player.isHuman || !Number.isFinite(state.x) || !Number.isFinite(state.y) ||
+                !Number.isFinite(state.targetX) || !Number.isFinite(state.targetY)) continue;
+            for (const key of ['x', 'y', 'targetX', 'targetY', 'fsmState', 'dodgeFatigue',
+                'actionLockTimer', 'repositionStrategy', 'wallAvoidSide', 'repositionAngleOffset',
+                'dodgeAngleOffset', 'mistakesCount', 'attackCooldown', 'hp', 'stunTimer', 'gauge']) {
+                if (state[key] !== undefined) player[key] = state[key];
+            }
+            if (player.classType === 'shielderPlayer') player.activeShield = state.activeShield || null;
+        }
+        this.hasRemoteAiState = true;
+    }
+
+    sendAiStateSync(dt) {
+        const net = window.networkManager;
+        if (!net || !net.socket || net.socket.readyState !== 1 || !this.isAiAuthority()) return;
+        this.aiSyncAccumulator += dt;
+
+        // 💡 [5배 빠른 10ms(0.01초) 동기화]: 뚝뚝 끊김 완치 및 초고속 갱신
+        if (this.aiSyncAccumulator < 0.01) return;
+        this.aiSyncAccumulator %= 0.01;
+        net.sendAiStateSync(++this.aiStateSequence, this.slots.filter(player => !player.isHuman).map(player => ({
+            slotIndex: player.slotIndex,
+            x: player.x, y: player.y, targetX: player.targetX, targetY: player.targetY,
+            fsmState: player.fsmState, dodgeFatigue: player.dodgeFatigue,
+            actionLockTimer: player.actionLockTimer, repositionStrategy: player.repositionStrategy,
+            wallAvoidSide: player.wallAvoidSide, repositionAngleOffset: player.repositionAngleOffset,
+            dodgeAngleOffset: player.dodgeAngleOffset, mistakesCount: player.mistakesCount,
+            attackCooldown: player.attackCooldown, hp: player.hp, stunTimer: player.stunTimer,
+            gauge: player.gauge,
+            activeShield: player.classType === 'shielderPlayer' ? player.activeShield : undefined
+        })));
+    }
+
     /**
      * 메인 메뉴의 드롭다운 선택값(p1-class ~ p4-class)을 읽어서 각 슬롯 기체를 동적으로 생성
      */
@@ -192,8 +263,26 @@ export class GameLoop {
             this.gameTime = 0;
             this.matchSecondAccumulator = 0;
             this.simulationAccumulator = 0;
+            this.aiSyncAccumulator = 0;
+            this.aiStateSequence = 0;
+            this.lastAiStateSequence = -1;
+            this.lastAiAuthoritySlot = null;
+            this.hasRemoteAiState = false;
+            this.scoreboardRequestSent = false;
+            this.scoreboardShown = false;
             this.matchState.timeRemaining = MATCH_CONFIG.DEFAULT_DURATION_SEC;
             this.matchState.teamScore = 0;
+            // 재도전 시작 시 이전 경기의 보스와 탄환·미니언을 모두 초기화한다.
+            if (this.boss) {
+                this.boss = BossFactory.createBoss('neonDragon', this.canvas.width / 2, 150);
+                this.playerBullets = [];
+                this.bossBullets = [];
+                this.minionBullets = [];
+                this.enemyMinions = [];
+                this.allyMinions = [];
+                this.particles = [];
+                this.floatingTexts = [];
+            }
         }
 
         this.slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
@@ -208,6 +297,11 @@ export class GameLoop {
             player.isHuman = serverSlot ? serverSlot.active && !serverSlot.isAiMode : activeSlots.includes(slotId);
             return player;
         });
+
+        const localPlayer = this.slots[mySlot - 1];
+        if (localPlayer && this.input && this.input.isAiMode === localPlayer.isHuman) {
+            this.input.setAiMode(!localPlayer.isHuman);
+        }
 
         if (this.canvas) {
             this.slots.forEach(slot => slot.resetPosition(1280, 720, TOTAL_SLOTS));
@@ -365,6 +459,20 @@ export class GameLoop {
      * 매치 종료 및 서버 랭킹 전송
      */
     endMatch() {
+        const net = window.networkManager;
+        if (net?.socket?.readyState === 1) {
+            if (this.isAiAuthority() && !this.scoreboardRequestSent) {
+                this.scoreboardRequestSent = true;
+                net.requestScoreboard();
+            }
+            return;
+        }
+        this.enterScoreboard();
+    }
+
+    enterScoreboard() {
+        if (this.scoreboardShown) return;
+        this.scoreboardShown = true;
         this.sceneManager.setState(GameState.GAMEOVER);
 
         this.ui.showGameOverModal(this.slots);
@@ -395,6 +503,7 @@ export class GameLoop {
             this.matchState.timeRemaining--;
             this.matchState.teamScore += MATCH_CONFIG.SCORE_PER_TICK;
             if (this.matchState.timeRemaining <= 0) {
+                this.matchState.timeRemaining = 0;
                 this.endMatch();
                 return;
             }
@@ -473,7 +582,7 @@ export class GameLoop {
                 if (typeof slot.update === 'function') {
                     slot.update(dt);
                 }
-            } else {
+            } else if (this.isAiAuthority() || !this.hasRemoteAiState) {
                 // 아군 전체 슬롯(this.slots)을 마지막 인자로 전달하여 쉴드 탐색 가능하게 수정
                 AIEngine.update(
                     slot,
@@ -502,7 +611,9 @@ export class GameLoop {
             }
 
             // 이동 및 델타룬 스치기/버프 업데이트
-            slot.updateMovement(dt, this.canvas.width, this.canvas.height, allEnemyBullets, this.slots);
+            if (slot.isHuman || this.isAiAuthority() || !this.hasRemoteAiState) {
+                slot.updateMovement(dt, this.canvas.width, this.canvas.height, allEnemyBullets, this.slots);
+            }
 
             // 💡 [유저 인간 슬롯 스킬 사용 시에도 allyMinions 인자 전달 보완]
             if (slot.isHuman && this.input.keys['KeyE']) { // 혹은 UI 스킬 버튼
@@ -549,13 +660,19 @@ export class GameLoop {
                 this.ui.updateSkillButton(slot);
             }
 
-            // 자동 사격 처리 (적 미니언 정보 포함 전달)
+            // 유저 탄환은 소유 기기가 생성한 방향과 좌표를 그대로 중계한다.
+            const net = window.networkManager;
+            const remoteHuman = slot.isHuman && !slot.isLocalOwner && net?.socket?.readyState === 1;
+            if (remoteHuman) return;
             slot.updateAttack(dt, () => {
                 slot.shoot(this.playerBullets, {
-                    mousePos: this.input.mousePos,
+                    mousePos: slot.isLocalOwner ? this.input.mousePos : slot.lastMousePos,
                     boss: this.boss,
                     enemyMinions: this.enemyMinions
                 });
+                if (slot.isHuman && slot.isLocalOwner && net?.socket?.readyState === 1) {
+                    net.sendPlayerShot(slot.slotIndex + 1, this.playerBullets[this.playerBullets.length - 1]);
+                }
                 if (slot.isLocalOwner) window.gameAudio?.play('shoot');
             });
         });
@@ -681,6 +798,7 @@ export class GameLoop {
         }
 
         // 실시간 HUD 및 통계 업데이트
+        this.sendAiStateSync(dt);
         this.ui.updateHeader(this.matchState.timeRemaining, this.matchState.teamScore);
     }
 

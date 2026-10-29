@@ -184,6 +184,7 @@ function checkReadyUnanimity() {
  * SCOREBOARD 상태 표결 일치 검사
  */
 function checkScoreboardVoting() {
+    if (currentPhase !== Phase.SCOREBOARD) return;
     const activeList = Object.values(slots).filter(s => s.active);
     if (activeList.length === 0) return;
 
@@ -304,7 +305,7 @@ wss.on('connection', (ws) => {
             // B. SCOREBOARD 표결(VOTE) 신호 수신 (REPLAY 또는 MENU)
             else if (data.type === 'SUBMIT_VOTE') {
                 const s = slots[ws.slotIndex];
-                if (s && s.active) {
+                if (currentPhase === Phase.SCOREBOARD && s && s.active && ['REPLAY', 'MENU'].includes(data.vote)) {
                     s.vote = data.vote; // 'REPLAY' | 'MENU'
                     console.log(`🗳️ [Vote Submitted] P${ws.slotIndex} Vote: ${s.vote}`);
                     checkScoreboardVoting();
@@ -324,6 +325,31 @@ wss.on('connection', (ws) => {
                 };
 
                 broadcast(relayPacket);
+            }
+            else if (data.type === 'PLAYER_SHOT_SYNC') {
+                const slot = slots[ws.slotIndex];
+                if (currentPhase === Phase.GAME && slot?.active && !slot.isAiMode &&
+                    Number.isFinite(data.x) && Number.isFinite(data.y) && Number.isFinite(data.angle)) {
+                    broadcast({
+                        type: 'PLAYER_SHOT_SYNC',
+                        slotIndex: ws.slotIndex,
+                        x: data.x,
+                        y: data.y,
+                        angle: data.angle
+                    });
+                }
+            }
+            else if (data.type === 'AI_STATE_SYNC') {
+                const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+                if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot &&
+                    Number.isInteger(data.sequence) && Array.isArray(data.slots)) {
+                    broadcast({
+                        type: 'AI_STATE_SYNC',
+                        authoritySlot,
+                        sequence: data.sequence,
+                        slots: data.slots
+                    });
+                }
             }
             // D. 설치형 오브젝트 및 HP 상태 동기화 (Object & HP Sync - Owner Authority)
             else if (data.type === 'OBJECT_STATE_SYNC') {
@@ -353,7 +379,10 @@ wss.on('connection', (ws) => {
             }
             // D. 관리자/게임 트리거: 게임 종료 및 결과 화면 이동 요청
             else if (data.type === 'TRIGGER_SCOREBOARD') {
-                changePhase(Phase.SCOREBOARD);
+                const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+                if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot) {
+                    changePhase(Phase.SCOREBOARD);
+                }
             }
             // E. 기타 범용 중계 패킷
             else {
