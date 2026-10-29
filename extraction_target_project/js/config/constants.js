@@ -27,7 +27,7 @@ export const MATCH_CONFIG = {
 export const AI_CONFIG = {
     REACTION_CYCLE: 0.01,             // AI 반응 및 판단 주기 (초 - 실시간 프레임 동기화)
     BASE_DANGER_RADIUS: 40,           // 탄막 감지 위험 반경 (px)
-    FATIGUE_MISTAKE_MIN: 0.001,       // 최소 실수 확률 
+    FATIGUE_MISTAKE_MIN: 0.005,       // 최소 실수 확률 
     FATIGUE_MISTAKE_MAX: 0.02,       // 최대 피로 시 실수 확률 
     FATIGUE_INCREASE_ON_DODGE: 0.008, // 회피 기동 1회당 증가하는 피로도
     FATIGUE_RECOVERY_RATE: 0.6,       // 평상시 초당 피로도 회복량

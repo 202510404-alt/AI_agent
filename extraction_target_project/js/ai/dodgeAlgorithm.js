@@ -4,17 +4,19 @@
  */
 import { AI_CONFIG } from '../config/constants.js';
 import { degToRad, radToDeg } from '../utils/math.js';
+import { rngPlayerAi } from '../utils/seededRNG.js';
 
 export class DodgeAlgorithm {
     /**
-     * 현재 피로도에 비례한 실수 발생 여부를 판정합니다.
+     * 현재 피로도에 비례한 실수 발생 여부를 판정합니다. (슬롯별 독립 시드 적용)
      * @param {number} fatigue (0.0 ~ 1.0)
+     * @param {number} slotIndex 플레이어 슬롯 인덱스 (0~3)
      * @returns {boolean} 실수 발생 여부
      */
-    static shouldMakeMistake(fatigue) {
+    static shouldMakeMistake(fatigue, slotIndex = 0) {
         const mistakeChance = AI_CONFIG.FATIGUE_MISTAKE_MIN + 
             (fatigue * (AI_CONFIG.FATIGUE_MISTAKE_MAX - AI_CONFIG.FATIGUE_MISTAKE_MIN));
-        return Math.random() < mistakeChance;
+        return rngPlayerAi.mistakeChance(slotIndex) < mistakeChance;
     }
 
     /**
@@ -246,13 +248,14 @@ export class DodgeAlgorithm {
     }
 
     /**
-     * 실수(Mistake A, B, C) 회피 궤적 계산
+     * 실수(Mistake A, B, C) 회피 궤적 계산 (슬롯별 독립 시드 적용)
      * @param {object} player 
      * @param {object} bullet 
      * @returns {{type: string, targetX: number, targetY: number, lockTime: number, label: string, color: string}}
      */
     static calculateMistakeDodge(player, bullet = null) {
-        const mistakeType = Math.floor(Math.random() * 3);
+        const slotIdx = player.slotIndex !== undefined ? player.slotIndex : 0;
+        const mistakeType = Math.floor(rngPlayerAi.mistakeChoice(slotIdx) * 3);
 
         if (mistakeType === 0) {
             // MISTAKE A: 순간 패닉 / 조작 정지 (0.25초 동안 제자리 정지)
@@ -270,7 +273,7 @@ export class DodgeAlgorithm {
             const refX = hasBullet ? bullet.x : (player.x + 50);
             const refY = hasBullet ? bullet.y : (player.y - 50);
 
-            const panicAngle = Math.atan2(player.y - refY, player.x - refX) + (Math.random() - 0.5) * 2.0;
+            const panicAngle = Math.atan2(player.y - refY, player.x - refX) + (rngPlayerAi.getSpread(slotIdx) - 0.5) * 2.0;
             return {
                 type: 'OVERSTEER',
                 label: 'OVERSTEER!',
@@ -281,12 +284,14 @@ export class DodgeAlgorithm {
             };
         } else {
             // MISTAKE C: 판단 미스 (불필요하게 살짝 피하거나 주춤거림)
+            const offX = (rngPlayerAi.getSpread(slotIdx) - 0.5) * 12;
+            const offY = (rngPlayerAi.getSpread(slotIdx) - 0.5) * 12;
             return {
                 type: 'MISJUDGE',
                 label: 'MISJUDGE!',
                 color: '#8b5cf6',
-                targetX: player.x + (Math.random() - 0.5) * 12,
-                targetY: player.y + (Math.random() - 0.5) * 12,
+                targetX: player.x + offX,
+                targetY: player.y + offY,
                 lockTime: 0.2
             };
         }

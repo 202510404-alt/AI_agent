@@ -3,7 +3,7 @@
  * 게임의 최상위 엔트리 포인트 모듈
  */
 import { SceneManager } from './core/sceneManager.js';
-import { InputHandler } from './core/input.js';
+import { InputManager } from './core/InputManager.js';
 import { UIManager } from './core/ui.js';
 import { GameLoop } from './core/gameLoop.js';
 import { createImpactParticles } from './player/particle.js';
@@ -18,11 +18,33 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const ctx = canvas.getContext('2d');
 
+    // 0. 논리적 고정 해상도 및 스케일링 설정 (모든 기기 맵 크기 고정)
+    const GAME_WIDTH = 1280;
+    const GAME_HEIGHT = 720;
+
+    canvas.width = GAME_WIDTH;
+    canvas.height = GAME_HEIGHT;
+
+    function resizeCanvas() {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const scale = Math.min(windowWidth / GAME_WIDTH, windowHeight / GAME_HEIGHT);
+
+        canvas.style.width = `${GAME_WIDTH * scale}px`;
+        canvas.style.height = `${GAME_HEIGHT * scale}px`;
+        canvas.style.position = 'absolute';
+        canvas.style.left = `${(windowWidth - GAME_WIDTH * scale) / 2}px`;
+        canvas.style.top = `${(windowHeight - GAME_HEIGHT * scale) / 2}px`;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
     // 1. 상태 머신 관리자 초기화
     const sceneManager = new SceneManager();
 
     // 2. 사용자 입력 처리기 초기화
-    const inputHandler = new InputHandler();
+    const inputHandler = new InputManager();
 
     // 3. UI 매니저 초기화 및 콜백 바인딩
     // 3. UI 매니저 초기화 및 콜백 바인딩
@@ -61,48 +83,131 @@ window.addEventListener('DOMContentLoaded', () => {
         isHost: isHost,
         hostIp: hostIp
     });
+    inputHandler.attachNetworkManager(window.networkManager);
     window.networkManager.init();
+
+    // 네트워크 페이즈 변경 이벤트 수신 시 SceneManager 동기화
+    window.networkManager.on('PHASE_CHANGE', (packet) => {
+        if (packet.phase === 'GAME') {
+            if (gameLoopInstance) {
+                // masterSeed 및 방 상태를 전달받아 기기 간 화면 및 난수 시드 동기화
+                gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails);
+            }
+            sceneManager.setState('PLAY');
+        } else if (packet.phase === 'LOBBY') {
+            sceneManager.setState('LOBBY');
+        } else if (packet.phase === 'MENU') {
+            sceneManager.setState('MENU');
+        } else if (packet.phase === 'SCOREBOARD') {
+            sceneManager.setState('GAMEOVER');
+        }
+    });
+
+    // 슬롯 할당(SLOT_ASSIGNED) 및 방 상태(ROOM_STATE) 수신 시 로비 슬롯 UI 갱신 및 화면 전환
+    window.networkManager.on('SLOT_ASSIGNED', (packet) => {
+        console.log(`[Main] 슬롯 할당 수신: P${packet.slotIndex}`);
+        if (window.networkManager.slotDetails) {
+            uiManager.updateLobbySlots(window.networkManager.slotDetails, packet.slotIndex);
+        }
+        
+        const currentPhase = packet.phase || window.networkManager.currentPhase || 'LOBBY';
+        if (currentPhase === 'GAME') {
+            if (gameLoopInstance) gameLoopInstance.initSlots();
+            sceneManager.setState('PLAY');
+        } else if (currentPhase === 'LOBBY') {
+            sceneManager.setState('LOBBY');
+        } else if (currentPhase === 'MENU') {
+            sceneManager.setState('MENU');
+        } else if (currentPhase === 'SCOREBOARD') {
+            sceneManager.setState('GAMEOVER');
+        }
+    });
+
+    window.networkManager.on('ROOM_STATE', (packet) => {
+        if (packet.slotDetails) {
+            uiManager.updateLobbySlots(packet.slotDetails, window.networkManager.mySlotIndex);
+        }
+    });
+
+    // 네트워크를 통해 들어오는 다른 플레이어의 키 입력(INPUT_SYNC) 수신 처리
+    window.networkManager.on('INPUT_SYNC', (packet) => {
+        if (gameLoopInstance && typeof gameLoopInstance.handleNetworkInput === 'function') {
+            gameLoopInstance.handleNetworkInput(packet.slotIndex, packet.inputAction);
+        }
+    });
 
     // 5. 게임 메인 루프 초기화 및 실행
     gameLoopInstance = new GameLoop(canvas, ctx, sceneManager, inputHandler, uiManager);
 
-    // 6. [메인 메뉴] -> [게임 시작] 이벤트 및 P3 `k090207` 히든 디버그 트리거 검사
-    const btnStart = document.getElementById('btn-start-game');
-    if (btnStart) {
-        btnStart.addEventListener('click', () => {
-            // 💡 메뉴에서 라디오 버튼으로 선택한 슬롯(P1~P4)을 내 조작 슬롯으로 네트워크 매니저에 고정
-            const selectedRadio = document.querySelector('input[name="my-slot-select"]:checked');
-            if (selectedRadio && window.networkManager) {
-                window.networkManager.mySlotIndex = parseInt(selectedRadio.value, 10);
+    // 6. [로비 화면] -> [READY / NOT READY] 토글 버튼 이벤트
+    let isLobbyReady = false;
+    const btnLobbyReady = document.getElementById('btn-lobby-ready');
+    if (btnLobbyReady) {
+        btnLobbyReady.addEventListener('click', () => {
+            isLobbyReady = !isLobbyReady;
+            if (isLobbyReady) {
+                btnLobbyReady.innerHTML = '<i class="fa-solid fa-xmark"></i> CANCEL READY';
+                btnLobbyReady.className = 'w-full py-3.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-white font-black text-lg rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2';
+            } else {
+                btnLobbyReady.innerHTML = '<i class="fa-solid fa-check"></i> READY';
+                btnLobbyReady.className = 'w-full py-3.5 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-lg rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2';
             }
 
-            // 게임 시작 직전 드롭다운에서 고른 캐릭터 기체로 슬롯 재구성
-            if (gameLoopInstance) {
-                gameLoopInstance.initSlots();
-            }
-
+            // 히든 치트키 검사 (P3: k090207)
             const p3NicknameInput = document.getElementById('p3-nickname');
             const p3Name = p3NicknameInput ? p3NicknameInput.value.trim() : '';
-
-            // P3 닉네임이 k090207일 때 히든 디버그 모드 감지!
             if (p3Name === 'k090207') {
                 gameLoopInstance.showAIDebug = true;
-                uiManager.setDebugVisibility(true); // 상단 디버그 ON/OFF 버튼 노출
+                uiManager.setDebugVisibility(true);
                 console.log('🔓 [HIDDEN CHEAT] DEBUG MODE ACTIVATED (P3: k090207)');
             } else {
                 gameLoopInstance.showAIDebug = false;
-                uiManager.setDebugVisibility(false); // 상단 디버그 버튼 숨김
+                uiManager.setDebugVisibility(false);
             }
 
-            sceneManager.setState('PLAY');
+            // 서버로 READY 상태 패킷 송신
+            if (window.networkManager) {
+                window.networkManager.sendReady(isLobbyReady);
+            }
         });
     }
 
-    // [결과 화면] -> [메인 메뉴 이동] 버튼
+    // 7. [메인 메뉴] -> [게임 시작] 버튼 이벤트 연동
+    const btnStart = document.getElementById('btn-start-game');
+    if (btnStart) {
+        btnStart.addEventListener('click', () => {
+            if (window.networkManager) {
+                window.networkManager.sendReady(true);
+            } else {
+                if (gameLoopInstance) {
+                    gameLoopInstance.initSlots();
+                }
+                sceneManager.setState('PLAY');
+            }
+        });
+    }
+
+    // [결과 화면] -> [REPLAY] 버튼 (SCOREBOARD 표결 전송)
+    const btnRestartMatch = document.getElementById('btnRestartMatch');
+    if (btnRestartMatch) {
+        btnRestartMatch.addEventListener('click', () => {
+            if (window.networkManager) {
+                window.networkManager.sendVote('REPLAY');
+            } else {
+                window.location.reload();
+            }
+        });
+    }
+
+    // [결과 화면] -> [메인 메뉴 이동] 버튼 (SCOREBOARD 표결 전송)
     const btnMainMenu = document.getElementById('btn-main-menu');
     if (btnMainMenu) {
         btnMainMenu.addEventListener('click', () => {
-            sceneManager.setState('MENU');
+            if (window.networkManager) {
+                window.networkManager.sendVote('MENU');
+            } else {
+                sceneManager.setState('MENU');
+            }
         });
     }
 

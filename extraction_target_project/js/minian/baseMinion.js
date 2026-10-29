@@ -3,6 +3,7 @@
  * 모든 미니언(적/아군)의 기반이 되는 BaseMinion 추상 클래스
  */
 import { MinionBullet } from './minionBullet.js';
+import { rngMinion } from '../utils/seededRNG.js';
 
 export const MINION_MOVE_MODE = {
     FOLLOW_TARGET: 'FOLLOW_TARGET', // 1모드: 가장 가까운 타깃과 일정 거리 유지하며 추적
@@ -190,8 +191,8 @@ export class BaseMinion {
                 // 타깃을 향한 기본 라디안 각도
                 const baseAngle = Math.atan2(closest.y - this.y, closest.x - this.x);
 
-                // ±15도 범위 내 무작위 오차각 적용 (시드 난수 적용)
-                const spreadAngle = (Math.random() - 0.5) * (Math.PI / 6);
+                // ±15도 범위 내 무작위 오차각 적용 (미니언 공격 PRNG 시드 적용)
+                const spreadAngle = (rngMinion.attack() - 0.5) * (Math.PI / 6);
                 const finalAngle = baseAngle + spreadAngle;
 
                 const bullet = new MinionBullet(

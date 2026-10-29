@@ -3,31 +3,32 @@
 ## 1. Tech Stack & Environment
 - **Engine**: Plain HTML5 Canvas + Vanilla JS (ES6 Modules: `import`/`export`).
 - **Forbidden**: Do NOT use external heavy game engines or frameworks (No React, Phaser, Pixi, etc.).
-- **Server Communication**: Pure HTTP `fetch` POST to remote Leaderboard Server on match completion.
+- **Server Communication**: WebSocket / Pure HTTP Node.js native server (`server.js`).
 
 ## 2. Directory & Module Architecture
 All code MUST respect and fit into the following predefined folder structure:
 - `index.html`: Canvas container & HUD / Modal overlay.
 - `css/style.css`: Custom animations, HUD styling & neon borders.
+- `server.js`: Node.js WebSocket/HTTP server handling Room State, Voting, and Sync.
 - `js/config/constants.js`: Game constants, colors, AI parameters.
-- `js/utils/math.js`: Vector, angle, distance, and Lerp helper functions.
+- `js/utils/math.js` & `js/utils/seededRNG.js`: Vector, math helpers, and deterministic PRNG.
 - `js/core/`:
-  - `sceneManager.js`: Game state manager (MENU -> PLAY -> GAMEOVER).
+  - `sceneManager.js`: Game state manager (LOBBY -> MENU -> GAME -> SCOREBOARD).
   - `gameLoop.js`: Main requestAnimationFrame update/render cycle.
-  - `input.js`: Keyboard, mouse & touch joystick handlers.
-  - `ui.js`: HUD update, damage stats, game-over modal.
+  - `inputManager.js`: Consolidated input controller (Keyboard, Joystick, AI mode toggle).
+  - `ui.js`: HUD update, damage stats, game-over modal, voting status overlay.
+  - `TeamBuffManager.js`: Shared team buffs (8 types).
 - `js/player/`:
-  - `basePlayer.js`: Base class for player slots.
+  - `basePlayer.js`: Base class for player slots (P1~P4).
   - `playerFactory.js`: Factory for spawning character types.
-  - `characters/speedster/`: Specific character code, bullets, and particles.
+  - `characters/`: Specific player classes.
 - `js/enemy/`:
-  - `baseBoss.js`: Base class for boss entities.
-  - `bossFactory.js`: Boss spawner.
-  - `bosses/neonDragon/`: Specific boss patterns, bullets, and particles.
+  - `baseBoss.js` & `bossFactory.js`: Boss logic and spawner.
 - `js/ai/`:
-  - `aiEngine.js`: 0.08s reaction cycle & FSM (IDLE/DODGE/REPOSITION).
-  - `dodgeAlgorithm.js`: Angle Offset error angle + Fatigue mistake calculation.
-- `js/network/scoreSender.js`: Single `fetch` POST handler for score submission.
+  - `aiEngine.js` & `dodgeAlgorithm.js`: AI behavior logic.
+- `js/network/`:
+  - `networkManager.js`: WebSocket connection, event dispatching, room sync.
+  - `scoreSender.js`: HTTP score submission handler.
 
 ## 3. Strict Coding Constraints
 1. **ES6 Modules**: Always use `import` and `export` statements properly across all JS files.

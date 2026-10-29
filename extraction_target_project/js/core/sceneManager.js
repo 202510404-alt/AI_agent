@@ -5,9 +5,12 @@
 
 
 export const GameState = {
+    LOBBY: 'LOBBY',
     MENU: 'MENU',
     PLAY: 'PLAY',
-    GAMEOVER: 'GAMEOVER'
+    GAME: 'PLAY', // 'GAME' 페이즈는 'PLAY'와 동치 매핑
+    SCOREBOARD: 'SCOREBOARD',
+    GAMEOVER: 'SCOREBOARD' // 'GAMEOVER'는 'SCOREBOARD'와 동치 매핑
 };
 
 export class SceneManager {
@@ -16,8 +19,13 @@ export class SceneManager {
      * @param {Function} [options.onStateChange] 상태 변경 콜백
      */
     constructor(options = {}) {
-        this.currentState = GameState.MENU; // 메인 로비(MENU)에서 시작
+        this.currentState = GameState.LOBBY; // 기본 시작 상태: LOBBY
         this.onStateChange = options.onStateChange || null;
+        
+        // 생성 시점 화면 가시성 강제 초기화 (LOBBY 화면 노출)
+        setTimeout(() => {
+            this.setState(GameState.LOBBY);
+        }, 0);
     }
 
     /**
@@ -41,14 +49,21 @@ export class SceneManager {
         console.log(`[SceneManager] Scene Changed: ${prevState} -> ${nextState}`);
 
         // 화면 DOM 엘리먼트 가시성 토글
+        const lobbyScreen = document.getElementById('lobby-screen');
         const menuScreen = document.getElementById('menu-screen');
         const uiLayer = document.getElementById('ui-layer');
         const resultScreen = document.getElementById('result-screen');
 
-        if (menuScreen) menuScreen.style.display = (nextState === GameState.MENU) ? 'flex' : 'none';
-        if (uiLayer) uiLayer.style.display = (nextState === GameState.PLAY) ? 'flex' : 'none';
+        const isLobby = (nextState === GameState.LOBBY || nextState === 'LOBBY');
+        const isMenu = (nextState === GameState.MENU);
+        const isPlay = (nextState === GameState.PLAY || nextState === 'GAME');
+        const isScoreboard = (nextState === GameState.SCOREBOARD || nextState === 'GAMEOVER');
+
+        if (lobbyScreen) lobbyScreen.style.display = isLobby ? 'flex' : 'none';
+        if (menuScreen) menuScreen.style.display = isMenu ? 'flex' : 'none';
+        if (uiLayer) uiLayer.style.display = isPlay ? 'flex' : 'none';
         if (resultScreen) {
-            if (nextState === GameState.GAMEOVER) {
+            if (isScoreboard) {
                 resultScreen.classList.remove('hidden');
                 resultScreen.style.display = 'flex';
             } else {

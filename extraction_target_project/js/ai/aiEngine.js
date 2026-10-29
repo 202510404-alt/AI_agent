@@ -5,6 +5,7 @@
 import { AI_CONFIG } from '../config/constants.js';
 import { DodgeAlgorithm } from './dodgeAlgorithm.js';
 import { getDistance } from '../utils/math.js';
+import { rngPlayerAi } from '../utils/seededRNG.js';
 
 export class AIEngine {
     /**
@@ -68,7 +69,7 @@ export class AIEngine {
             player.fsmState = 'DODGE';
             player.dodgeFatigue = Math.min(1.0, player.dodgeFatigue + AI_CONFIG.FATIGUE_INCREASE_ON_DODGE);
 
-            const triggerMistake = DodgeAlgorithm.shouldMakeMistake(player.dodgeFatigue);
+            const triggerMistake = DodgeAlgorithm.shouldMakeMistake(player.dodgeFatigue, player.slotIndex);
 
             if (triggerMistake) {
                 player.mistakesCount++;
@@ -101,8 +102,10 @@ export class AIEngine {
                 // REPOSITION 진입 시점에 단 한 번 전략 결정 (APPROACH 또는 RETREAT)
                 if (player.fsmState !== 'REPOSITION' && player.fsmState !== 'COVER') {
                     player.fsmState = 'REPOSITION';
-                    player.repositionStrategy = Math.random() < 0.5 ? 'APPROACH' : 'RETREAT';
-                    player.wallAvoidSide = Math.random() < 0.5 ? 1 : -1;
+                    const stratRng = rngPlayerAi.getSpread(player.slotIndex);
+                    const wallRng = rngPlayerAi.getSpread(player.slotIndex);
+                    player.repositionStrategy = stratRng < 0.5 ? 'APPROACH' : 'RETREAT';
+                    player.wallAvoidSide = wallRng < 0.5 ? 1 : -1;
                 }
 
                 const primaryEnemy = (enemyEntities && enemyEntities.length > 0) ? enemyEntities[0] : null;

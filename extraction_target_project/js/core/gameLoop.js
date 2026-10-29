@@ -60,6 +60,15 @@ export class GameLoop {
             this.ui.bindSkillButton(() => this.slots.find(s => s.isHuman), this);
         }
 
+        // 💡 [신규 - 네트워크 슬롯 이벤트 바인딩]: 수신된 AI 모드 전환 신호를 실시간 처리
+        if (window.networkManager) {
+            window.networkManager.on('SLOT_EVENT_SYNC', (packet) => {
+                if (packet.eventType === 'TOGGLE_AI_MODE' && packet.payload) {
+                    this.applySlotAiMode(packet.slotIndex, packet.payload.isAiMode);
+                }
+            });
+        }
+
         this.init();
     }
 
@@ -90,53 +99,59 @@ export class GameLoop {
      * 메인 프레임 업데이트 중 유저 입력 처리 연동 (네트워크 동기화 포함)
      */
     updateInputs() {
-        const localInputAction = this.input.getInputAction();
         const net = window.networkManager;
+        const mySlotNum = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
+        const mySlotIdx = mySlotNum - 1;
 
-        // 1. 내 컴퓨터 슬롯 조작 신호를 네트워크 소켓으로 송신
+        // 1. 내 기체 입력 액션 추출 (isAiMode 여부에 따라 수동/AI 자동 생성)
+        const myPlayer = this.slots ? this.slots[mySlotIdx] : null;
+        const localInputAction = this.input.getInputAction(mySlotIdx, {
+            player: myPlayer,
+            boss: this.boss,
+            gameLoop: this
+        });
+
+        // 2. 내 컴퓨터 슬롯 조작 신호를 네트워크 소켓으로 송신 (INPUT_SYNC)
         if (net && net.mySlotIndex) {
-            net.sendClientInput(net.mySlotIndex, localInputAction);
+            net.sendInputSync(net.mySlotIndex, localInputAction);
         }
 
-        // 2. 각 슬롯별 입력 처리 (내 슬롯 = 내 조작, 타 컴퓨터 = 수신된 원격 조작)
+        // 3. 각 슬롯별 권한 분리 및 입력/네트워크 위치 보간 동기화
         this.slots.forEach((player, idx) => {
             const slotNum = idx + 1;
             const isMySlot = (net && net.mySlotIndex === slotNum);
-            
-            // 네트워크 수신 입력이 존재하면 꺼내오기
+            player.isLocalOwner = isMySlot; // 내 소유 기체 설정
+
             const remoteInput = net ? net.consumeClientInput(slotNum) : null;
-            const inputPacket = isMySlot ? localInputAction : (remoteInput || player.remoteInputPacket);
-
-            if (player.isHuman || remoteInput) {
-                const allEnemyBullets = [
-                    ...(this.bossBullets || []),
-                    ...(this.minionBullets || [])
-                ];
-
-                const skillParams = {
-                    boss: this.boss,
-                    enemyMinions: this.enemyMinions,
-                    bossBullets: this.bossBullets,
-                    minionBullets: this.minionBullets,
-                    enemyBullets: allEnemyBullets,
-                    allyMinions: this.allyMinions,
-                    allyPlayers: this.slots
-                };
-
-                if (inputPacket && inputPacket.useSkill && typeof player.useSkill === 'function') {
-                    const success = player.useSkill(skillParams);
-                    if (success && Array.isArray(this.floatingTexts)) {
-                        this.floatingTexts.push(createFloatingText(
-                            player.x, 
-                            player.y - 20, 
-                            player.skillFloatText || 'SKILL ACTIVATED!', 
-                            player.themeColor || '#10b981'
-                        ));
-                    }
+            if (remoteInput) {
+                if (typeof remoteInput.isAiMode === 'boolean') {
+                    player.isHuman = !remoteInput.isAiMode;
                 }
+                player.remoteInputPacket = remoteInput;
+            }
 
-                if (inputPacket) {
-                    player.handleHumanInputPacket(inputPacket, skillParams);
+            const skillParams = {
+                boss: this.boss,
+                enemyMinions: this.enemyMinions,
+                bossBullets: this.bossBullets,
+                minionBullets: this.minionBullets,
+                enemyBullets: [...(this.bossBullets || []), ...(this.minionBullets || [])],
+                allyMinions: this.allyMinions,
+                allyPlayers: this.slots
+            };
+
+            // 💡 [핵심 - 권한 분리]: 내 슬롯(Local Owner)만 키보드/마우스 입력을 직접 계산
+            if (isMySlot && player.isHuman) {
+                player.handleHumanInputPacket(localInputAction, skillParams);
+            } 
+            // 💡 [상대 슬롯 - Remote Proxy]: 수신받은 네트워크 패킷(remoteInputPacket)으로 위치 및 스킬 1회성 적용
+            else if (!isMySlot && player.isHuman && player.remoteInputPacket) {
+                const pkt = player.remoteInputPacket;
+                player.handleHumanInputPacket(pkt, skillParams);
+
+                // 스킬 연속 발동 방지 플래그 소모
+                if (pkt.useSkill) {
+                    pkt.useSkill = false;
                 }
             }
         });
@@ -146,7 +161,9 @@ export class GameLoop {
      * 메인 메뉴의 드롭다운 선택값(p1-class ~ p4-class)을 읽어서 각 슬롯 기체를 동적으로 생성
      */
     initSlots() {
-        const mySlot = (window.networkManager && window.networkManager.mySlotIndex) ? window.networkManager.mySlotIndex : 1;
+        const net = window.networkManager;
+        const mySlot = (net && net.mySlotIndex) ? net.mySlotIndex : 1;
+        const activeSlots = (net && net.activeSlots) ? net.activeSlots : [1];
 
         this.slots = Array.from({ length: TOTAL_SLOTS }, (_, i) => {
             const slotId = i + 1;
@@ -155,13 +172,13 @@ export class GameLoop {
             
             const player = PlayerFactory.createPlayer(i, classType);
             
-            // 접속자가 실제 존재하는 슬롯이며, 내 컴퓨터의 슬롯일 때만 유저(Human) 조작으로 설정
-            player.isHuman = (slotId === mySlot);
+            // 실제 멀티 접속 중인 인간 유저 슬롯(activeSlots에 포함된 슬롯)은 AI 제어를 해제(isHuman = true)
+            player.isHuman = activeSlots.includes(slotId);
             return player;
         });
 
         if (this.canvas) {
-            this.slots.forEach(slot => slot.resetPosition(this.canvas.width, this.canvas.height, TOTAL_SLOTS));
+            this.slots.forEach(slot => slot.resetPosition(1280, 720, TOTAL_SLOTS));
         }
         if (this.ui) {
             this.ui.updateSlotAndStats(this.slots);
@@ -192,12 +209,27 @@ export class GameLoop {
     }
 
     /**
-     * 캔버스 리사이즈 및 슬롯 좌표 재정렬
+     * 캔버스 리사이즈 및 슬롯 좌표 재정렬 (1280x720 고정 좌표계 유지)
      */
     resize() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-        this.slots.forEach(slot => slot.resetPosition(this.canvas.width, this.canvas.height, TOTAL_SLOTS));
+        const GAME_WIDTH = 1280;
+        const GAME_HEIGHT = 720;
+        this.canvas.width = GAME_WIDTH;
+        this.canvas.height = GAME_HEIGHT;
+
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const scale = Math.min(windowWidth / GAME_WIDTH, windowHeight / GAME_HEIGHT);
+
+        this.canvas.style.width = `${GAME_WIDTH * scale}px`;
+        this.canvas.style.height = `${GAME_HEIGHT * scale}px`;
+        this.canvas.style.position = 'absolute';
+        this.canvas.style.left = `${(windowWidth - GAME_WIDTH * scale) / 2}px`;
+        this.canvas.style.top = `${(windowHeight - GAME_HEIGHT * scale) / 2}px`;
+
+        if (this.slots) {
+            this.slots.forEach(slot => slot.resetPosition(GAME_WIDTH, GAME_HEIGHT, TOTAL_SLOTS));
+        }
     }
 
     /**
@@ -224,6 +256,43 @@ export class GameLoop {
     useBomb() {
         this.bossBullets = [];
         createImpactParticles(this.particles, this.canvas.width / 2, this.canvas.height / 2, '#ec4899', 30);
+    }
+
+    /**
+     * 💡 [신규 - 슬롯 AI 모드 수신 적용 메서드]:
+     * 네트워크 신호를 받아 타 PC 화면에서도 해당 슬롯 기체의 AI 모드와 UI 상태를 즉시 일치시킴
+     * @param {number} slotIndex 슬롯 번호 (1~4)
+     * @param {boolean} isAiMode AI 모드 활성화 여부
+     */
+    applySlotAiMode(slotIndex, isAiMode) {
+        const slotIdx = slotIndex - 1;
+        const player = this.slots ? this.slots[slotIdx] : null;
+
+        if (player) {
+            player.isHuman = !isAiMode; // isAiMode가 true면 isHuman = false
+
+            // 수신받은 슬롯이 내 슬롯일 경우 InputHandler 내 AI 플래그도 동기화
+            const mySlotNum = (window.networkManager && window.networkManager.mySlotIndex) ? window.networkManager.mySlotIndex : 1;
+            if (slotIndex === mySlotNum && this.input && typeof this.input.setAiMode === 'function') {
+                this.input.setAiMode(isAiMode);
+            }
+
+            // 상단 HUD 상태 텍스트 동기화 (내 슬롯 변경 시)
+            if (slotIndex === mySlotNum) {
+                const statusText = document.getElementById('top-ai-status-text');
+                if (statusText) {
+                    statusText.innerText = player.isHuman ? 'USER (MANUAL)' : 'AI (AUTO)';
+                    statusText.className = player.isHuman ? 'text-cyan-400 font-bold' : 'text-pink-400 font-bold';
+                }
+            }
+
+            // 우측 슬롯 디버그 패널 렌더링 갱신
+            if (this.ui && typeof this.ui.updateSlotAndStats === 'function') {
+                this.ui.updateSlotAndStats(this.slots);
+            }
+
+            console.log(`🤖 [GameLoop] P${slotIndex} AI 모드 원격 전환 완료: ${isAiMode ? 'AI (AUTO)' : 'USER (MANUAL)'}`);
+        }
     }
 
     /**

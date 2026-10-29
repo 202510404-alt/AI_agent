@@ -11,20 +11,19 @@
  * @param {number} y2 
  * @returns {number} 거리
  */
-// 💡 [시드 기반 PRNG 시스템] Mulberry32 알고리즘 및 전역 Math.random 덮어쓰기
+import { seededRNG } from './seededRNG.js';
+
 let currentSeed = 12345;
 
 export function setGameSeed(seed) {
     currentSeed = seed;
-    // 전역 Math.random()을 시드 기반 난수 함수로 덮어씌움 (기존 모든 Math.random 자동 동기화)
+    seededRNG.initDerivations(seed);
+    // 전역 Math.random()을 독립 PRNG의 범용 난수로 덮어씌움
     Math.random = seededRandom;
 }
 
 export function seededRandom() {
-    let t = (currentSeed += 0x6D2B79F5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    return seededRNG.get('general').next();
 }
 
 export function getDistance(x1, y1, x2, y2) {

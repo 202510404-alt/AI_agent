@@ -5,6 +5,7 @@
  */
 import { SLOT_COLORS } from '../config/constants.js';
 import { PlayerBullet } from './playerBullet.js';
+import { rngPlayerAi } from '../utils/seededRNG.js';
 
 export default class BasePlayer {
     /**
@@ -17,6 +18,14 @@ export default class BasePlayer {
         this.color = SLOT_COLORS[slotIndex % SLOT_COLORS.length];
         this.isHuman = (slotIndex === 0);
         this.classType = classType;
+
+        // 💡 [멀티플레이 권한 시스템]: 내가 직접 키보드/마우스로 조종하는 기체인지 여부
+        this.isLocalOwner = false;
+
+        // 💡 [네트워크 위치 보간(Interpolation) 좌표]: 상대 기체가 전송한 위치로 부드럽게 Lerp 이동
+        this.netTargetX = 0;
+        this.netTargetY = 0;
+        this.remoteInputPacket = null;
 
         // --- 공통 메타 속성 (하위 캐릭터 파일에서 오버라이드) ---
         this.className = '기본 기체';
@@ -411,7 +420,7 @@ export default class BasePlayer {
             }
 
             if (closestEnemy) {
-                const spread = (Math.random() - 0.5) * 0.15;
+                const spread = (rngPlayerAi.getSpread(this.slotIndex) - 0.5) * 0.15;
                 targetAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x) + spread;
             }
         }

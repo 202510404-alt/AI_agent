@@ -19,8 +19,91 @@
         <div class="scanline absolute inset-0"></div>
     </div>
 
-    <!-- 1. 메인 메뉴 화면 (MENU State) -->
-    <div id="menu-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
+    <!-- 1. 로비 화면 (LOBBY State) -->
+    <div id="lobby-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-4">
+        <div class="text-center space-y-6 max-w-2xl w-full bg-slate-900/80 p-8 rounded-2xl border border-cyan-500/50 shadow-2xl neon-border-cyan">
+            <!-- 로비 타이틀 -->
+            <div>
+                <h1 class="text-3xl sm:text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 animate-pulse">
+                    MULTIPLAYER LOBBY
+                </h1>
+                <p class="text-xs text-cyan-300/80 mt-1">대기실에서 모든 참가자가 준비를 완료하면 게임이 시작됩니다.</p>
+            </div>
+
+            <!-- P1~P4 슬롯 카드 그리드 -->
+            <div id="lobby-slots-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
+                <!-- P1 슬롯 카드 -->
+                <div id="lobby-slot-card-1" class="bg-black/60 p-4 rounded-xl border border-cyan-500/30 flex flex-col justify-between transition-all">
+                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-cyan-400">SLOT 1</span>
+                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
+                        </div>
+                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
+                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
+                    </div>
+                </div>
+
+                <!-- P2 슬롯 카드 -->
+                <div id="lobby-slot-card-2" class="bg-black/60 p-4 rounded-xl border border-pink-500/30 flex flex-col justify-between transition-all">
+                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-pink-400">SLOT 2</span>
+                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
+                        </div>
+                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
+                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
+                    </div>
+                </div>
+
+                <!-- P3 슬롯 카드 -->
+                <div id="lobby-slot-card-3" class="bg-black/60 p-4 rounded-xl border border-emerald-500/30 flex flex-col justify-between transition-all">
+                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-emerald-400">SLOT 3</span>
+                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
+                        </div>
+                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
+                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
+                    </div>
+                </div>
+
+                <!-- P4 슬롯 카드 -->
+                <div id="lobby-slot-card-4" class="bg-black/60 p-4 rounded-xl border border-amber-500/30 flex flex-col justify-between transition-all">
+                    <div class="flex items-center justify-between border-b border-gray-700/60 pb-2 mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black text-amber-400">SLOT 4</span>
+                            <span class="slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-700 text-gray-400">WAITING</span>
+                        </div>
+                        <span class="slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-700 text-gray-400">NOT READY</span>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-sm font-bold text-white slot-nickname truncate">대기 중...</p>
+                        <p class="text-xs text-gray-400 slot-class truncate"><i class="fa-solid fa-crosshairs mr-1"></i>기본 기체</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- READY 토글 버튼 -->
+            <div class="pt-2">
+                <button id="btn-lobby-ready" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-black font-black text-lg rounded-xl shadow-lg transition active:scale-95 flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check"></i> READY
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 메인 메뉴 화면 (MENU State) -->
+    <div id="menu-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md p-4" style="display: none;">
         <div class="text-center space-y-6 max-w-lg w-full bg-slate-900/80 p-8 rounded-2xl border border-cyan-500/50 shadow-2xl neon-border-cyan">
             <!-- 깔끔한 단독 네온 타이틀 -->
             <h1 class="text-4xl sm:text-5xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-yellow-400 animate-pulse">

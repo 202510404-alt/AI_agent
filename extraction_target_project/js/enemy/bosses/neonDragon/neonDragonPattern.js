@@ -3,6 +3,7 @@
  * 18-Way Ring Blast 및 Triple Target Spiral 탄막 발사 패턴 로직
  */
 import { BossBullet } from './neonDragonBullet.js';
+import { rngBoss } from '../../../utils/seededRNG.js';
 
 export class NeonDragonPattern {
     static currentTargetIndex = 0;

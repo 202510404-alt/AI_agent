@@ -1,22 +1,27 @@
 /**
  * server.js
- * 방장(Host) 노트북 전용 Node.js 웹소켓 & 정적 파일 서버
+ * 페이즈 순환 및 masterSeed 발행 서버
  * 
- * [실행 방법]
- * 1. 터미널/CMD 열기: npm install ws express
- * 2. 서버 실행: node server.js
+ * [동작 명세]
+ * 1. State Machine: LOBBY -> MENU -> GAME -> SCOREBOARD -> MENU... 순환 관리.
+ * 2. masterSeed 발행: GAME 시작 시 단일 masterSeed 생성 및 전체 브로드캐스트.
+ * 3. 슬롯 관리: P1~P4 슬롯 자동 할당/해제, ROOM_STATE 방송 (active: true 인원 추적).
+ * 4. 만장일치 표결:
+ *    - LOBBY / MENU: active: true인 모든 접속자가 ready === true 일 때 다음 Phase로 전환.
+ *    - SCOREBOARD: 전원 표결(REPLAY/MENU) 일치 시 이동, 불일치 시 VOTE_STATUS_UPDATE 방송.
  */
 
 const { execSync } = require('child_process');
 const path = require('path');
 const os = require('os');
+const http = require('http');
+const fs = require('fs');
 
-// 💡 [자동 라이브러리 감지 & 설치 구역]
 function ensureModule(moduleName) {
     try {
         return require(moduleName);
     } catch (e) {
-        console.log(`📦 [Auto Setup] 필수 모듈 '${moduleName}'을(를) 찾을 수 없습니다. 자동으로 설치 중...`);
+        console.log(`📦 [Auto Setup] 필수 모듈 '${moduleName}' 설치 중...`);
         execSync(`npm install ${moduleName}`, { stdio: 'inherit' });
         return require(moduleName);
     }
@@ -24,17 +29,12 @@ function ensureModule(moduleName) {
 
 const express = ensureModule('express');
 const WebSocket = ensureModule('ws');
-const http = require('http');
 
 const app = express();
 const PORT = 3000;
 const WS_PORT = 8080;
 
-const fs = require('fs');
-
-// 💡 [실행 경로 자동 추적]: 어느 위치에서 실행되어도 extraction_target_project 내부 경로 자동 조준
 let targetStaticPath = __dirname;
-
 if (fs.existsSync(path.join(__dirname, 'extraction_target_project'))) {
     targetStaticPath = path.join(__dirname, 'extraction_target_project');
 } else if (fs.existsSync(path.join(__dirname, 'AI_agent', 'extraction_target_project'))) {
@@ -42,14 +42,170 @@ if (fs.existsSync(path.join(__dirname, 'extraction_target_project'))) {
 }
 
 app.use(express.static(targetStaticPath));
-console.log(`📂 [Static Directory] 게임 정적 경로 자동 로드 완료: ${targetStaticPath}`);
+console.log(`📂 [Static Directory] 게임 정적 파일 서빙: ${targetStaticPath}`);
 
 const server = http.createServer(app);
-
-// 웹소켓 서버 인스턴스 생성 (포트 8080)
 const wss = new WebSocket.Server({ port: WS_PORT });
 
-// 현재 호스트 노트북의 로컬 IP 주소 추출
+// --- 페이즈(State Machine) 정의 ---
+const Phase = {
+    LOBBY: 'LOBBY',
+    MENU: 'MENU',
+    GAME: 'GAME',
+    SCOREBOARD: 'SCOREBOARD'
+};
+
+let currentPhase = Phase.LOBBY;
+let currentMasterSeed = null;
+
+// 슬롯 상태: P1~P4 (최대 4명)
+// 각 슬롯 구조: { slotIndex: 1~4, active: boolean, ready: boolean, vote: string|null, ws: WebSocket|null }
+const slots = {
+    1: { slotIndex: 1, active: false, ready: false, vote: null, ws: null },
+    2: { slotIndex: 2, active: false, ready: false, vote: null, ws: null },
+    3: { slotIndex: 3, active: false, ready: false, vote: null, ws: null },
+    4: { slotIndex: 4, active: false, ready: false, vote: null, ws: null }
+};
+
+/**
+ * 0 ~ 4294967295 범위의 단일 masterSeed 생성
+ */
+function generateMasterSeed() {
+    return Math.floor(Math.random() * 0xFFFFFFFF) >>> 0;
+}
+
+/**
+ * 전체 클라이언트에게 브로드캐스트
+ */
+function broadcast(payloadObj) {
+    const jsonStr = JSON.stringify(payloadObj);
+    wss.clients.forEach(client => {
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(jsonStr);
+        }
+    });
+}
+
+/**
+ * 현재 ROOM_STATE 패킷 생성 및 전송
+ */
+function broadcastRoomState() {
+    const activeSlots = [];
+    const slotDetails = [];
+
+    for (let i = 1; i <= 4; i++) {
+        const s = slots[i];
+        if (s.active) {
+            activeSlots.push(i);
+        }
+        slotDetails.push({
+            slotIndex: i,
+            active: s.active,
+            ready: s.ready,
+            vote: s.vote
+        });
+    }
+
+    broadcast({
+        type: 'ROOM_STATE',
+        phase: currentPhase,
+        activeSlots,
+        slotDetails,
+        masterSeed: currentMasterSeed
+    });
+}
+
+/**
+ * 투표 현황(VOTE_STATUS_UPDATE) 방송
+ */
+function broadcastVoteStatus() {
+    const votes = {};
+    for (let i = 1; i <= 4; i++) {
+        if (slots[i].active) {
+            votes[i] = slots[i].vote;
+        }
+    }
+    broadcast({
+        type: 'VOTE_STATUS_UPDATE',
+        phase: currentPhase,
+        votes
+    });
+}
+
+/**
+ * 페이즈 전환 함수
+ * @param {string} nextPhase 
+ */
+function changePhase(nextPhase) {
+    console.log(`🔄 [Phase Transition] ${currentPhase} ➔ ${nextPhase}`);
+    currentPhase = nextPhase;
+
+    // 모든 슬롯의 준비 및 표결 상태 초기화
+    for (let i = 1; i <= 4; i++) {
+        slots[i].ready = false;
+        slots[i].vote = null;
+    }
+
+    let payload = {
+        type: 'PHASE_CHANGE',
+        phase: currentPhase
+    };
+
+    // GAME 페이즈 진입 시 단일 masterSeed 생성 및 하사
+    if (currentPhase === Phase.GAME) {
+        currentMasterSeed = generateMasterSeed();
+        payload.masterSeed = currentMasterSeed;
+        console.log(`🎲 [masterSeed Issued] 신규 게임 마스터 시드 생성: ${currentMasterSeed}`);
+    }
+
+    broadcast(payload);
+    broadcastRoomState();
+}
+
+/**
+ * LOBBY / MENU 상태 만장일치 레디 검사
+ */
+function checkReadyUnanimity() {
+    const activeList = Object.values(slots).filter(s => s.active);
+    if (activeList.length === 0) return;
+
+    const allReady = activeList.every(s => s.ready === true);
+    if (allReady) {
+        if (currentPhase === Phase.LOBBY || currentPhase === Phase.MENU) {
+            changePhase(Phase.GAME);
+        }
+    }
+}
+
+/**
+ * SCOREBOARD 상태 표결 일치 검사
+ */
+function checkScoreboardVoting() {
+    const activeList = Object.values(slots).filter(s => s.active);
+    if (activeList.length === 0) return;
+
+    // 모든 접속자가 투표를 마쳤는지 확인
+    const allVoted = activeList.every(s => s.vote !== null);
+    broadcastVoteStatus();
+
+    if (allVoted) {
+        const firstVote = activeList[0].vote;
+        const isUnanimous = activeList.every(s => s.vote === firstVote);
+
+        if (isUnanimous) {
+            console.log(`🗳️ [Scoreboard Vote] 전원 일치 표결 완료: ${firstVote}`);
+            if (firstVote === 'REPLAY') {
+                changePhase(Phase.GAME);
+            } else if (firstVote === 'MENU') {
+                changePhase(Phase.MENU);
+            }
+        } else {
+            console.log(`⚠️ [Scoreboard Vote] 표결 불일치 발생. 현 상태 유지`);
+        }
+    }
+}
+
+// 로컬 IP 검색
 function getLocalIpAddress() {
     const interfaces = os.networkInterfaces();
     for (const name of Object.keys(interfaces)) {
@@ -65,60 +221,127 @@ function getLocalIpAddress() {
 const localIp = getLocalIpAddress();
 
 console.log('====================================================');
-console.log(`🚀 [Bullet Hell Host Server] 오프라인 LAN 서버 가동 중`);
-console.log(`📱 폰/클라이언트 접속 주소: http://${localIp}:${PORT}?client=true`);
+console.log(`🚀 [Bullet Hell Server] 웹소켓 & 멀티플레이어 마스터 서버 가동`);
+console.log(`📱 클라이언트 접속 주소: http://${localIp}:${PORT}?client=true`);
 console.log(`⚡ 웹소켓 포트: ${WS_PORT}`);
 console.log('====================================================');
 
-// 연결된 모든 클라이언트 패킷 중계 및 슬롯 관리
-const connectedSlots = {}; // { wsId: slotIndex }
-
 wss.on('connection', (ws) => {
-    // 1~4 중 사용 가능한 빈 슬롯 찾기
-    const assignedSlots = Object.values(connectedSlots);
-    let mySlot = 1;
+    // 1. 빈 슬롯 자동 할당 (P1 ~ P4)
+    let assignedSlot = null;
     for (let i = 1; i <= 4; i++) {
-        if (!assignedSlots.includes(i)) {
-            mySlot = i;
+        if (!slots[i].active) {
+            assignedSlot = i;
+            slots[i].active = true;
+            slots[i].ready = false;
+            slots[i].vote = null;
+            slots[i].ws = ws;
             break;
         }
     }
-    const socketId = Math.random();
-    ws.socketId = socketId;
-    ws.slotIndex = mySlot;
-    connectedSlots[socketId] = mySlot;
 
-    console.log(`🌐 [WebSocket] 노드 연결됨 - 슬롯 P${mySlot} 할당`);
+    if (!assignedSlot) {
+        console.warn(`🚫 [Connection Rejected] 방이 가득 찼습니다 (4/4 Max).`);
+        ws.send(JSON.stringify({ type: 'ROOM_FULL', error: '방이 가득 찼습니다.' }));
+        ws.close();
+        return;
+    }
 
-    // 새로 들어온 클라이언트에게 할당된 슬롯 전달
-    ws.send(JSON.stringify({ type: 'SLOT_ASSIGNED', slotIndex: mySlot }));
+    ws.slotIndex = assignedSlot;
+    console.log(`🌐 [Client Connected] P${assignedSlot} 슬롯 할당 (현재 활성: ${Object.values(slots).filter(s => s.active).length}명)`);
 
-    // 접속한 전원에게 현재 연결된 슬롯 상태 전파
-    const sendRoomState = () => {
-        const activeSlots = Object.values(connectedSlots);
-        const payload = JSON.stringify({ type: 'ROOM_STATE', activeSlots });
-        wss.clients.forEach(c => {
-            if (c.readyState === WebSocket.OPEN) c.send(payload);
-        });
-    };
-    sendRoomState();
+    // 신규 접속자에게 슬롯 할당 알림
+    ws.send(JSON.stringify({
+        type: 'SLOT_ASSIGNED',
+        slotIndex: assignedSlot,
+        phase: currentPhase,
+        masterSeed: currentMasterSeed
+    }));
+
+    // 전원에게 방 상태 방송
+    broadcastRoomState();
 
     ws.on('message', (message) => {
-        // 💡 송신자를 포함한 연결된 모든 클라이언트 노드에 조작 및 방 상태 공유
-        wss.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(message.toString());
+        try {
+            const data = JSON.parse(message.toString());
+
+            // A. 준비(READY) 신호 수신
+            if (data.type === 'SET_READY') {
+                const s = slots[ws.slotIndex];
+                if (s && s.active) {
+                    s.ready = !!data.ready;
+                    console.log(`👍 [Ready Changed] P${ws.slotIndex} Ready: ${s.ready}`);
+                    broadcastRoomState();
+                    checkReadyUnanimity();
+                }
             }
-        });
+            // B. SCOREBOARD 표결(VOTE) 신호 수신 (REPLAY 또는 MENU)
+            else if (data.type === 'SUBMIT_VOTE') {
+                const s = slots[ws.slotIndex];
+                if (s && s.active) {
+                    s.vote = data.vote; // 'REPLAY' | 'MENU'
+                    console.log(`🗳️ [Vote Submitted] P${ws.slotIndex} Vote: ${s.vote}`);
+                    checkScoreboardVoting();
+                }
+            }
+            // C. 조작 입력 동기화 (INPUT_SYNC)
+            else if (data.type === 'INPUT_SYNC' || data.type === 'CLIENT_INPUT') {
+                // 발신자 포함 전체 노드에 릴레이 중계 (INPUT_SYNC 규격 통합)
+                broadcast({
+                    type: 'INPUT_SYNC',
+                    slotIndex: ws.slotIndex,
+                    inputAction: data.inputAction
+                });
+            }
+            // C-1. 💡 [신규 - 입력 디버그 로그 브로드캐스트]: 키보드/마우스 입력 수신 시 서버 터미널 출력 및 전체 방송
+            else if (data.type === 'DEBUG_INPUT_EVENT') {
+                console.log(`📡 [Server Debug Sync] P${ws.slotIndex} (${data.source}): ${data.description}`);
+                broadcast({
+                    type: 'DEBUG_INPUT_EVENT',
+                    slotIndex: ws.slotIndex,
+                    source: data.source,
+                    description: data.description,
+                    timestamp: Date.now()
+                });
+            }
+            // C-2. 확장형 슬롯 이벤트 릴레이
+            else if (data.type === 'SLOT_EVENT_SYNC') {
+                broadcast(data);
+            }
+            // D. 관리자/게임 트리거: 게임 종료 및 결과 화면 이동 요청
+            else if (data.type === 'TRIGGER_SCOREBOARD') {
+                changePhase(Phase.SCOREBOARD);
+            }
+            // E. 기타 범용 중계 패킷
+            else {
+                broadcast(data);
+            }
+        } catch (e) {
+            console.warn('[Server] 패킷 처리 오류:', e);
+        }
     });
 
     ws.on('close', () => {
-        delete connectedSlots[ws.socketId];
-        console.log(`❌ [WebSocket] P${ws.slotIndex} 연결 해제됨`);
-        sendRoomState();
+        const slotIdx = ws.slotIndex;
+        if (slotIdx && slots[slotIdx]) {
+            slots[slotIdx].active = false;
+            slots[slotIdx].ready = false;
+            slots[slotIdx].vote = null;
+            slots[slotIdx].ws = null;
+            console.log(`❌ [Client Disconnected] P${slotIdx} 슬롯 퇴장 (남은 인원: ${Object.values(slots).filter(s => s.active).length}명)`);
+
+            // 퇴장 후 인원 변동에 따른 갱신 및 표결/레디 재검사
+            broadcastRoomState();
+
+            if (currentPhase === Phase.LOBBY || currentPhase === Phase.MENU) {
+                checkReadyUnanimity();
+            } else if (currentPhase === Phase.SCOREBOARD) {
+                checkScoreboardVoting();
+            }
+        }
     });
 });
 
 server.listen(PORT, () => {
-    console.log(`🌐 웹 서버가 포트 ${PORT}에서 정상 대기 중입니다.`);
+    console.log(`🌐 HTTP 정적 웹 서버가 포트 ${PORT}에서 정상 대기 중입니다.`);
 });

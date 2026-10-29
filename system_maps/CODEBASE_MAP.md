@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **41개**
+현재 인덱싱된 총 파일 수: **43개**
 
 ## 🗂️ [Module Index]
 - `extraction_target_project/AGENTS.md`
@@ -9,6 +9,7 @@
 - `extraction_target_project/js/ai/aiEngine.js`
 - `extraction_target_project/js/ai/dodgeAlgorithm.js`
 - `extraction_target_project/js/config/constants.js`
+- `extraction_target_project/js/core/InputManager.js`
 - `extraction_target_project/js/core/gameLoop.js`
 - `extraction_target_project/js/core/input.js`
 - `extraction_target_project/js/core/sceneManager.js`
@@ -40,6 +41,7 @@
 - `extraction_target_project/js/player/playerBullet.js`
 - `extraction_target_project/js/player/playerFactory.js`
 - `extraction_target_project/js/utils/math.js`
+- `extraction_target_project/js/utils/seededRNG.js`
 - `extraction_target_project/package-lock.json`
 - `extraction_target_project/package.json`
 - `extraction_target_project/run_server.bat`
@@ -64,8 +66,8 @@
 ### 📄 extraction_target_project/js/ai/aiEngine.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../config/constants.js, ../utils/math.js, ./dodgeAlgorithm.js
-🧬 class AIEngine [L9~L245]
+💡 📦 imp: ../config/constants.js, ../utils/math.js, ../utils/seededRNG.js, ./dodgeAlgorithm.js
+🧬 class AIEngine [L10~L248]
 ```
 
 --------------------------------------------------
@@ -73,14 +75,23 @@
 ### 📄 extraction_target_project/js/ai/dodgeAlgorithm.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../config/constants.js, ../utils/math.js
-🧬 class DodgeAlgorithm [L8~L294]
+💡 📦 imp: ../config/constants.js, ../utils/math.js, ../utils/seededRNG.js
+🧬 class DodgeAlgorithm [L9~L299]
 ```
 
 --------------------------------------------------
 
 ### 📄 extraction_target_project/js/config/constants.js
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/core/InputManager.js
+#### 🧱 Code Skeleton:
+```python
+💡 📦 imp: ./input.js
+🧬 class InputManager [L9~L35]
+```
 
 --------------------------------------------------
 
@@ -96,8 +107,9 @@
 ### 📄 extraction_target_project/js/core/input.js
 #### 🧱 Code Skeleton:
 ```python
-🧬 class InputHandler [L6~L145]
-🎯 def endTouch() [L104~L109]
+💡 📦 imp: ../utils/seededRNG.js
+🧬 class InputHandler [L11~L257]
+🎯 def endTouch() [L146~L151]
 ```
 
 --------------------------------------------------
@@ -105,7 +117,7 @@
 ### 📄 extraction_target_project/js/core/sceneManager.js
 #### 🧱 Code Skeleton:
 ```python
-🧬 class SceneManager [L13~L80]
+🧬 class SceneManager [L16~L95]
 ```
 
 --------------------------------------------------
@@ -114,9 +126,11 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../player/characters/index.js
-🧬 class UIManager [L8~L407]
+🧬 class UIManager [L8~L506]
 🎯 def updateSlotLockStatus() [L69~L87]
-🎯 def triggerSkill() [L235~L265]
+🎯 def triggerSkill() [L246~L276]
+🧬 class truncate [L461~L473]
+🧬 class truncate [L499~L508]
 ```
 
 --------------------------------------------------
@@ -132,8 +146,8 @@
 ### 📄 extraction_target_project/js/enemy/bossFactory.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ./bosses/neonDragon/neonDragon.js
-🧬 class BossFactory [L7~L22]
+💡 📦 imp: ../utils/seededRNG.js, ./bosses/neonDragon/neonDragon.js
+🧬 class BossFactory [L8~L31]
 ```
 
 --------------------------------------------------
@@ -141,7 +155,7 @@
 ### 📄 extraction_target_project/js/enemy/bosses/neonDragon/neonDragon.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../../../minian/enemy/neonDragonHatchling/neonDragonHatchling.js, ../../../utils/math.js, ../../baseBoss.js, ./neonDragonPattern.js
+💡 📦 imp: ../../../minian/enemy/neonDragonHatchling/neonDragonHatchling.js, ../../../utils/seededRNG.js, ../../baseBoss.js, ./neonDragonPattern.js
 🧬 class NeonDragon [L10~L226]
 ```
 
@@ -167,8 +181,8 @@
 ### 📄 extraction_target_project/js/enemy/bosses/neonDragon/neonDragonPattern.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ./neonDragonBullet.js
-🧬 class NeonDragonPattern [L7~L58]
+💡 📦 imp: ../../../utils/seededRNG.js, ./neonDragonBullet.js
+🧬 class NeonDragonPattern [L8~L59]
 ```
 
 --------------------------------------------------
@@ -176,7 +190,8 @@
 ### 📄 extraction_target_project/js/main.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ./core/gameLoop.js, ./core/input.js, ./core/sceneManager.js, ./core/ui.js, ./network/networkManager.js, ./player/particle.js
+💡 📦 imp: ./core/InputManager.js, ./core/gameLoop.js, ./core/sceneManager.js, ./core/ui.js, ./network/networkManager.js, ./player/particle.js
+🎯 def resizeCanvas() [L28~L38]
 ```
 
 --------------------------------------------------
@@ -210,8 +225,8 @@
 ### 📄 extraction_target_project/js/minian/ally/shooterMinion.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ./baseAllyMinion.js
-🧬 class ShooterMinion [L8~L108]
+💡 📦 imp: ../../utils/seededRNG.js, ./baseAllyMinion.js
+🧬 class ShooterMinion [L9~L109]
 ```
 
 --------------------------------------------------
@@ -219,8 +234,8 @@
 ### 📄 extraction_target_project/js/minian/baseMinion.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ./minionBullet.js
-🧬 class BaseMinion [L13~L253]
+💡 📦 imp: ../utils/seededRNG.js, ./minionBullet.js
+🧬 class BaseMinion [L14~L254]
 ```
 
 --------------------------------------------------
@@ -228,8 +243,8 @@
 ### 📄 extraction_target_project/js/minian/enemy/neonDragonHatchling/neonDragonHatchling.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../../baseMinion.js
-🧬 class NeonDragonHatchling [L7~L113]
+💡 📦 imp: ../../../utils/seededRNG.js, ../../baseMinion.js
+🧬 class NeonDragonHatchling [L8~L114]
 ```
 
 --------------------------------------------------
@@ -245,7 +260,8 @@
 ### 📄 extraction_target_project/js/network/networkManager.js
 #### 🧱 Code Skeleton:
 ```python
-🧬 class NetworkManager [L6~L116]
+💡 📦 imp: ../utils/seededRNG.js
+🧬 class NetworkManager [L13~L272]
 ```
 
 --------------------------------------------------
@@ -262,8 +278,8 @@
 ### 📄 extraction_target_project/js/player/basePlayer.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../config/constants.js, ./playerBullet.js
-🧬 class BasePlayer [L9~L18]
+💡 📦 imp: ../config/constants.js, ../utils/seededRNG.js, ./playerBullet.js
+🧬 class BasePlayer [L10~L19]
 ```
 
 --------------------------------------------------
@@ -352,14 +368,25 @@
 ### 📄 extraction_target_project/js/utils/math.js
 #### 🧱 Code Skeleton:
 ```python
-🎯 def setGameSeed(seed) [L17~L21]
-🎯 def seededRandom() [L23~L28]
-🎯 def getDistance(x1, y1, x2, y2) [L30~L32]
-🎯 def getAngle(fromX, fromY, toX, toY) [L42~L44]
-🎯 def lerp(start, end, factor) [L53~L55]
-🎯 def degToRad(deg) [L62~L64]
-🎯 def radToDeg(rad) [L71~L73]
-🧬 class Vector2D [L78~L109]
+💡 📦 imp: ./seededRNG.js
+🎯 def setGameSeed(seed) [L18~L23]
+🎯 def seededRandom() [L25~L27]
+🎯 def getDistance(x1, y1, x2, y2) [L29~L31]
+🎯 def getAngle(fromX, fromY, toX, toY) [L41~L43]
+🎯 def lerp(start, end, factor) [L52~L54]
+🎯 def degToRad(deg) [L61~L63]
+🎯 def radToDeg(rad) [L70~L72]
+🧬 class Vector2D [L77~L108]
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/utils/seededRNG.js
+#### 🧱 Code Skeleton:
+```python
+🎯 def hashSeed(seed) [L14~L28]
+🧬 class Mulberry32PRNG [L34~L78]
+🧬 class SeededRNGManager [L83~L138]
 ```
 
 --------------------------------------------------
@@ -370,7 +397,7 @@
 - **[JSON_KEY]** `lockfileVersion` (Line: 3~3)
 - **[JSON_KEY]** `requires` (Line: 4~4)
 - **[JSON_KEY]** `packages` (Line: 5~5)
-  - 🔗 *Calls (호출하는 것)*: `node_modules/ipaddr.js, ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `ipaddr.js, node_modules/ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -404,9 +431,15 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: child_process, fs, http, os, path
-🎯 def ensureModule(moduleName) [L15~L23]
-🎯 def getLocalIpAddress() [L53~L63]
-🎯 def sendRoomState() [L97~L103]
+🎯 def ensureModule(moduleName) [L20~L28]
+🎯 def generateMasterSeed() [L73~L75]
+🎯 def broadcast(payloadObj) [L80~L87]
+🎯 def broadcastRoomState() [L92~L116]
+🎯 def broadcastVoteStatus() [L121~L133]
+🎯 def changePhase(nextPhase) [L139~L163]
+🎯 def checkReadyUnanimity() [L168~L178]
+🎯 def checkScoreboardVoting() [L183~L206]
+🎯 def getLocalIpAddress() [L209~L219]
 ```
 
 --------------------------------------------------

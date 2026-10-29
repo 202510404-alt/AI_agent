@@ -4,7 +4,7 @@
  */
 import BaseBoss from '../../baseBoss.js';
 import { NeonDragonPattern } from './neonDragonPattern.js';
-import { seededRandom } from '../../../utils/math.js';
+import { rngBoss } from '../../../utils/seededRNG.js';
 import { NeonDragonHatchling } from '../../../minian/enemy/neonDragonHatchling/neonDragonHatchling.js';
 
 export class NeonDragon extends BaseBoss {
@@ -29,12 +29,12 @@ export class NeonDragon extends BaseBoss {
     }
 
     /**
-     * 상단 영역 내 새로운 목표점 추첨 (시드 기반 난수 적용)
+     * 상단 영역 내 새로운 목표점 추첨 (보스 이동 전용 PRNG 시드 적용)
      */
     pickNewTarget(canvasWidth) {
         const marginX = 150;
-        this.targetX = marginX + Math.random() * (canvasWidth - marginX * 2);
-        this.targetY = 120 + Math.random() * 120;
+        this.targetX = marginX + rngBoss.move() * (canvasWidth - marginX * 2);
+        this.targetY = 120 + rngBoss.move() * 120;
     }
 
     /**

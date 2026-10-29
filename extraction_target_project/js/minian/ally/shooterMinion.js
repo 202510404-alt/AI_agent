@@ -4,6 +4,7 @@
  * 스펙: 무적 판정, 플레이어 연사속도 1/10, AI 오차 조준, 플레이어 기절 시 소멸
  */
 import BaseAllyMinion from './baseAllyMinion.js';
+import { rngMinion } from '../../utils/seededRNG.js';
 
 export class ShooterMinion extends BaseAllyMinion {
     constructor(owner, orbitAngleOffset = 0) {
@@ -46,9 +47,9 @@ export class ShooterMinion extends BaseAllyMinion {
     }
 
     shoot(target, allyBullets) {
-        // AI 특유의 오차 조준 (±0.3 라디안) - Math.random() 시드 동기화 덮어쓰기 적용
+        // AI 특유의 오차 조준 (±0.3 라디안) - 미니언 공격 독립 PRNG 적용
         const baseAngle = Math.atan2(target.y - this.y, target.x - this.x);
-        const aimError = (Math.random() - 0.5) * 0.6;
+        const aimError = (rngMinion.attack() - 0.5) * 0.6;
         const finalAngle = baseAngle + aimError;
 
         const bulletSpeed = 350;

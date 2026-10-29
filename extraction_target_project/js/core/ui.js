@@ -170,6 +170,9 @@ export class UIManager {
                     this.elDebugStatus.innerText = this.showAIDebug ? 'ON' : 'OFF';
                     this.elDebugStatus.className = this.showAIDebug ? 'text-emerald-400' : 'text-gray-500';
                 }
+                if (window.networkManager) {
+                    window.networkManager.sendDebugInput('UI_BUTTON', `Debug Toggle Click (Status: ${this.showAIDebug})`);
+                }
                 if (this.callbacks.onToggleDebug) {
                     this.callbacks.onToggleDebug(this.showAIDebug);
                 }
@@ -211,19 +214,27 @@ export class UIManager {
         const topAiToggleBtn = document.getElementById('btn-top-ai-toggle');
         if (topAiToggleBtn) {
             topAiToggleBtn.onclick = () => {
-                const mySlotIdx = (window.networkManager && window.networkManager.mySlotIndex) 
-                    ? window.networkManager.mySlotIndex - 1 
-                    : 0;
+                const mySlotNum = (window.networkManager && window.networkManager.mySlotIndex) 
+                    ? window.networkManager.mySlotIndex 
+                    : 1;
+                const mySlotIdx = mySlotNum - 1;
                 
-                // 내 컴퓨터에 할당된 기체 슬롯을 정확히 탐색
                 const myPlayer = gameLoopInstance.slots ? gameLoopInstance.slots[mySlotIdx] : null;
 
                 if (myPlayer) {
-                    myPlayer.isHuman = !myPlayer.isHuman; // 내 기체만 유저/AI 수동 전환
-                    const statusText = document.getElementById('top-ai-status-text');
-                    if (statusText) {
-                        statusText.innerText = myPlayer.isHuman ? 'USER (MANUAL)' : 'AI (AUTO)';
-                        statusText.className = myPlayer.isHuman ? 'text-cyan-400 font-bold' : 'text-pink-400 font-bold';
+                    // 전환할 목표 AI 모드 상태 (현재 isHuman이 true이면 AI 모드 true로 전환)
+                    const targetAiMode = myPlayer.isHuman; 
+
+                    // 💡 [확장 이벤트 송신]: 로컬 직접 변경 대신 서버로 AI 모드 전환 신호 발송
+                    if (window.networkManager && typeof window.networkManager.sendSlotEvent === 'function') {
+                        window.networkManager.sendSlotEvent(mySlotNum, 'TOGGLE_AI_MODE', {
+                            isAiMode: targetAiMode
+                        });
+                    } else {
+                        // 소켓 연결 없는 오프라인 폴백 처리
+                        if (gameLoopInstance && typeof gameLoopInstance.applySlotAiMode === 'function') {
+                            gameLoopInstance.applySlotAiMode(mySlotNum, targetAiMode);
+                        }
                     }
                 }
             };
@@ -403,6 +414,94 @@ export class UIManager {
         });
 
         this.elModal.classList.remove('hidden');
+    }
+
+    /**
+     * LOBBY 페이즈 슬롯 카드 상태 갱신
+     * @param {Array} slotDetails 서버에서 수신한 슬롯 상세 배열 [{ slotIndex, active, ready, vote }]
+     * @param {number} mySlotIndex 내 슬롯 번호 (1~4)
+     */
+    updateLobbySlots(slotDetails = [], mySlotIndex = null) {
+        if (!slotDetails || !Array.isArray(slotDetails)) return;
+
+        slotDetails.forEach(slot => {
+            const idx = slot.slotIndex;
+            const card = document.getElementById(`lobby-slot-card-${idx}`);
+            if (!card) return;
+
+            const connBadge = card.querySelector('.slot-conn-badge');
+            const readyBadge = card.querySelector('.slot-ready-badge');
+            const nicknameEl = card.querySelector('.slot-nickname');
+            const classEl = card.querySelector('.slot-class');
+
+            // 닉네임 및 선택 캐릭터 정보 가져오기 (인풋 또는 기본값)
+            const nicknameInput = document.getElementById(`p${idx}-nickname`);
+            const classSelect = document.getElementById(`p${idx}-class`);
+            const nickname = (nicknameInput && nicknameInput.value.trim()) ? nicknameInput.value.trim() : `PLAYER ${idx}`;
+            const className = (classSelect && classSelect.options[classSelect.selectedIndex]) 
+                ? classSelect.options[classSelect.selectedIndex].text 
+                : '기본 기체';
+
+            const isMySlot = (mySlotIndex === idx);
+
+            // 접속 상태 표시 (active)
+            if (slot.active) {
+                if (connBadge) {
+                    connBadge.textContent = isMySlot ? 'YOU' : 'ONLINE';
+                    connBadge.className = `slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold ${
+                        isMySlot ? 'bg-cyan-500 text-black' : 'bg-blue-600 text-white'
+                    }`;
+                }
+                if (nicknameEl) {
+                    nicknameEl.textContent = nickname;
+                    nicknameEl.className = 'text-sm font-bold text-white slot-nickname truncate';
+                }
+                if (classEl) {
+                    classEl.innerHTML = `<i class="fa-solid fa-gamepad mr-1"></i>${className}`;
+                    classEl.className = 'text-xs text-cyan-300/80 slot-class truncate';
+                }
+
+                // 레디 상태 표시 (ready: 초록색 / 회색 뱃지)
+                if (readyBadge) {
+                    if (slot.ready) {
+                        readyBadge.textContent = 'READY';
+                        readyBadge.className = 'slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-emerald-500 text-black shadow-md shadow-emerald-500/30';
+                    } else {
+                        readyBadge.textContent = 'NOT READY';
+                        readyBadge.className = 'slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-slate-700 text-gray-400';
+                    }
+                }
+
+                // 카드 테두리 강조
+                if (slot.ready) {
+                    card.style.borderColor = 'rgba(16, 185, 129, 0.8)';
+                    card.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.2)';
+                } else {
+                    card.style.borderColor = '';
+                    card.style.boxShadow = '';
+                }
+            } else {
+                // 미접속 상태
+                if (connBadge) {
+                    connBadge.textContent = 'EMPTY';
+                    connBadge.className = 'slot-conn-badge text-[9px] px-1.5 py-0.5 rounded font-bold bg-gray-800 text-gray-500';
+                }
+                if (readyBadge) {
+                    readyBadge.textContent = 'WAITING';
+                    readyBadge.className = 'slot-ready-badge text-[10px] px-2 py-0.5 rounded font-black bg-gray-800 text-gray-600';
+                }
+                if (nicknameEl) {
+                    nicknameEl.textContent = '대기 중...';
+                    nicknameEl.className = 'text-sm font-bold text-gray-600 slot-nickname truncate';
+                }
+                if (classEl) {
+                    classEl.innerHTML = `<i class="fa-solid fa-crosshairs mr-1"></i>미선택`;
+                    classEl.className = 'text-xs text-gray-600 slot-class truncate';
+                }
+                card.style.borderColor = '';
+                card.style.boxShadow = '';
+            }
+        });
     }
 }
 

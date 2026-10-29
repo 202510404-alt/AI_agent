@@ -3,6 +3,7 @@
  * 네온드래곤 본체에서 튀어나와 가장 가까운 플레이어를 추격하는 소형 해츨링 미니언
  */
 import { BaseMinion, MINION_MOVE_MODE } from '../../baseMinion.js';
+import { rngMinion } from '../../../utils/seededRNG.js';
 
 export class NeonDragonHatchling extends BaseMinion {
     /**
@@ -22,12 +23,12 @@ export class NeonDragonHatchling extends BaseMinion {
         // 소멸 타이머 제거 (처치할 때까지 무제한 생존)
         this.lifeTimer = null;
 
-        // 곡선/궤적 이동 전용 변수
+        // 곡선/궤적 이동 전용 변수 (미니언 이동 독립 PRNG 적용)
         this.parentBoss = parentBoss;
-        this.orbitRadius = 90 + Math.random() * 40; // 보스 주변 90~130px 거리 유지
+        this.orbitRadius = 90 + rngMinion.move() * 40; // 보스 주변 90~130px 거리 유지
         this.orbitAngle = orbitAngle;               // 현재 회전 각도
-        this.orbitSpeed = 1.8 + Math.random() * 0.8; // 각속도 (초당 라디안)
-        this.waveTime = Math.random() * Math.PI * 2; // 곡선 파동 오프셋 타이머
+        this.orbitSpeed = 1.8 + rngMinion.move() * 0.8; // 각속도 (초당 라디안)
+        this.waveTime = rngMinion.move() * Math.PI * 2; // 곡선 파동 오프셋 타이머
 
         // 사격 능력치 
         this.attackInterval = 24; 
