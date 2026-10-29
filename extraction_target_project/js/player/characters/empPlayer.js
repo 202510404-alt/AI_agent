@@ -55,7 +55,10 @@ export class EmpPlayer extends BasePlayer {
      */
     updateMovement(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
         super.updateMovement(dt, canvasWidth, canvasHeight, enemyBullets, allyPlayers);
+        this.updateSkillEffect(dt, canvasWidth, canvasHeight, enemyBullets, allyPlayers);
+    }
 
+    updateSkillEffect(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
         if (this.empWaveActive) {
             this.empWaveRadius += dt * 1400; // 파동 확장 속도
 

@@ -150,7 +150,7 @@ export default class BasePlayer {
 
             if (dist > this.radius && dist <= this.grazeRadius) {
                 b.grazedSlots.push(this.slotIndex);
-                this.gauge = Math.min(this.maxGauge, this.gauge + 1);
+                this.gauge = Math.min(this.maxGauge, this.gauge + 1 + this.getModifierValue('gaugeTickRate') / 100);
                 this.grazeEffectTimer = 0.2;
             }
         }
@@ -315,11 +315,7 @@ export default class BasePlayer {
             }
         }
 
-        // 3. 1회성 스킬 트리거 실행 (useSkill)
-        if (inputAction.useSkill && skillParams) {
-            this.useSkill(skillParams);
-            inputAction.useSkill = false; // 1회성 소모
-        }
+        // 스킬은 성공한 시전 이벤트를 별도로 수신하여 재생한다.
     }
 
     /**
@@ -423,7 +419,9 @@ export default class BasePlayer {
             }
         }
 
-        bulletContainer.push(new PlayerBullet(this.x, this.y, targetAngle, this.slotIndex, this.color));
+        const bullet = new PlayerBullet(this.x, this.y, targetAngle, this.slotIndex, this.color);
+        bullet.damage = Math.round(bullet.damage * (1 + this.getModifierValue('damage') / 100));
+        bulletContainer.push(bullet);
     }
 
     updateAttack(dt, onShoot) {

@@ -111,8 +111,9 @@ window.addEventListener('DOMContentLoaded', () => {
             sceneManager.setState('LOBBY');
         } else if (packet.phase === 'MENU') {
             sceneManager.setState('MENU');
+            uiManager.loadRankings();
         } else if (packet.phase === 'SCOREBOARD') {
-            if (gameLoopInstance) gameLoopInstance.enterScoreboard();
+            if (gameLoopInstance) gameLoopInstance.enterScoreboard(packet.result);
         }
     });
 
@@ -130,8 +131,9 @@ window.addEventListener('DOMContentLoaded', () => {
             sceneManager.setState('LOBBY');
         } else if (currentPhase === 'MENU') {
             sceneManager.setState('MENU');
+            uiManager.loadRankings();
         } else if (currentPhase === 'SCOREBOARD') {
-            if (gameLoopInstance) gameLoopInstance.enterScoreboard();
+            if (gameLoopInstance) gameLoopInstance.enterScoreboard(packet.result);
         }
     });
 

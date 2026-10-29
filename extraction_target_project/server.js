@@ -57,6 +57,12 @@ const Phase = {
 
 let currentPhase = Phase.LOBBY;
 let currentMasterSeed = null;
+let skillEventSequence = 0;
+let matchParticipants = {};
+let currentMatchResult = null;
+const rankFile = path.join(targetStaticPath, 'rank.json');
+let pendingSkillBySlot = {};
+const SKILL_WINDUP_MS = 300;
 
 // 슬롯 상태: P1~P4 (최대 4명)
 // 각 슬롯 구조: { slotIndex: 1~4, active: boolean, ready: boolean, vote: string|null, isAiMode: boolean, nickname: string, classType: string, ws: WebSocket|null }
@@ -66,6 +72,42 @@ const slots = {
     3: { slotIndex: 3, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 3', classType: 'shielderPlayer', ws: null },
     4: { slotIndex: 4, active: false, ready: false, vote: null, isAiMode: false, nickname: 'PLAYER 4', classType: 'summonerPlayer', ws: null }
 };
+
+function loadRankings() {
+    try {
+        const data = JSON.parse(fs.readFileSync(rankFile, 'utf8'));
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        if (error.code === 'ENOENT') return [];
+        throw error;
+    }
+}
+
+app.get('/api/rankings', (req, res) => {
+    try {
+        res.json(loadRankings().sort((a, b) => b.score - a.score).slice(0, 20));
+    } catch (error) {
+        console.error('[Ranking] 조회 실패:', error.message);
+        res.status(500).json({ error: '랭킹을 불러오지 못했습니다.' });
+    }
+});
+
+function saveMatchResult(score) {
+    const players = Object.values(slots).map(s => ({
+        slotIndex: s.slotIndex,
+        nickname: matchParticipants[s.slotIndex]?.nickname || s.nickname || `PLAYER ${s.slotIndex}`,
+        connected: !!matchParticipants[s.slotIndex]
+    }));
+    const result = { score: Math.max(0, Math.floor(score)), players, playedAt: new Date().toISOString() };
+    try {
+        const rankings = loadRankings();
+        rankings.push(result);
+        fs.writeFileSync(rankFile, JSON.stringify(rankings, null, 2), 'utf8');
+    } catch (error) {
+        console.error('[Ranking] 저장 실패:', error.message);
+    }
+    return result;
+}
 
 /**
  * 0 ~ 4294967295 범위의 단일 masterSeed 생성
@@ -139,9 +181,10 @@ function broadcastVoteStatus() {
  * 페이즈 전환 함수
  * @param {string} nextPhase 
  */
-function changePhase(nextPhase) {
+function changePhase(nextPhase, result = null) {
     console.log(`🔄 [Phase Transition] ${currentPhase} ➔ ${nextPhase}`);
     currentPhase = nextPhase;
+    pendingSkillBySlot = {};
 
     // 모든 슬롯의 준비 및 표결 상태 초기화
     for (let i = 1; i <= 4; i++) {
@@ -156,9 +199,18 @@ function changePhase(nextPhase) {
 
     // GAME 페이즈 진입 시 단일 masterSeed 생성 및 하사
     if (currentPhase === Phase.GAME) {
+        currentMatchResult = null;
+        matchParticipants = {};
+        Object.values(slots).filter(s => s.active).forEach(s => {
+            matchParticipants[s.slotIndex] = { nickname: s.nickname };
+        });
         currentMasterSeed = generateMasterSeed();
         payload.masterSeed = currentMasterSeed;
         console.log(`🎲 [masterSeed Issued] 신규 게임 마스터 시드 생성: ${currentMasterSeed}`);
+    }
+    if (currentPhase === Phase.SCOREBOARD && result) {
+        currentMatchResult = result;
+        payload.result = result;
     }
 
     broadcast(payload);
@@ -252,6 +304,9 @@ wss.on('connection', (ws) => {
     }
 
     ws.slotIndex = assignedSlot;
+    if (currentPhase === Phase.GAME) {
+        matchParticipants[assignedSlot] = { nickname: slots[assignedSlot].nickname };
+    }
     console.log(`🌐 [Client Connected] P${assignedSlot} 슬롯 할당 (현재 활성: ${Object.values(slots).filter(s => s.active).length}명)`);
 
     // 신규 접속자에게 슬롯 할당 알림
@@ -259,7 +314,8 @@ wss.on('connection', (ws) => {
         type: 'SLOT_ASSIGNED',
         slotIndex: assignedSlot,
         phase: currentPhase,
-        masterSeed: currentMasterSeed
+        masterSeed: currentMasterSeed,
+        result: currentMatchResult
     }));
 
     // 전원에게 방 상태 방송
@@ -275,6 +331,7 @@ wss.on('connection', (ws) => {
                 if (s && s.active) {
                     s.ready = !!data.ready;
                     if (data.nickname) s.nickname = String(data.nickname).slice(0, 20);
+                    if (currentPhase === Phase.GAME && matchParticipants[s.slotIndex]) matchParticipants[s.slotIndex].nickname = s.nickname;
                     if (data.classType) s.classType = String(data.classType);
                     console.log(`👍 [Ready Changed] P${ws.slotIndex} Ready: ${s.ready} (${s.nickname}, ${s.classType})`);
                     broadcastRoomState();
@@ -286,6 +343,7 @@ wss.on('connection', (ws) => {
                 const s = slots[ws.slotIndex];
                 if (s && s.active) {
                     if (data.nickname) s.nickname = String(data.nickname).slice(0, 20);
+                    if (currentPhase === Phase.GAME && matchParticipants[s.slotIndex]) matchParticipants[s.slotIndex].nickname = s.nickname;
                     if (data.classType) s.classType = String(data.classType);
                     if (typeof data.isAiMode === 'boolean') s.isAiMode = data.isAiMode;
                     console.log(`👤 [Slot Profile Updated] P${ws.slotIndex} Nickname: ${s.nickname}, Class: ${s.classType}, AiMode: ${s.isAiMode}`);
@@ -329,13 +387,54 @@ wss.on('connection', (ws) => {
             else if (data.type === 'PLAYER_SHOT_SYNC') {
                 const slot = slots[ws.slotIndex];
                 if (currentPhase === Phase.GAME && slot?.active && !slot.isAiMode &&
-                    Number.isFinite(data.x) && Number.isFinite(data.y) && Number.isFinite(data.angle)) {
+                    Number.isFinite(data.x) && Number.isFinite(data.y) && Number.isFinite(data.angle) &&
+                    Number.isFinite(data.damage)) {
                     broadcast({
                         type: 'PLAYER_SHOT_SYNC',
                         slotIndex: ws.slotIndex,
                         x: data.x,
                         y: data.y,
-                        angle: data.angle
+                        angle: data.angle,
+                        damage: data.damage
+                    });
+                }
+            }
+            else if (data.type === 'TIME_SYNC_REQUEST') {
+                if (Number.isFinite(data.clientSentAt)) {
+                    ws.send(JSON.stringify({
+                        type: 'TIME_SYNC_RESPONSE',
+                        clientSentAt: data.clientSentAt,
+                        serverTime: Date.now()
+                    }));
+                }
+            }
+            else if (data.type === 'PLAYER_SKILL_REQUEST') {
+                const fromAiAuthority = data.source === 'AI';
+                const targetSlot = fromAiAuthority ? data.slotIndex : ws.slotIndex;
+                const target = slots[targetSlot];
+                const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+                const allowed = fromAiAuthority
+                    ? ws.slotIndex === authoritySlot && target && (!target.active || target.isAiMode)
+                    : data.source === 'HUMAN' && target?.active && !target.isAiMode;
+                const serverSentAt = Date.now();
+                if (currentPhase === Phase.GAME && allowed && Number.isInteger(targetSlot) &&
+                    Number.isInteger(data.sequence) && Number.isFinite(data.x) && Number.isFinite(data.y) &&
+                    (!pendingSkillBySlot[targetSlot] || pendingSkillBySlot[targetSlot] <= serverSentAt)) {
+                    const executeAt = serverSentAt + SKILL_WINDUP_MS;
+                    pendingSkillBySlot[targetSlot] = executeAt;
+                    broadcast({
+                        type: 'PLAYER_SKILL_SYNC',
+                        slotIndex: targetSlot,
+                        classType: target.classType,
+                        source: data.source,
+                        sequence: ++skillEventSequence,
+                        serverSentAt,
+                        executeAt,
+                        x: data.x,
+                        y: data.y,
+                        mouseX: data.mouseX,
+                        mouseY: data.mouseY,
+                        keys: data.keys || {}
                     });
                 }
             }
@@ -380,8 +479,8 @@ wss.on('connection', (ws) => {
             // D. 관리자/게임 트리거: 게임 종료 및 결과 화면 이동 요청
             else if (data.type === 'TRIGGER_SCOREBOARD') {
                 const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
-                if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot) {
-                    changePhase(Phase.SCOREBOARD);
+                if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot && Number.isFinite(data.score)) {
+                    changePhase(Phase.SCOREBOARD, saveMatchResult(data.score));
                 }
             }
             // E. 기타 범용 중계 패킷

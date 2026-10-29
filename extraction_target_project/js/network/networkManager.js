@@ -29,6 +29,10 @@ export class NetworkManager {
         this.slotDetails = [];        // 슬롯별 레디/투표/닉네임/직업 상세 상태
         this.currentPhase = 'LOBBY';  // LOBBY, MENU, GAME, SCOREBOARD
         this.masterSeed = null;
+        this.serverClockOffsetMs = 0;
+        this.clockSyncRttMs = Infinity;
+        this.lastClockSyncAt = 0;
+        this.timeSyncTimer = null;
 
         // 원격 입력 버퍼: slotIndex -> inputAction
         this.clientInputs = {};
@@ -51,6 +55,8 @@ export class NetworkManager {
             PHASE_CHANGE: [],
             INPUT_SYNC: [],
             PLAYER_SHOT_SYNC: [],
+            PLAYER_SKILL_SYNC: [],
+            TIME_SYNC_RESPONSE: [],
             SLOT_ASSIGNED: [],
             SLOT_EVENT_SYNC: [],
             AI_STATE_SYNC: [],
@@ -75,6 +81,10 @@ export class NetworkManager {
             this.socket.onopen = () => {
                 this.lastSentAction = null;
                 this.lastInputSentAt = 0;
+                this.requestTimeSync();
+                if (!this.timeSyncTimer) {
+                    this.timeSyncTimer = setInterval(() => this.requestTimeSync(), 5000);
+                }
                 console.log(`🌐 [NetworkManager] 웹소켓 서버 연결 완료 (${wsUrl})`);
                 // 내 닉네임 / 직업 정보가 준비되어 있다면 초기 동기화
                 this.syncLocalProfile();
@@ -94,6 +104,8 @@ export class NetworkManager {
             };
 
             this.socket.onclose = () => {
+                if (this.timeSyncTimer) clearInterval(this.timeSyncTimer);
+                this.timeSyncTimer = null;
                 console.warn('[NetworkManager] 소켓 연결 종료. 3초 후 재연결 시도...');
                 setTimeout(() => {
                     this.init();
@@ -206,6 +218,19 @@ export class NetworkManager {
 
                 // 💡 상대방 슬롯 입력 버퍼에 유실 없이 보관 (gameLoop.js에서 소비)
                 this.clientInputs[sIdx] = action;
+                break;
+            }
+
+            case 'TIME_SYNC_RESPONSE': {
+                const receivedAt = Date.now();
+                const rtt = receivedAt - packet.clientSentAt;
+                if (Number.isFinite(rtt) && rtt >= 0 && rtt < 5000 &&
+                    Number.isFinite(packet.serverTime) &&
+                    (rtt < this.clockSyncRttMs || receivedAt - this.lastClockSyncAt > 15000)) {
+                    this.serverClockOffsetMs = packet.serverTime - (packet.clientSentAt + receivedAt) / 2;
+                    this.clockSyncRttMs = rtt;
+                    this.lastClockSyncAt = receivedAt;
+                }
                 break;
             }
 
@@ -370,8 +395,31 @@ export class NetworkManager {
             slotIndex,
             x: bullet.x,
             y: bullet.y,
-            angle: bullet.angle
+            angle: bullet.angle,
+            damage: bullet.damage
         }));
+    }
+
+    sendPlayerSkill(slotIndex, skillState) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'PLAYER_SKILL_REQUEST',
+            slotIndex,
+            ...skillState
+        }));
+    }
+
+    requestTimeSync() {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({ type: 'TIME_SYNC_REQUEST', clientSentAt: Date.now() }));
+    }
+
+    getSkillExecutionDelay(executeAt, serverSentAt) {
+        if (this.lastClockSyncAt && Date.now() - this.lastClockSyncAt < 30000) {
+            return Math.max(0, executeAt - (Date.now() + this.serverClockOffsetMs));
+        }
+        // 시계 동기화 전에는 서버가 보장한 준비 시간에서 전송 지연을 보수적으로 뺀다.
+        return Math.max(0, executeAt - serverSentAt - 50);
     }
 
     /**
@@ -448,9 +496,9 @@ export class NetworkManager {
         }));
     }
 
-    requestScoreboard() {
+    requestScoreboard(score) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
-        this.socket.send(JSON.stringify({ type: 'TRIGGER_SCOREBOARD' }));
+        this.socket.send(JSON.stringify({ type: 'TRIGGER_SCOREBOARD', score }));
     }
 
     /**

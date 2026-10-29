@@ -10,7 +10,6 @@ import { AIEngine } from '../ai/aiEngine.js';
 import { createImpactParticles, createFloatingText } from '../player/particle.js';
 import { setGameSeed } from '../utils/math.js';
 import { GameState } from './sceneManager.js';
-import { sendScoreToServer } from '../network/scoreSender.js';
 
 export class GameLoop {
     /**
@@ -41,6 +40,10 @@ export class GameLoop {
         this.hasRemoteAiState = false;
         this.scoreboardRequestSent = false;
         this.scoreboardShown = false;
+        this.localSkillSequence = 0;
+        this.lastRemoteSkillSequence = {};
+        this.pendingSkillSlots = new Map();
+        this.matchGeneration = 0;
 
         // 전역 참조 등록
         window.gameLoopInstance = this;
@@ -92,35 +95,18 @@ export class GameLoop {
                 const slot = this.slots?.[packet.slotIndex - 1];
                 if (!this.sceneManager.isPlaying() || packet.slotIndex === net.mySlotIndex ||
                     !slot || !slot.isHuman || !Number.isFinite(packet.x) ||
-                    !Number.isFinite(packet.y) || !Number.isFinite(packet.angle)) return;
-                this.playerBullets.push(new PlayerBullet(packet.x, packet.y, packet.angle, slot.slotIndex, slot.color));
+                    !Number.isFinite(packet.y) || !Number.isFinite(packet.angle) ||
+                    !Number.isFinite(packet.damage)) return;
+                const bullet = new PlayerBullet(packet.x, packet.y, packet.angle, slot.slotIndex, slot.color);
+                bullet.damage = packet.damage;
+                this.playerBullets.push(bullet);
+            });
+            window.networkManager.on('PLAYER_SKILL_SYNC', (packet) => {
+                this.applyRemoteSkill(packet);
             });
         }
 
         this.init();
-    }
-
-    /**
-     * 💡 [유저 스킬 시전 처리 메서드 - E키 및 UI 전용]
-     */
-    useUserSkill() {
-        const userSlot = this.slots.find(s => s.isHuman && !s.isStunned());
-        if (!userSlot || !userSlot.hasActiveSkill) return;
-
-        const allEnemyBullets = [...this.bossBullets, ...this.minionBullets];
-        const success = userSlot.useSkill({
-            boss: this.boss,
-            enemyMinions: this.enemyMinions,
-            bossBullets: this.bossBullets,
-            minionBullets: this.minionBullets,
-            enemyBullets: allEnemyBullets,
-            allyMinions: this.allyMinions,
-            allyPlayers: this.slots
-        });
-
-        if (success) {
-            this.floatingTexts.push(createFloatingText(userSlot.x, userSlot.y - 20, userSlot.skillFloatText, userSlot.themeColor));
-        }
     }
 
     /**
@@ -178,6 +164,7 @@ export class GameLoop {
                 // 💡 [Local Owner]: 키보드/마우스 입력을 내 기기에 즉시 실행 (Client Prediction)
                 if (player.isHuman && localInputAction) {
                     player.handleHumanInputPacket(localInputAction, skillParams);
+                    if (localInputAction.useSkill) this.useUserSkill();
                 }
             } else {
                 // 💡 [Remote Proxy]: 상대방 기기에서 릴레이된 원격 패킷 소비
@@ -270,6 +257,10 @@ export class GameLoop {
             this.hasRemoteAiState = false;
             this.scoreboardRequestSent = false;
             this.scoreboardShown = false;
+            this.localSkillSequence = 0;
+            this.lastRemoteSkillSequence = {};
+            this.pendingSkillSlots.clear();
+            this.matchGeneration++;
             this.matchState.timeRemaining = MATCH_CONFIG.DEFAULT_DURATION_SEC;
             this.matchState.teamScore = 0;
             // 재도전 시작 시 이전 경기의 보스와 탄환·미니언을 모두 초기화한다.
@@ -392,22 +383,109 @@ export class GameLoop {
         }
     }
 
-    /**
-     * 유저 조작 슬롯의 액티브 스킬 발동 트리거 (조작 키 및 위치 타겟 전달)
-     */
-    useUserSkill() {
-        const humanSlot = this.slots.find(s => s.isHuman && !s.isStunned());
-        if (humanSlot && humanSlot.hasActiveSkill && humanSlot.gauge >= humanSlot.maxGauge) {
-            const success = humanSlot.useSkill({
-                keys: this.input.keys,
-                mousePos: this.input.mousePos,
-                boss: this.boss,
-                enemyMinions: this.enemyMinions
-            });
-            if (success) {
-                this.floatingTexts.push(createFloatingText(humanSlot.x, humanSlot.y - 20, humanSlot.skillFloatText, humanSlot.themeColor));
-            }
+    /** 스킬마다 동일한 월드 컨테이너를 전달한다. */
+    getSkillContext(keys, mousePos) {
+        return {
+            keys, mousePos,
+            boss: this.boss,
+            enemyMinions: this.enemyMinions,
+            bossBullets: this.bossBullets,
+            minionBullets: this.minionBullets,
+            enemyBullets: [...this.bossBullets, ...this.minionBullets],
+            allyMinions: this.allyMinions,
+            allyPlayers: this.slots
+        };
+    }
+
+    /** 시전 전에 서버에 예약하고, 서버가 지정한 시각까지 중복 요청을 막는다. */
+    requestSkillCast(player, source, keys = {}, mousePos = null) {
+        const slotIndex = player.slotIndex + 1;
+        if (!player.isSkillReady() || this.pendingSkillSlots.has(slotIndex)) return false;
+        const sequence = ++this.localSkillSequence;
+        const request = {
+            source, sequence, x: player.x, y: player.y,
+            mouseX: mousePos?.x, mouseY: mousePos?.y, keys
+        };
+        const net = window.networkManager;
+        if (net?.socket?.readyState === 1) {
+            const pending = { sequence };
+            this.pendingSkillSlots.set(slotIndex, pending);
+            net.sendPlayerSkill(slotIndex, request);
+            setTimeout(() => {
+                if (this.pendingSkillSlots.get(slotIndex) === pending) this.pendingSkillSlots.delete(slotIndex);
+            }, 1500);
+        } else {
+            this.performScheduledSkill({ ...request, slotIndex, classType: player.classType });
         }
+        return true;
+    }
+
+    /** 로컬 슬롯의 스킬을 서버 예약 경로로 보낸다. */
+    useUserSkill() {
+        if (!this.sceneManager.isPlaying()) return false;
+        const net = window.networkManager;
+        const player = this.slots[(net?.mySlotIndex || 1) - 1];
+        if (!player?.isHuman || !player.hasActiveSkill || !player.isSkillReady()) return false;
+
+        const keys = Object.fromEntries(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+            .map(key => [key, !!this.input.keys[key]]));
+        const mousePos = { ...this.input.mousePos };
+        return this.requestSkillCast(player, 'HUMAN', keys, mousePos);
+    }
+
+    /** 서버가 배포한 예약 시각에 맞춰 모든 기기의 시전을 실행한다. */
+    applyRemoteSkill(packet) {
+        const net = window.networkManager;
+        const player = this.slots?.[packet.slotIndex - 1];
+        if (!this.sceneManager.isPlaying() || !player?.hasActiveSkill ||
+            player.classType !== packet.classType ||
+            !Number.isInteger(packet.sequence) ||
+            packet.sequence <= (this.lastRemoteSkillSequence[packet.slotIndex] || 0) ||
+            !Number.isFinite(packet.x) || !Number.isFinite(packet.y) ||
+            !Number.isFinite(packet.executeAt)) return false;
+
+        this.lastRemoteSkillSequence[packet.slotIndex] = packet.sequence;
+        const pending = { sequence: packet.sequence };
+        this.pendingSkillSlots.set(packet.slotIndex, pending);
+        const matchGeneration = this.matchGeneration;
+        const delay = net?.getSkillExecutionDelay?.(packet.executeAt, packet.serverSentAt) ?? 0;
+        setTimeout(() => {
+            if (this.pendingSkillSlots.get(packet.slotIndex) !== pending) return;
+            this.pendingSkillSlots.delete(packet.slotIndex);
+            if (this.matchGeneration === matchGeneration && this.sceneManager.isPlaying()) {
+                this.performScheduledSkill(packet);
+            }
+        }, delay);
+        return true;
+    }
+
+    /** 예약된 스킬을 소유 기기까지 포함해 동일한 입력으로 재생한다. */
+    performScheduledSkill(packet) {
+        const player = this.slots?.[packet.slotIndex - 1];
+        if (!player || !this.sceneManager.isPlaying()) return false;
+        const net = window.networkManager;
+        const mousePos = Number.isFinite(packet.mouseX) && Number.isFinite(packet.mouseY)
+            ? { x: packet.mouseX, y: packet.mouseY } : null;
+        const context = this.getSkillContext(packet.keys || {}, mousePos);
+        context.castX = packet.x;
+        context.castY = packet.y;
+        context.castId = packet.sequence;
+        context.scheduledNetworkCast = net?.socket?.readyState === 1;
+        const wasLocalOwner = player.isLocalOwner;
+        const previousStunTimer = player.stunTimer;
+        player.isLocalOwner = packet.source === 'HUMAN' && packet.slotIndex === (net?.mySlotIndex || 1);
+        player.stunTimer = 0;
+        player.gauge = player.maxGauge;
+        let success;
+        try {
+            success = player.useSkill(context);
+        } finally {
+            player.isLocalOwner = wasLocalOwner;
+            player.stunTimer = previousStunTimer;
+        }
+        if (!success) return false;
+        this.floatingTexts.push(createFloatingText(packet.x, packet.y - 20, player.skillFloatText, player.themeColor));
+        return true;
     }
 
     /**
@@ -463,30 +541,20 @@ export class GameLoop {
         if (net?.socket?.readyState === 1) {
             if (this.isAiAuthority() && !this.scoreboardRequestSent) {
                 this.scoreboardRequestSent = true;
-                net.requestScoreboard();
+                net.requestScoreboard(this.matchState.teamScore);
             }
             return;
         }
         this.enterScoreboard();
     }
 
-    enterScoreboard() {
+    enterScoreboard(result = null) {
         if (this.scoreboardShown) return;
         this.scoreboardShown = true;
         this.sceneManager.setState(GameState.GAMEOVER);
 
-        this.ui.showGameOverModal(this.slots);
-
-        // Wi-Fi 랭킹 서버로 결과 비동기 전송
-        sendScoreToServer({
-            score: this.matchState.teamScore,
-            slotsStats: this.slots.map(s => ({
-                id: s.id,
-                isHuman: s.isHuman,
-                damageDealt: s.damageDealt,
-                mistakesCount: s.mistakesCount
-            }))
-        });
+        if (Number.isFinite(result?.score)) this.matchState.teamScore = result.score;
+        this.ui.showGameOverModal(this.slots, this.matchState.teamScore, result?.players);
     }
 
     /**
@@ -504,6 +572,7 @@ export class GameLoop {
             this.matchState.teamScore += MATCH_CONFIG.SCORE_PER_TICK;
             if (this.matchState.timeRemaining <= 0) {
                 this.matchState.timeRemaining = 0;
+                this.ui.updateHeader(0, this.matchState.teamScore);
                 this.endMatch();
                 return;
             }
@@ -594,25 +663,18 @@ export class GameLoop {
                 );
 
                 // AI 스킬 연동: 원본 탄환 배열 및 아군 미니언 컨테이너 전달 (100게이지 3종 동시 소환 지원)
-                if (slot.hasActiveSkill && slot.gauge >= slot.maxGauge) {
-                    const success = slot.useSkill({
-                        boss: this.boss,
-                        enemyMinions: this.enemyMinions,
-                        bossBullets: this.bossBullets,
-                        minionBullets: this.minionBullets,
-                        enemyBullets: allEnemyBullets,
-                        allyMinions: this.allyMinions,
-                        allyPlayers: this.slots
-                    });
-                    if (success) {
-                        this.floatingTexts.push(createFloatingText(slot.x, slot.y - 20, slot.skillFloatText, slot.themeColor));
-                    }
+                if (this.isAiAuthority() && slot.hasActiveSkill && slot.gauge >= slot.maxGauge) {
+                    this.requestSkillCast(slot, 'AI');
                 }
             }
 
             // 이동 및 델타룬 스치기/버프 업데이트
             if (slot.isHuman || this.isAiAuthority() || !this.hasRemoteAiState) {
                 slot.updateMovement(dt, this.canvas.width, this.canvas.height, allEnemyBullets, this.slots);
+            } else {
+                // 위치는 방장 스냅샷을 따르되 원격 AI 버프와 스킬 이펙트 시간은 진행한다.
+                slot.updateModifiers?.(dt);
+                slot.updateSkillEffect?.(dt, this.canvas.width, this.canvas.height, allEnemyBullets, this.slots);
             }
 
             // 💡 [유저 인간 슬롯 스킬 사용 시에도 allyMinions 인자 전달 보완]

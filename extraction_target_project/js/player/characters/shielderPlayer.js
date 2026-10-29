@@ -33,6 +33,10 @@ export class ShielderPlayer extends BasePlayer {
     useSkill(targetInfo = {}) {
         if (!super.useSkill(targetInfo)) return false;
 
+        const castX = Number.isFinite(targetInfo.castX) ? targetInfo.castX : this.x;
+        const castY = Number.isFinite(targetInfo.castY) ? targetInfo.castY : this.y;
+        const castId = targetInfo.castId ?? this.shieldCastCount + 1;
+        this.shieldCastCount = Math.max(this.shieldCastCount, castId);
         let deployAngle = -Math.PI / 2; // 기본 방향: 위쪽
 
         if (this.isHuman) {
@@ -50,7 +54,7 @@ export class ShielderPlayer extends BasePlayer {
             } else {
                 const mousePos = targetInfo.mousePos;
                 if (mousePos) {
-                    deployAngle = Math.atan2(mousePos.y - this.y, mousePos.x - this.x);
+                    deployAngle = Math.atan2(mousePos.y - castY, mousePos.x - castX);
                 }
             }
         } else {
@@ -69,15 +73,15 @@ export class ShielderPlayer extends BasePlayer {
             }
 
             if (closest) {
-                deployAngle = Math.atan2(closest.y - this.y, closest.x - this.x);
+                deployAngle = Math.atan2(closest.y - castY, closest.x - castX);
             }
         }
 
         // 곡선 배리어 생성 (체력 100, 반지름 70px, 90도 호)
         this.activeShield = {
-            id: `shield_${this.slotIndex}_${++this.shieldCastCount}`,
-            x: this.x,
-            y: this.y,
+            id: `shield_${this.slotIndex}_${castId}`,
+            x: castX,
+            y: castY,
             angle: deployAngle,
             radius: 70,
             arcAngle: Math.PI / 2,
@@ -89,7 +93,7 @@ export class ShielderPlayer extends BasePlayer {
         this.shieldSyncTimer = 0;
 
         // 소유자(Owner)인 경우 전체 기기에 방벽 생성 브로드캐스트
-        if (this.isLocalOwner && window.networkManager) {
+        if (this.isLocalOwner && window.networkManager && !targetInfo.scheduledNetworkCast) {
             window.networkManager.sendObjectStateSync(this.slotIndex + 1, [this.activeShield]);
         }
 

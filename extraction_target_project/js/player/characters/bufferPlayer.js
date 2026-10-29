@@ -38,7 +38,10 @@ export class BufferPlayer extends BasePlayer {
      */
     updateMovement(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
         super.updateMovement(dt, canvasWidth, canvasHeight, enemyBullets, allyPlayers);
+        this.updateSkillEffect(dt, canvasWidth, canvasHeight, enemyBullets, allyPlayers);
+    }
 
+    updateSkillEffect(dt, canvasWidth, canvasHeight, enemyBullets = [], allyPlayers = []) {
         if (this.activeAura) {
             this.activeAura.timer -= dt;
             if (this.activeAura.timer <= 0) {
@@ -54,18 +57,16 @@ export class BufferPlayer extends BasePlayer {
                         if (dist <= (this.activeAura.radius + (p.radius || 8))) {
                             if (typeof p.addModifier === 'function') {
                                 p.addModifier({
-                                    id: 'buffer_atk_aura',
-                                    targetStat: 'damage',
-                                    type: 'MULTIPLY',
-                                    value: 1.5,
+                                    key: 'buffer_atk_aura',
+                                    stat: 'damage',
+                                    value: 50,
                                     duration: 10.0
                                 });
                                 // 틱 회복 속도 1.2배 버프 레이어 동시 적용 지원
                                 p.addModifier({
-                                    id: 'buffer_tick_aura',
-                                    targetStat: 'gaugeTickRate',
-                                    type: 'MULTIPLY',
-                                    value: 1.2,
+                                    key: 'buffer_tick_aura',
+                                    stat: 'gaugeTickRate',
+                                    value: 20,
                                     duration: 0.5
                                 });
                             }
@@ -113,7 +114,7 @@ export class BufferPlayer extends BasePlayer {
         // 3. 💡 [버프 상태 아군 추적 이펙트] modifiers 파이프라인 버프가 존재하는 아군 추적 이펙트
         if (Array.isArray(allyPlayers)) {
             allyPlayers.forEach(p => {
-                const hasAtkBuff = p && Array.isArray(p.modifiers) && p.modifiers.some(m => m.id === 'buffer_atk_aura');
+                const hasAtkBuff = p && Array.isArray(p.modifiers) && p.modifiers.some(m => m.key === 'buffer_atk_aura');
                 if (hasAtkBuff && !p.isStunned()) {
                     ctx.save();
                     ctx.translate(p.x, p.y);

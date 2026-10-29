@@ -233,46 +233,7 @@ export class UIManager {
             };
         }
 
-        // 2. 우측 하단 스킬 버튼 클릭/터치 이벤트 핸들러 연동
-        if (!this.elSkillBtn) return;
-
-        const triggerSkill = () => {
-            const userPlayer = typeof getUserPlayerFn === 'function' ? getUserPlayerFn() : null;
-            if (!userPlayer || typeof userPlayer.useSkill !== 'function') return;
-
-            const slot = window.networkManager?.mySlotIndex || 1;
-            console.log(`[LOCAL_INPUT] Slot P${slot} | Move: (0, 0) | Skill: true | Pos: (${userPlayer.x}, ${userPlayer.y})`);
-
-            const allEnemyBullets = [
-                ...(gameLoopInstance.bossBullets || []),
-                ...(gameLoopInstance.minionBullets || [])
-            ];
-
-            const success = userPlayer.useSkill({
-                boss: gameLoopInstance.boss,
-                enemyMinions: gameLoopInstance.enemyMinions,
-                bossBullets: gameLoopInstance.bossBullets,
-                minionBullets: gameLoopInstance.minionBullets,
-                enemyBullets: allEnemyBullets,
-                allyMinions: gameLoopInstance.allyMinions,
-                allyPlayers: gameLoopInstance.slots
-            });
-
-            if (success && Array.isArray(gameLoopInstance.floatingTexts)) {
-                gameLoopInstance.floatingTexts.push({
-                    x: userPlayer.x,
-                    y: userPlayer.y - 20,
-                    text: userPlayer.skillFloatText || 'SKILL ACTIVATED!',
-                    color: userPlayer.themeColor || '#10b981',
-                    alpha: 1.0,
-                    vy: -1.5,
-                    life: 1.0
-                });
-            }
-        };
-
-        // 기존 이벤트 중복 방지 후 신규 등록
-        this.elSkillBtn.onclick = triggerSkill;
+        // 스킬 버튼은 bindEvents의 단일 핸들러를 통해 GameLoop로 전달한다.
     }
 
     /**
@@ -392,31 +353,62 @@ export class UIManager {
      * 경기 종료 후 최종 스코어보드 모달 표시
      * @param {Array} slots 
      */
-    showGameOverModal(slots) {
+    showGameOverModal(slots, score = 0, players = null) {
         if (!this.elScoreboardList || !this.elModal) return;
 
+        const scoreDisplay = document.getElementById('final-score-val');
+        if (scoreDisplay) scoreDisplay.textContent = Math.floor(score).toString().padStart(6, '0');
         this.elScoreboardList.innerHTML = '';
         const sorted = [...slots].sort((a, b) => b.damageDealt - a.damageDealt);
 
         sorted.forEach((s, idx) => {
             const row = document.createElement('div');
             row.className = "flex justify-between items-center p-2 rounded bg-slate-900 border border-slate-800";
-            row.innerHTML = `
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-gray-500">${idx + 1}.</span>
-                    <span class="font-bold" style="color: ${s.color}">SLOT ${s.id} (${s.isHuman ? '유저' : 'AI 봇'})</span>
-                </div>
-                <div class="text-right">
-                    <span class="text-cyan-300 font-bold">${Math.floor(s.damageDealt).toLocaleString()} DMG</span>
-                    <span class="text-pink-400 text-[10px] ml-2">(${s.mistakesCount} 실수)</span>
-                </div>
-            `;
+            const participant = players?.find(p => p.slotIndex === s.id);
+            const connected = participant ? participant.connected : !!window.networkManager?.activeSlots?.includes(s.id);
+            const name = document.createElement('span');
+            name.className = 'font-bold';
+            name.style.color = s.color;
+            name.textContent = `${idx + 1}. ${participant?.nickname || s.nickname || `SLOT ${s.id}`} (${connected ? '유저' : 'AI 봇'})`;
+            const damage = document.createElement('span');
+            damage.className = 'text-cyan-300 font-bold';
+            damage.textContent = `${Math.floor(s.damageDealt).toLocaleString()} DMG`;
+            row.appendChild(name);
+            row.appendChild(damage);
             this.elScoreboardList.appendChild(row);
         });
 
         this.elModal.classList.remove('hidden');
         const voteStatus = document.getElementById('vote-status');
         if (voteStatus) voteStatus.textContent = '전원 같은 선택을 하면 함께 이동합니다.';
+    }
+
+    async loadRankings() {
+        const list = document.getElementById('ranking-list');
+        if (!list) return;
+        list.textContent = '랭킹을 불러오는 중...';
+        try {
+            const response = await fetch('/api/rankings');
+            if (!response.ok) throw new Error('랭킹 조회 실패');
+            const rankings = await response.json();
+            list.textContent = '';
+            if (!rankings.length) list.textContent = '아직 기록이 없습니다.';
+            rankings.slice(0, 20).forEach((entry, index) => {
+                const row = document.createElement('div');
+                row.className = 'rounded bg-slate-900 p-2 border border-slate-700';
+                const title = document.createElement('div');
+                title.className = 'font-bold text-cyan-300';
+                title.textContent = `${index + 1}위 · ${Number(entry.score).toLocaleString()}점 · ${new Date(entry.playedAt).toLocaleDateString('ko-KR')}`;
+                const names = document.createElement('div');
+                names.className = 'mt-1 text-slate-300 break-words';
+                names.textContent = (entry.players || []).map(p => p.nickname).join(' · ');
+                row.appendChild(title);
+                row.appendChild(names);
+                list.appendChild(row);
+            });
+        } catch (error) {
+            list.textContent = '랭킹을 불러오지 못했습니다.';
+        }
     }
 
     updateVoteStatus(votes = {}, mySlotIndex = null) {
