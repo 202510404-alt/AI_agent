@@ -55,7 +55,9 @@ export class NetworkManager {
             PHASE_CHANGE: [],
             INPUT_SYNC: [],
             PLAYER_SHOT_SYNC: [],
+            AI_SHOT_SYNC: [],
             PLAYER_SKILL_SYNC: [],
+            BOSS_TRANSITION: [],
             TIME_SYNC_RESPONSE: [],
             SLOT_ASSIGNED: [],
             SLOT_EVENT_SYNC: [],
@@ -401,6 +403,14 @@ export class NetworkManager {
         }));
     }
 
+    sendAiShot(slotIndex, bullet) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
+        this.socket.send(JSON.stringify({
+            type: 'AI_SHOT_REQUEST', slotIndex,
+            x: bullet.x, y: bullet.y, angle: bullet.angle, damage: bullet.damage
+        }));
+    }
+
     sendPlayerSkill(slotIndex, skillState) {
         if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return;
         this.socket.send(JSON.stringify({
@@ -408,6 +418,12 @@ export class NetworkManager {
             slotIndex,
             ...skillState
         }));
+    }
+
+    requestBossTransition(previousType, nextType, revision) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) return false;
+        this.socket.send(JSON.stringify({ type: 'BOSS_TRANSITION_REQUEST', previousType, nextType, revision }));
+        return true;
     }
 
     requestTimeSync() {

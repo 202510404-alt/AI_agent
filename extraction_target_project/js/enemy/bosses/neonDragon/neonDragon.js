@@ -14,6 +14,7 @@ export class NeonDragon extends BaseBoss {
      */
     constructor(x, y) {
         super(x, y, 25000);
+        this.type = 'neonDragon';
         NeonDragonPattern.currentTargetIndex = 0;
         this.dangerAreas = []; // AI 연동용 위험 구역 (레이저)
 
@@ -131,10 +132,7 @@ export class NeonDragon extends BaseBoss {
      * 보스 체력 차감 및 체력 0 도달 시 해츨링 동시 사망 처리
      */
     takeDamage(damage) {
-        this.hp -= damage;
-        if (this.hp <= 0) {
-            this.hp = this.maxHp;
-
+        if (super.takeDamage(damage)) {
             // 보스 사망 시 동시 사망 처리
             this.hatchlings.forEach(h => {
                 if (h) h.isDead = true;

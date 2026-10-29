@@ -144,6 +144,7 @@ window.addEventListener('DOMContentLoaded', () => {
         if (awaitingGameRoomState && packet.phase === 'GAME') {
             awaitingGameRoomState = false;
             if (gameLoopInstance) gameLoopInstance.initSlots(packet.masterSeed, packet.slotDetails);
+            if (gameLoopInstance) gameLoopInstance.syncBossState(packet.bossType, packet.bossRevision);
             sceneManager.setState('PLAY');
         }
     });

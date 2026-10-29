@@ -99,8 +99,12 @@ export class AIEngine {
 
             if (shieldSpot) {
                 player.fsmState = 'COVER';
-                player.targetX = shieldSpot.x;
-                player.targetY = shieldSpot.y;
+                const dx = shieldSpot.x - player.x;
+                const dy = shieldSpot.y - player.y;
+                const distance = Math.hypot(dx, dy);
+                const step = Math.min(distance, 15);
+                player.targetX = distance > 0 ? player.x + dx / distance * step : player.x;
+                player.targetY = distance > 0 ? player.y + dy / distance * step : player.y;
                 player.actionLockTimer = 0;
             } else {
                 // REPOSITION 진입 시점에 단 한 번 전략 결정 (APPROACH 또는 RETREAT)

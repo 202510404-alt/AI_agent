@@ -44,6 +44,8 @@ export class GameLoop {
         this.lastRemoteSkillSequence = {};
         this.pendingSkillSlots = new Map();
         this.matchGeneration = 0;
+        this.bossRevision = 0;
+        this.pendingBossTransition = false;
 
         // 전역 참조 등록
         window.gameLoopInstance = this;
@@ -101,8 +103,27 @@ export class GameLoop {
                 bullet.damage = packet.damage;
                 this.playerBullets.push(bullet);
             });
+            window.networkManager.on('AI_SHOT_SYNC', (packet) => {
+                const slot = this.slots?.[packet.slotIndex - 1];
+                if (!this.sceneManager.isPlaying() || !slot || slot.isHuman ||
+                    !Number.isFinite(packet.x) || !Number.isFinite(packet.y) ||
+                    !Number.isFinite(packet.angle) || !Number.isFinite(packet.damage) ||
+                    !Number.isFinite(packet.executeAt) || !Number.isFinite(packet.serverSentAt)) return;
+                const generation = this.matchGeneration;
+                const delay = window.networkManager.getSkillExecutionDelay(packet.executeAt, packet.serverSentAt);
+                setTimeout(() => {
+                    if (generation !== this.matchGeneration || !this.sceneManager.isPlaying()) return;
+                    const bullet = new PlayerBullet(packet.x, packet.y, packet.angle, slot.slotIndex, slot.color);
+                    bullet.damage = packet.damage;
+                    this.playerBullets.push(bullet);
+                    if (slot.isLocalOwner) window.gameAudio?.play('shoot');
+                }, delay);
+            });
             window.networkManager.on('PLAYER_SKILL_SYNC', (packet) => {
                 this.applyRemoteSkill(packet);
+            });
+            window.networkManager.on('BOSS_TRANSITION', (packet) => {
+                this.syncBossState(packet.bossType, packet.revision, true);
             });
         }
 
@@ -191,6 +212,31 @@ export class GameLoop {
         return net.mySlotIndex === Math.min(...activeSlots);
     }
 
+    syncBossState(bossType, revision, awardKill = false) {
+        if (!['neonDragon', 'necromancer'].includes(bossType) ||
+            !Number.isInteger(revision) || revision <= this.bossRevision) return false;
+        if (Array.isArray(this.boss?.hatchlings)) this.boss.hatchlings.forEach(h => { h.isDead = true; });
+        if (awardKill) this.matchState.teamScore += MATCH_CONFIG.SCORE_ON_BOSS_KILL;
+        this.boss = BossFactory.createBoss(bossType, this.canvas.width / 2, 150);
+        this.bossRevision = revision;
+        this.pendingBossTransition = false;
+        return true;
+    }
+
+    handleBossDeath() {
+        if (!this.boss?.isDead || this.pendingBossTransition || !this.isAiAuthority()) return;
+        const revision = this.bossRevision + 1;
+        const nextType = BossFactory.getNextBossType(this.boss.type, revision);
+        if (!nextType) return;
+        this.pendingBossTransition = true;
+        const net = window.networkManager;
+        if (!net?.socket || net.socket.readyState !== 1) {
+            this.syncBossState(nextType, revision, true);
+        } else {
+            net.requestBossTransition(this.boss.type, nextType, revision);
+        }
+    }
+
     applyAiStateSync(packet) {
         if (this.isAiAuthority() || !this.sceneManager.isPlaying() || !Array.isArray(packet.slots)) return;
         if (packet.authoritySlot !== this.lastAiAuthoritySlot) {
@@ -261,6 +307,8 @@ export class GameLoop {
             this.lastRemoteSkillSequence = {};
             this.pendingSkillSlots.clear();
             this.matchGeneration++;
+            this.bossRevision = 0;
+            this.pendingBossTransition = false;
             this.matchState.timeRemaining = MATCH_CONFIG.DEFAULT_DURATION_SEC;
             this.matchState.teamScore = 0;
             // 재도전 시작 시 이전 경기의 보스와 탄환·미니언을 모두 초기화한다.
@@ -582,11 +630,12 @@ export class GameLoop {
         this.updateInputs(dt);
 
         // 보스 기동 및 탄막 발생 (플레이어 정보 전달)
-        this.boss.update(this.bossBullets, this.canvas.width, this.slots, dt);
+        if (!this.boss.isDead) this.boss.update(this.bossBullets, this.canvas.width, this.slots, dt);
 
         // 💡 [보스 레이저(dangerAreas) 광역 다중 피격 및 쉴드 연동 정밀 판정 로직]
         if (this.boss && Array.isArray(this.boss.dangerAreas)) {
             this.boss.dangerAreas.forEach(area => {
+                if (this.boss.isDead) return;
                 if (area.isFiring) {
                     // 차단 상태 초기화 후 판정
                     area.isBlockedByShield = false;
@@ -725,7 +774,8 @@ export class GameLoop {
             // 유저 탄환은 소유 기기가 생성한 방향과 좌표를 그대로 중계한다.
             const net = window.networkManager;
             const remoteHuman = slot.isHuman && !slot.isLocalOwner && net?.socket?.readyState === 1;
-            if (remoteHuman) return;
+            const remoteAi = !slot.isHuman && net?.socket?.readyState === 1 && !this.isAiAuthority();
+            if (remoteHuman || remoteAi) return;
             slot.updateAttack(dt, () => {
                 slot.shoot(this.playerBullets, {
                     mousePos: slot.isLocalOwner ? this.input.mousePos : slot.lastMousePos,
@@ -734,8 +784,11 @@ export class GameLoop {
                 });
                 if (slot.isHuman && slot.isLocalOwner && net?.socket?.readyState === 1) {
                     net.sendPlayerShot(slot.slotIndex + 1, this.playerBullets[this.playerBullets.length - 1]);
+                } else if (!slot.isHuman && net?.socket?.readyState === 1) {
+                    const bullet = this.playerBullets.pop();
+                    if (bullet) net.sendAiShot(slot.slotIndex + 1, bullet);
                 }
-                if (slot.isLocalOwner) window.gameAudio?.play('shoot');
+                if (slot.isLocalOwner && (slot.isHuman || net?.socket?.readyState !== 1)) window.gameAudio?.play('shoot');
             });
         });
 
@@ -820,7 +873,7 @@ export class GameLoop {
 
                             if (this.matchState) {
                                 this.matchState.teamScore += damage * MATCH_CONFIG.DAMAGE_SCORE_RATIO;
-                                if (isKilled) this.matchState.teamScore += MATCH_CONFIG.SCORE_ON_BOSS_KILL;
+                                if (isKilled && target !== this.boss) this.matchState.teamScore += MATCH_CONFIG.SCORE_ON_BOSS_KILL;
                             }
 
                             createImpactParticles(this.particles, b.x, b.y, b.color || '#06b6d4', 4);
@@ -840,6 +893,8 @@ export class GameLoop {
                 }
             }
         }
+
+        this.handleBossDeath();
 
         // 사망한 미니언 객체 청소
         this.enemyMinions = this.enemyMinions.filter(m => !m.isDead);

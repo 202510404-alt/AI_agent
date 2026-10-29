@@ -345,8 +345,8 @@ export default class BasePlayer {
         const dist = Math.hypot(dx, dy);
 
         // 💡 [이동 연산 및 권한 판정 완치]
-        if (this.isLocalOwner) {
-            // [로컬 기체]: 내 키보드/조이스틱 입력으로 부드럽고 정확하게 실시간 이동
+        if (this.isLocalOwner || !this.isHuman) {
+            // 로컬 유저와 AI는 목표까지 실제 이동 속도로 이동한다.
             if (dist > 1) {
                 const step = Math.min(dist, this.moveSpeed * dt);
                 this.x += (dx / dist) * step;

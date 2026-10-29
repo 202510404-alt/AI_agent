@@ -15,6 +15,7 @@ export default class BaseBoss {
         this.radius = 42;
         this.maxHp = maxHp;
         this.hp = maxHp;
+        this.isDead = false;
         this.angle = 0;
         this.patternTimer = 0;
         this.patternTick = 0;
@@ -52,9 +53,10 @@ export default class BaseBoss {
      * @returns {boolean} 처치 여부
      */
     takeDamage(damage) {
-        this.hp -= damage;
+        if (this.isDead || !Number.isFinite(damage) || damage <= 0) return false;
+        this.hp = Math.max(0, this.hp - damage);
         if (this.hp <= 0) {
-            this.hp = this.maxHp; // 처치 시 즉시 체력 회복 및 킬 카운트
+            this.isDead = true;
             return true;
         }
         return false;

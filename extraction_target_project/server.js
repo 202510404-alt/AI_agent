@@ -59,6 +59,8 @@ const Phase = {
 let currentPhase = Phase.LOBBY;
 let currentMasterSeed = null;
 let skillEventSequence = 0;
+let currentBossType = 'neonDragon';
+let bossRevision = 0;
 let matchParticipants = {};
 let currentMatchResult = null;
 let currentMatchSaved = false;
@@ -201,7 +203,9 @@ function broadcastRoomState() {
         phase: currentPhase,
         activeSlots,
         slotDetails,
-        masterSeed: currentMasterSeed
+        masterSeed: currentMasterSeed,
+        bossType: currentBossType,
+        bossRevision
     });
 }
 
@@ -244,6 +248,8 @@ function changePhase(nextPhase, result = null) {
 
     // GAME 페이즈 진입 시 단일 masterSeed 생성 및 하사
     if (currentPhase === Phase.GAME) {
+        currentBossType = 'neonDragon';
+        bossRevision = 0;
         currentMatchResult = null;
         currentMatchSaved = false;
         matchParticipants = {};
@@ -449,6 +455,19 @@ wss.on('connection', (ws) => {
                     });
                 }
             }
+            else if (data.type === 'AI_SHOT_REQUEST') {
+                const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+                const target = slots[data.slotIndex];
+                if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot &&
+                    Number.isInteger(data.slotIndex) && target && (!target.active || target.isAiMode) &&
+                    Number.isFinite(data.x) && Number.isFinite(data.y) &&
+                    Number.isFinite(data.angle) && Number.isFinite(data.damage)) {
+                    const serverSentAt = Date.now();
+                    broadcast({ type: 'AI_SHOT_SYNC', slotIndex: data.slotIndex,
+                        x: data.x, y: data.y, angle: data.angle, damage: data.damage,
+                        serverSentAt, executeAt: serverSentAt + 200 });
+                }
+            }
             else if (data.type === 'TIME_SYNC_REQUEST') {
                 if (Number.isFinite(data.clientSentAt)) {
                     ws.send(JSON.stringify({
@@ -456,6 +475,17 @@ wss.on('connection', (ws) => {
                         clientSentAt: data.clientSentAt,
                         serverTime: Date.now()
                     }));
+                }
+            }
+            else if (data.type === 'BOSS_TRANSITION_REQUEST') {
+                const authoritySlot = Object.values(slots).filter(s => s.active).reduce((min, s) => Math.min(min, s.slotIndex), Infinity);
+                const allowedTypes = ['neonDragon', 'necromancer'];
+                if (currentPhase === Phase.GAME && ws.slotIndex === authoritySlot &&
+                    data.previousType === currentBossType && data.revision === bossRevision + 1 &&
+                    allowedTypes.includes(data.nextType) && data.nextType !== currentBossType) {
+                    currentBossType = data.nextType;
+                    bossRevision = data.revision;
+                    broadcast({ type: 'BOSS_TRANSITION', bossType: currentBossType, revision: bossRevision });
                 }
             }
             else if (data.type === 'PLAYER_SKILL_REQUEST') {
