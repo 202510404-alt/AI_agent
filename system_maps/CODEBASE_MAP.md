@@ -1,6 +1,6 @@
 # 🏗️ 짭커서 프로젝트 CODEBASE MAP
 
-현재 인덱싱된 총 파일 수: **44개**
+현재 인덱싱된 총 파일 수: **52개**
 
 ## 🗂️ [Module Index]
 - `extraction_target_project/AGENTS.md`
@@ -17,6 +17,11 @@
 - `extraction_target_project/js/core/ui.js`
 - `extraction_target_project/js/enemy/baseBoss.js`
 - `extraction_target_project/js/enemy/bossFactory.js`
+- `extraction_target_project/js/enemy/bossMovement.js`
+- `extraction_target_project/js/enemy/bosses/necromancer/necromancer.js`
+- `extraction_target_project/js/enemy/bosses/necromancer/necromancerBullet.js`
+- `extraction_target_project/js/enemy/bosses/necromancer/necromancerParticle.js`
+- `extraction_target_project/js/enemy/bosses/necromancer/necromancerPattern.js`
 - `extraction_target_project/js/enemy/bosses/neonDragon/neonDragon.js`
 - `extraction_target_project/js/enemy/bosses/neonDragon/neonDragonBullet.js`
 - `extraction_target_project/js/enemy/bosses/neonDragon/neonDragonParticle.js`
@@ -27,6 +32,7 @@
 - `extraction_target_project/js/minian/ally/berserkerMinion.js`
 - `extraction_target_project/js/minian/ally/shooterMinion.js`
 - `extraction_target_project/js/minian/baseMinion.js`
+- `extraction_target_project/js/minian/enemy/necromancerEliteZombie.js`
 - `extraction_target_project/js/minian/enemy/neonDragonHatchling/neonDragonHatchling.js`
 - `extraction_target_project/js/minian/minionBullet.js`
 - `extraction_target_project/js/network/networkManager.js`
@@ -45,6 +51,8 @@
 - `extraction_target_project/js/utils/seededRNG.js`
 - `extraction_target_project/package-lock.json`
 - `extraction_target_project/package.json`
+- `extraction_target_project/rank.json`
+- `extraction_target_project/rank.pending.json`
 - `extraction_target_project/run_server.bat`
 - `extraction_target_project/server.js`
 
@@ -68,7 +76,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../config/constants.js, ../utils/math.js, ../utils/seededRNG.js, ./dodgeAlgorithm.js
-🧬 class AIEngine [L10~L255]
+🧬 class AIEngine [L10~L262]
 ```
 
 --------------------------------------------------
@@ -107,7 +115,7 @@
 ### 📄 extraction_target_project/js/core/gameLoop.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../ai/aiEngine.js, ../config/constants.js, ../enemy/bossFactory.js, ../network/scoreSender.js, ../player/particle.js, ../player/playerFactory.js, ../utils/math.js, ./sceneManager.js
+💡 📦 imp: ../ai/aiEngine.js, ../config/constants.js, ../enemy/bossFactory.js, ../player/particle.js, ../player/playerBullet.js, ../player/playerFactory.js, ../utils/math.js, ./sceneManager.js
 🧬 class GameLoop [L14~L23]
 ```
 
@@ -116,10 +124,9 @@
 ### 📄 extraction_target_project/js/core/input.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../utils/seededRNG.js
-🧬 class InputHandler [L12~L298]
-🎯 def updateJoystick(clientX, clientY) [L144~L162]
-🎯 def endJoystick(e) [L179~L186]
+🧬 class InputHandler [L10~L299]
+🎯 def updateJoystick(clientX, clientY) [L150~L168]
+🎯 def endJoystick(e) [L185~L192]
 ```
 
 --------------------------------------------------
@@ -137,10 +144,9 @@
 ```python
 💡 📦 imp: ../player/characters/index.js
 🧬 class UIManager [L8~L17]
-🎯 def updateSlotLockStatus() [L69~L87]
-🎯 def triggerSkill() [L248~L281]
-🧬 class truncate [L480~L492]
-🧬 class truncate [L518~L527]
+🎯 def updateSlotLockStatus() [L72~L85]
+🧬 class truncate [L478~L490]
+🧬 class truncate [L516~L525]
 ```
 
 --------------------------------------------------
@@ -148,7 +154,7 @@
 ### 📄 extraction_target_project/js/enemy/baseBoss.js
 #### 🧱 Code Skeleton:
 ```python
-🧬 class BaseBoss [L6~L61]
+🧬 class BaseBoss [L6~L67]
 ```
 
 --------------------------------------------------
@@ -156,8 +162,53 @@
 ### 📄 extraction_target_project/js/enemy/bossFactory.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../utils/seededRNG.js, ./bosses/neonDragon/neonDragon.js
-🧬 class BossFactory [L8~L31]
+💡 📦 imp: ../utils/seededRNG.js, ./bosses/necromancer/necromancer.js, ./bosses/neonDragon/neonDragon.js
+🧬 class BossFactory [L9~L35]
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/enemy/bossMovement.js
+#### 🧱 Code Skeleton:
+```python
+💡 📦 imp: ../utils/seededRNG.js
+🎯 def updateBossMovement(boss, canvasWidth, dt) [L4~L24]
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/enemy/bosses/necromancer/necromancer.js
+#### 🧱 Code Skeleton:
+```python
+💡 📦 imp: ../../../minian/enemy/necromancerEliteZombie.js, ../../baseBoss.js, ../../bossMovement.js, ./necromancerParticle.js, ./necromancerPattern.js
+🧬 class Necromancer [L8~L166]
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/enemy/bosses/necromancer/necromancerBullet.js
+#### 🧱 Code Skeleton:
+```python
+🧬 class NecromancerBullet [L2~L53]
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/enemy/bosses/necromancer/necromancerParticle.js
+#### 🧱 Code Skeleton:
+```python
+🎯 def createNecromancerParticles(ctx, x, y, time = 0) [L6~L16]
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/enemy/bosses/necromancer/necromancerPattern.js
+#### 🧱 Code Skeleton:
+```python
+💡 📦 imp: ../../../minian/baseMinion.js, ../../../utils/seededRNG.js, ./necromancerBullet.js
+🎯 def closestPlayer(x, y, players = []) [L26~L35]
+🧬 class NecromancerZombie [L37~L61]
+🧬 class NecromancerPattern [L63~L97]
 ```
 
 --------------------------------------------------
@@ -165,8 +216,8 @@
 ### 📄 extraction_target_project/js/enemy/bosses/neonDragon/neonDragon.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: ../../../minian/enemy/neonDragonHatchling/neonDragonHatchling.js, ../../../utils/seededRNG.js, ../../baseBoss.js, ./neonDragonPattern.js
-🧬 class NeonDragon [L10~L226]
+💡 📦 imp: ../../../minian/enemy/neonDragonHatchling/neonDragonHatchling.js, ../../../utils/seededRNG.js, ../../baseBoss.js, ../../bossMovement.js, ./neonDragonPattern.js
+🧬 class NeonDragon [L11~L206]
 ```
 
 --------------------------------------------------
@@ -227,7 +278,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ./baseAllyMinion.js
-🧬 class BerserkerMinion [L7~L241]
+🧬 class BerserkerMinion [L7~L240]
 ```
 
 --------------------------------------------------
@@ -236,7 +287,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../../utils/seededRNG.js, ./baseAllyMinion.js
-🧬 class ShooterMinion [L9~L109]
+🧬 class ShooterMinion [L9~L110]
 ```
 
 --------------------------------------------------
@@ -245,7 +296,16 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../utils/seededRNG.js, ./minionBullet.js
-🧬 class BaseMinion [L14~L254]
+🧬 class BaseMinion [L14~L255]
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/js/minian/enemy/necromancerEliteZombie.js
+#### 🧱 Code Skeleton:
+```python
+💡 📦 imp: ../../enemy/bosses/necromancer/necromancerPattern.js, ../baseMinion.js
+🧬 class NecromancerEliteZombie [L5~L73]
 ```
 
 --------------------------------------------------
@@ -271,7 +331,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../utils/seededRNG.js
-🧬 class NetworkManager [L14~L423]
+🧬 class NetworkManager [L14~L23]
 ```
 
 --------------------------------------------------
@@ -289,7 +349,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../config/constants.js, ../utils/seededRNG.js, ./playerBullet.js
-🧬 class BasePlayer [L15~L462]
+🧬 class BasePlayer [L15~L493]
 ```
 
 --------------------------------------------------
@@ -298,7 +358,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../basePlayer.js
-🧬 class BufferPlayer [L7~L142]
+🧬 class BufferPlayer [L7~L143]
 ```
 
 --------------------------------------------------
@@ -316,7 +376,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../basePlayer.js
-🧬 class EmpPlayer [L3~L132]
+🧬 class EmpPlayer [L3~L135]
 ```
 
 --------------------------------------------------
@@ -334,7 +394,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../basePlayer.js
-🧬 class ShielderPlayer [L11~L255]
+🧬 class ShielderPlayer [L11~L264]
 ```
 
 --------------------------------------------------
@@ -343,7 +403,7 @@
 #### 🧱 Code Skeleton:
 ```python
 💡 📦 imp: ../../minian/ally/berserkerMinion.js, ../../minian/ally/shooterMinion.js, ../basePlayer.js
-🧬 class SummonerPlayer [L12~L84]
+🧬 class SummonerPlayer [L12~L96]
 ```
 
 --------------------------------------------------
@@ -407,7 +467,7 @@
 - **[JSON_KEY]** `lockfileVersion` (Line: 3~3)
 - **[JSON_KEY]** `requires` (Line: 4~4)
 - **[JSON_KEY]** `packages` (Line: 5~5)
-  - 🔗 *Calls (호출하는 것)*: `ipaddr.js, node_modules/ipaddr.js`
+  - 🔗 *Calls (호출하는 것)*: `node_modules/ipaddr.js, ipaddr.js`
 
 #### 🧱 Code Skeleton:
 ```python
@@ -432,6 +492,33 @@
 
 --------------------------------------------------
 
+### 📄 extraction_target_project/rank.json
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  └── Root Array: List (len: 4)
+```
+
+--------------------------------------------------
+
+### 📄 extraction_target_project/rank.pending.json
+#### 🔍 내부 심볼 및 의존성 관계:
+- **[JSON_KEY]** `matchId` (Line: 2~2)
+- **[JSON_KEY]** `score` (Line: 3~3)
+- **[JSON_KEY]** `players` (Line: 4~4)
+- **[JSON_KEY]** `playedAt` (Line: 26~26)
+
+#### 🧱 Code Skeleton:
+```python
+📦 [JSON STRUCTURE MAP]
+  ├── "matchId": str (val: a23a2a01-f95d-47e3-898d-59bfd9)
+  ├── "score": int (val: 147347)
+  ├── "players": List (len: 4)
+  ├── "playedAt": str (val: 2026-10-29T21:15:23.246Z)
+```
+
+--------------------------------------------------
+
 ### 📄 extraction_target_project/run_server.bat
 *선언된 클래스나 함수가 없는 파일이거나 모듈입니다.*
 
@@ -440,16 +527,20 @@
 ### 📄 extraction_target_project/server.js
 #### 🧱 Code Skeleton:
 ```python
-💡 📦 imp: child_process, fs, http, os, path
-🎯 def ensureModule(moduleName) [L20~L28]
-🎯 def generateMasterSeed() [L73~L75]
-🎯 def broadcast(payloadObj) [L80~L87]
-🎯 def broadcastRoomState() [L92~L119]
-🎯 def broadcastVoteStatus() [L124~L136]
-🎯 def changePhase(nextPhase) [L142~L166]
-🎯 def checkReadyUnanimity() [L171~L181]
-🎯 def checkScoreboardVoting() [L186~L209]
-🎯 def getLocalIpAddress() [L212~L222]
+💡 📦 imp: child_process, crypto, fs, http, os, path
+🎯 def ensureModule(moduleName) [L21~L29]
+🎯 def loadRankings() [L85~L93]
+🎯 def createMatchResult(score) [L104~L121]
+🎯 def saveMatchResult(result) [L123~L144]
+🎯 def generateMasterSeed() [L166~L168]
+🎯 def selectInitialBoss(seed) [L171~L178]
+🎯 def broadcast(payloadObj) [L183~L190]
+🎯 def broadcastRoomState() [L195~L226]
+🎯 def broadcastVoteStatus() [L231~L243]
+🎯 def changePhase(nextPhase, result = null) [L249~L291]
+🎯 def checkReadyUnanimity() [L296~L306]
+🎯 def checkScoreboardVoting() [L311~L339]
+🎯 def getLocalIpAddress() [L342~L352]
 ```
 
 --------------------------------------------------
